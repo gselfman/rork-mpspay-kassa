@@ -12,7 +12,7 @@ import {
   Modal,
   ScrollView,
   Image,
-  TextInput as RNTextInput,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TransactionItem } from '@/components/TransactionItem';
@@ -561,7 +561,7 @@ export default function HistoryScreen() {
                       borderColor: theme.border,
                       backgroundColor: theme.inputBackground
                     }]}>
-                      <RNTextInput
+                      <TextInput
                         placeholder="YYYY-MM-DD"
                         value={customStartDate}
                         onChangeText={setCustomStartDate}
@@ -579,7 +579,7 @@ export default function HistoryScreen() {
                       borderColor: theme.border,
                       backgroundColor: theme.inputBackground
                     }]}>
-                      <RNTextInput
+                      <TextInput
                         placeholder="YYYY-MM-DD"
                         value={customEndDate}
                         onChangeText={setCustomEndDate}

@@ -9,7 +9,6 @@ import {
   Platform,
   Share,
   ActivityIndicator,
-  Image,
   Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
@@ -421,8 +420,8 @@ export default function PaymentDetailsScreen() {
           )}
         </Card>
         
-        {/* QR Code and Payment Link (only for pending payments) */}
-        {paymentStatus === 'pending' && transaction.paymentUrl && (
+        {/* QR Code and Payment Link */}
+        {transaction.paymentUrl && (
           <Card style={styles.qrCard}>
             <Text style={[styles.qrTitle, { color: theme.text }]}>
               {language === 'en' ? 'Scan QR Code to Pay' : 'Отсканируйте QR-код для оплаты'}
@@ -584,47 +583,45 @@ export default function PaymentDetailsScreen() {
           )}
         </Card>
         
-        {/* Instructions for pending payments */}
-        {paymentStatus === 'pending' && (
-          <Card style={styles.instructionsCard}>
-            <Text style={[styles.instructionsTitle, { color: theme.text }]}>
-              {language === 'en' ? 'Payment Instructions' : 'Инструкции по оплате'}
+        {/* Instructions for payments */}
+        <Card style={styles.instructionsCard}>
+          <Text style={[styles.instructionsTitle, { color: theme.text }]}>
+            {language === 'en' ? 'Payment Instructions' : 'Инструкции по оплате'}
+          </Text>
+          
+          <View style={styles.instructionStep}>
+            <View style={[styles.instructionNumber, { backgroundColor: theme.primary }]}>
+              <Text style={styles.instructionNumberText}>1</Text>
+            </View>
+            <Text style={[styles.instructionText, { color: theme.text }]}>
+              {language === 'en' 
+                ? 'Scan the QR code with your banking app or open the payment link'
+                : 'Отсканируйте QR-код с помощью банковского приложения или откройте ссылку на оплату'}
             </Text>
-            
-            <View style={styles.instructionStep}>
-              <View style={[styles.instructionNumber, { backgroundColor: theme.primary }]}>
-                <Text style={styles.instructionNumberText}>1</Text>
-              </View>
-              <Text style={[styles.instructionText, { color: theme.text }]}>
-                {language === 'en' 
-                  ? 'Scan the QR code with your banking app or open the payment link'
-                  : 'Отсканируйте QR-код с помощью банковского приложения или откройте ссылку на оплату'}
-              </Text>
+          </View>
+          
+          <View style={styles.instructionStep}>
+            <View style={[styles.instructionNumber, { backgroundColor: theme.primary }]}>
+              <Text style={styles.instructionNumberText}>2</Text>
             </View>
-            
-            <View style={styles.instructionStep}>
-              <View style={[styles.instructionNumber, { backgroundColor: theme.primary }]}>
-                <Text style={styles.instructionNumberText}>2</Text>
-              </View>
-              <Text style={[styles.instructionText, { color: theme.text }]}>
-                {language === 'en' 
-                  ? 'Complete the payment using your preferred payment method'
-                  : 'Завершите платеж, используя предпочтительный способ оплаты'}
-              </Text>
+            <Text style={[styles.instructionText, { color: theme.text }]}>
+              {language === 'en' 
+                ? 'Complete the payment using your preferred payment method'
+                : 'Завершите платеж, используя предпочтительный способ оплаты'}
+            </Text>
+          </View>
+          
+          <View style={styles.instructionStep}>
+            <View style={[styles.instructionNumber, { backgroundColor: theme.primary }]}>
+              <Text style={styles.instructionNumberText}>3</Text>
             </View>
-            
-            <View style={styles.instructionStep}>
-              <View style={[styles.instructionNumber, { backgroundColor: theme.primary }]}>
-                <Text style={styles.instructionNumberText}>3</Text>
-              </View>
-              <Text style={[styles.instructionText, { color: theme.text }]}>
-                {language === 'en' 
-                  ? 'Wait for the payment confirmation (this page will update automatically)'
-                  : 'Дождитесь подтверждения платежа (эта страница обновится автоматически)'}
-              </Text>
-            </View>
-          </Card>
-        )}
+            <Text style={[styles.instructionText, { color: theme.text }]}>
+              {language === 'en' 
+                ? 'Wait for the payment confirmation (this page will update automatically)'
+                : 'Дождитесь подтверждения платежа (эта страница обновится автоматически)'}
+            </Text>
+          </View>
+        </Card>
       </ScrollView>
       
       {/* Error Popup */}
