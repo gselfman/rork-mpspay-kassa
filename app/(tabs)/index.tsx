@@ -108,8 +108,8 @@ export default function HomeScreen() {
     
     // Filter successful transactions for today
     const successfulTransactionsToday = successfulTransactions.filter(t => {
-      if (!t.finishedAt) return false;
-      const transactionDate = new Date(t.finishedAt);
+      if (!t.createdAt) return false;
+      const transactionDate = new Date(t.createdAt);
       return !isNaN(transactionDate.getTime()) && transactionDate >= today;
     });
     
@@ -174,18 +174,24 @@ export default function HomeScreen() {
       
       // Calculate date range (last 30 days)
       const today = new Date();
-      const todayStr = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      
+      // Date for tomorrow (to include all of today's transactions)
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0]; // Format: YYYY-MM-DD
       
       // Date 30 days ago
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
       
+      console.log(`Fetching payment history from ${thirtyDaysAgoStr} to ${tomorrowStr}`);
+      
       // Fetch payment history for the last 30 days
       const historyData = await getPaymentHistory(
         credentials,
         thirtyDaysAgoStr,
-        todayStr
+        tomorrowStr
       );
       
       console.log('Payment history data:', historyData);

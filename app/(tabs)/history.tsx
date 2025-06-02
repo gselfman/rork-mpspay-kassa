@@ -66,16 +66,20 @@ export default function HistoryScreen() {
       
       // Calculate date range (last 30 days)
       const now = new Date();
-      const today = now.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      
+      // Date for tomorrow (to include all of today's transactions)
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0]; // Format: YYYY-MM-DD
       
       // Date 30 days ago
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
       
-      console.log(`Fetching payment history from ${thirtyDaysAgoStr} to ${today}`);
+      console.log(`Fetching payment history from ${thirtyDaysAgoStr} to ${tomorrowStr}`);
       
-      const apiTransactions = await getPaymentHistory(credentials, thirtyDaysAgoStr, today);
+      const apiTransactions = await getPaymentHistory(credentials, thirtyDaysAgoStr, tomorrowStr);
       console.log('Fetched transactions:', apiTransactions);
       
       if (apiTransactions.isSuccess && apiTransactions.items && apiTransactions.items.length > 0) {
@@ -198,39 +202,58 @@ export default function HistoryScreen() {
       
       switch (filterDateRange) {
         case 'today':
+          // Start of today (00:00:00)
           startDate = new Date(now);
           startDate.setHours(0, 0, 0, 0);
+          
           dateFiltered = allTransactions.filter(t => {
-            // Fix: Ensure transaction date is valid before comparison
+            // Use createdAt for filtering
             if (!t.createdAt) return false;
+            
             const transactionDate = new Date(t.createdAt);
             return !isNaN(transactionDate.getTime()) && transactionDate >= startDate;
           });
+          
+          console.log(`Filtered to ${dateFiltered.length} transactions for today`);
           break;
+          
         case 'week':
+          // 7 days ago
           startDate = new Date(now);
           startDate.setDate(now.getDate() - 7);
+          
           dateFiltered = allTransactions.filter(t => {
-            // Fix: Ensure transaction date is valid before comparison
+            // Use createdAt for filtering
             if (!t.createdAt) return false;
+            
             const transactionDate = new Date(t.createdAt);
             return !isNaN(transactionDate.getTime()) && transactionDate >= startDate;
           });
+          
+          console.log(`Filtered to ${dateFiltered.length} transactions for last 7 days`);
           break;
+          
         case 'custom':
           if (customStartDate && customEndDate) {
             const startDate = new Date(customStartDate);
+            // Set end date to end of the day (23:59:59.999)
             const endDate = new Date(customEndDate);
-            endDate.setHours(23, 59, 59, 999); // End of the day
+            endDate.setHours(23, 59, 59, 999);
             
             dateFiltered = allTransactions.filter(t => {
-              // Fix: Ensure transaction date is valid before comparison
+              // Use createdAt for filtering
               if (!t.createdAt) return false;
+              
               const transactionDate = new Date(t.createdAt);
-              return !isNaN(transactionDate.getTime()) && transactionDate >= startDate && transactionDate <= endDate;
+              return !isNaN(transactionDate.getTime()) && 
+                     transactionDate >= startDate && 
+                     transactionDate <= endDate;
             });
+            
+            console.log(`Filtered to ${dateFiltered.length} transactions for custom range`);
           }
           break;
+          
         case 'month':
         default:
           // Already have all transactions for the last 30 days
@@ -252,7 +275,7 @@ export default function HistoryScreen() {
       statusFiltered = dateFiltered;
     }
     
-    console.log(`Filtered to ${statusFiltered.length} transactions`);
+    console.log(`Filtered to ${statusFiltered.length} transactions after status filter`);
     return statusFiltered;
   };
   
