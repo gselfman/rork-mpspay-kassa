@@ -448,8 +448,8 @@ export default function PaymentDetailsScreen() {
           )}
         </Card>
         
-        {/* QR Code Card - Only show if payment is pending and has paymentUrl */}
-        {transaction.status === 'pending' && transaction.paymentUrl && !isExpired && (
+        {/* QR Code Card - Show if payment has paymentUrl */}
+        {transaction.paymentUrl && (
           <Card style={styles.qrCard}>
             <View style={styles.qrContainer}>
               <QRCode

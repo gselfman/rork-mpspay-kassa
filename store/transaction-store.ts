@@ -6,9 +6,10 @@ import { Transaction } from '@/types/api';
 interface TransactionState {
   transactions: Transaction[];
   addTransaction: (transaction: Transaction) => void;
-  updateTransaction: (id: string, transaction: Transaction) => void;
+  updateTransaction: (transaction: Transaction) => void;
   removeTransaction: (id: string) => void;
   clearTransactions: () => void;
+  getTransactionById: (id: string) => Transaction | null;
 }
 
 export const useTransactionStore = create<TransactionState>()(
@@ -32,10 +33,10 @@ export const useTransactionStore = create<TransactionState>()(
         });
       },
       
-      updateTransaction: (id: string, transaction: Transaction) => {
+      updateTransaction: (transaction: Transaction) => {
         set((state) => ({
           transactions: state.transactions.map(t => 
-            t.id === id ? transaction : t
+            t.id === transaction.id ? transaction : t
           )
         }));
       },
@@ -48,6 +49,11 @@ export const useTransactionStore = create<TransactionState>()(
       
       clearTransactions: () => {
         set({ transactions: [] });
+      },
+      
+      getTransactionById: (id: string) => {
+        const state = get();
+        return state.transactions.find(t => t.id === id) || null;
       },
     }),
     {
