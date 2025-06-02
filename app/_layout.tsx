@@ -80,6 +80,14 @@ export default function RootLayout() {
               ...(Platform.OS === 'ios' && { headerBackTitle: 'Back' }),
             }}
           />
+          <Stack.Screen
+            name="payment/id"
+            options={{
+              title: 'Payment',
+              // Use headerBackTitle for iOS
+              ...(Platform.OS === 'ios' && { headerBackTitle: 'Back' }),
+            }}
+          />
         </Stack>
       </QueryClientProvider>
     </trpc.Provider>

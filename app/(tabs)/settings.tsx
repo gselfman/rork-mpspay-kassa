@@ -78,12 +78,20 @@ export default function SettingsScreen() {
       [
         {
           text: 'English',
-          onPress: () => setLanguage('en'),
+          onPress: () => {
+            setLanguage('en');
+            // Force refresh UI
+            setTimeout(() => {}, 100);
+          },
           style: language === 'en' ? 'default' : 'default',
         },
         {
           text: 'Русский',
-          onPress: () => setLanguage('ru'),
+          onPress: () => {
+            setLanguage('ru');
+            // Force refresh UI
+            setTimeout(() => {}, 100);
+          },
           style: language === 'ru' ? 'default' : 'default',
         },
         {
@@ -106,8 +114,8 @@ export default function SettingsScreen() {
     Alert.alert(
       language === 'en' ? 'Telegram Support' : 'Поддержка в Telegram',
       language === 'en' 
-        ? 'Contact our support team via Telegram: @mpspay_support'
-        : 'Свяжитесь с нашей службой поддержки через Telegram: @mpspay_support',
+        ? 'Contact our support team via Telegram: @max_support_main'
+        : 'Свяжитесь с нашей службой поддержки через Telegram: @max_support_main',
       [
         {
           text: 'OK',
@@ -273,7 +281,7 @@ export default function SettingsScreen() {
           {renderSettingItem(
             <MessageCircle size={20} color={theme.primary} />,
             language === 'en' ? 'Telegram Support' : 'Поддержка в Telegram',
-            '@mpspay_support',
+            '@max_support_main',
             handleTelegramSupport
           )}
           
