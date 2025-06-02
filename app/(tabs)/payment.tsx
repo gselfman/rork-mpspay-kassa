@@ -49,6 +49,7 @@ export default function PaymentScreen() {
   const [productPrice, setProductPrice] = useState('');
   const [productQuantity, setProductQuantity] = useState('1');
   const [productErrors, setProductErrors] = useState<{name?: string, price?: string, quantity?: string}>({});
+  const [debugInfo, setDebugInfo] = useState<{request?: any, response?: any}>({});
   
   // Translations
   const getTranslation = (en: string, ru: string): string => {
@@ -272,6 +273,23 @@ export default function PaymentScreen() {
         paymentComment = `${merchantPrefix}: ${getTranslation('Manual amount', 'Сумма вручную')} (${dateTimeStr})`;
       }
       
+      // Create request object for debugging
+      const requestObj = {
+        credentials: {
+          ...credentials,
+          // Mask sensitive data
+          readOnlyAccessKey: credentials.readOnlyAccessKey.substring(0, 4) + '...',
+          clientSecret: credentials.clientSecret ? '****' : undefined
+        },
+        amount: numAmount,
+        products: products.length > 0 ? products : undefined,
+        comment: paymentComment
+      };
+      
+      setDebugInfo({
+        request: requestObj
+      });
+      
       const result = await createTransaction(
         credentials,
         numAmount,
@@ -279,12 +297,22 @@ export default function PaymentScreen() {
         paymentComment
       );
       
+      // Update debug info with response
+      setDebugInfo(prev => ({
+        ...prev,
+        response: result
+      }));
+      
       if (result.success && result.transaction) {
         // Add transaction to store
         addTransaction(result.transaction);
         
         // Navigate to payment details screen with QR code
-        router.push(`/payment/${result.transaction.id}`);
+        // Use the correct route format
+        router.push({
+          pathname: '/payment/id',
+          params: { id: result.transaction.id }
+        });
       } else {
         setError(result.error || getTranslation(
           "Failed to create payment",
@@ -321,6 +349,15 @@ export default function PaymentScreen() {
       setError(errorMsg);
       setRawErrorResponse(rawError);
       setShowErrorPopup(true);
+      
+      // Update debug info with error
+      setDebugInfo(prev => ({
+        ...prev,
+        response: {
+          error: errorMsg,
+          rawError
+        }
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -332,6 +369,35 @@ export default function PaymentScreen() {
     }
     
     return products.reduce((sum, p) => sum + (p.price * p.quantity), 0);
+  };
+  
+  // Show debug info in a popup
+  const showDebugInfoPopup = () => {
+    if (!debugInfo.request && !debugInfo.response) {
+      Alert.alert(
+        getTranslation('Debug Info', 'Отладочная информация'),
+        getTranslation('No debug information available yet.', 'Отладочная информация пока недоступна.')
+      );
+      return;
+    }
+    
+    Alert.alert(
+      getTranslation('Debug Info', 'Отладочная информация'),
+      getTranslation(
+        'Request and response data is available in the console.',
+        'Данные запроса и ответа доступны в консоли.'
+      ),
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            console.log('=== DEBUG INFO ===');
+            console.log('REQUEST:', JSON.stringify(debugInfo.request, null, 2));
+            console.log('RESPONSE:', JSON.stringify(debugInfo.response, null, 2));
+          }
+        }
+      ]
+    );
   };
   
   return (
@@ -355,6 +421,16 @@ export default function PaymentScreen() {
           }]}>
             {getTranslation('Create Payment', 'Создать платеж')}
           </Text>
+          
+          {/* Debug button */}
+          <TouchableOpacity 
+            style={styles.debugButton}
+            onPress={showDebugInfoPopup}
+          >
+            <Text style={[styles.debugButtonText, { color: theme.placeholder }]}>
+              Debug
+            </Text>
+          </TouchableOpacity>
         </View>
         
         <Card style={styles.card}>
@@ -635,17 +711,24 @@ const styles = StyleSheet.create({
     paddingBottom: scaleSpacing(32),
   },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: scaleSpacing(24),
   },
   logo: {
-    width: 120,
+    width: 60,
     height: 60,
-    marginBottom: scaleSpacing(8),
+    marginRight: scaleSpacing(8),
   },
   title: {
     fontWeight: 'bold',
-    textAlign: 'center',
+    flex: 1,
+  },
+  debugButton: {
+    padding: scaleSpacing(8),
+  },
+  debugButtonText: {
+    fontSize: scaleFontSize(12),
   },
   card: {
     marginBottom: scaleSpacing(16),

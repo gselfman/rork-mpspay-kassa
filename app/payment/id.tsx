@@ -49,7 +49,15 @@ export default function PaymentDetailsScreen() {
   const credentials = useAuthStore((state) => state.credentials);
   
   // Get transaction from store
-  const { getTransactionById, updateTransaction } = useTransactionStore();
+  const transactions = useTransactionStore((state) => state.transactions);
+  const addTransaction = useTransactionStore((state) => state.addTransaction);
+  const updateTransaction = useTransactionStore((state) => state.updateTransaction);
+  
+  // Find transaction by ID
+  const getTransactionById = (id: string): Transaction | null => {
+    return transactions.find(t => t.id === id) || null;
+  };
+  
   const storedTransaction = getTransactionById(transactionId);
   
   // State for transaction data
@@ -353,11 +361,6 @@ export default function PaymentDetailsScreen() {
       startTimer(transaction.createdAt);
     }
   }, [transaction]);
-  
-  // Set page title
-  useEffect(() => {
-    // Set page title
-  }, [language]);
   
   // Render loading state
   if (isLoading) {
