@@ -653,6 +653,23 @@ export const createTransaction = async (
       ? products.map(p => `${p.name} x${p.quantity}`).join(', ') 
       : "New payment");
     
+    // Create request body
+    const requestBody = {
+      currency: parseInt(credentials.currencyCode, 10),
+      amount: integerAmount,
+      description: description,
+      orderId: Date.now(),
+      callbackUrl: "https://flowxo.com/hooks/a/ykz48eyb",
+      returnUrl: "https://mpspay.ru"
+    };
+    
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    console.log('Request headers:', {
+      'Content-Type': 'application/json',
+      'accessKey': credentials.readOnlyAccessKey,
+      'accountIdGuid': credentials.currencyAccountGuid
+    });
+    
     const response = await fetch(`${API_BASE_URL}/payments/external/incoming/card/prepare`, {
       method: 'POST',
       headers: {
@@ -660,26 +677,23 @@ export const createTransaction = async (
         'accessKey': credentials.readOnlyAccessKey,
         'accountIdGuid': credentials.currencyAccountGuid
       },
-      body: JSON.stringify({
-        currency: parseInt(credentials.currencyCode, 10),
-        amount: integerAmount,
-        description: description,
-        orderId: Date.now(),
-        callbackUrl: "https://flowxo.com/hooks/a/ykz48eyb",
-        returnUrl: "https://mpspay.ru"
-      }),
+      body: JSON.stringify(requestBody),
     });
     
     // Get the full response text for error reporting
     const responseText = await response.text();
+    console.log('Raw response text:', responseText);
+    
     let responseData;
     
     try {
       // Try to parse as JSON if possible
       responseData = JSON.parse(responseText);
+      console.log('Parsed response data:', responseData);
     } catch (e) {
       // If not JSON, use the raw text
       responseData = responseText;
+      console.error('Failed to parse response as JSON:', e);
     }
     
     if (!response.ok) {
@@ -706,22 +720,32 @@ export const createTransaction = async (
     let paymentUrl = '';
     let paymentId = '';
     let createdAt = new Date().toISOString();
+    let status = 'pending';
     
     if (responseData.value) {
       paymentUrl = responseData.value.paymentUrl || '';
       paymentId = responseData.value.id?.toString() || `T${Date.now()}`;
       createdAt = responseData.value.createdAt || new Date().toISOString();
+      status = mapApiStatusToAppStatus(responseData.value.status);
     } else if (responseData.paymentUrl) {
       paymentUrl = responseData.paymentUrl;
       paymentId = responseData.id?.toString() || `T${Date.now()}`;
       createdAt = responseData.createdAt || new Date().toISOString();
+      status = mapApiStatusToAppStatus(responseData.status);
     }
+    
+    console.log('Extracted payment details:', {
+      paymentUrl,
+      paymentId,
+      createdAt,
+      status
+    });
     
     // Create transaction record from API response
     const transaction: Transaction = {
       id: paymentId,
       amount: integerAmount,
-      status: 'pending',
+      status: status,
       createdAt: createdAt,
       customerInfo: description,
       merchantName: credentials.merchantName || '',
@@ -1112,14 +1136,18 @@ export const checkTransactionStatus = async (
     
     // Get the full response text for error reporting
     const responseText = await response.text();
+    console.log('Raw transaction status response:', responseText);
+    
     let responseData;
     
     try {
       // Try to parse as JSON if possible
       responseData = JSON.parse(responseText);
+      console.log('Parsed transaction status response:', responseData);
     } catch (e) {
       // If not JSON, use the raw text
       responseData = responseText;
+      console.error('Failed to parse transaction status response as JSON:', e);
     }
     
     if (!response.ok) {

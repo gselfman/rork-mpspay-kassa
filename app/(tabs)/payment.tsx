@@ -50,6 +50,7 @@ export default function PaymentScreen() {
   const [productQuantity, setProductQuantity] = useState('1');
   const [productErrors, setProductErrors] = useState<{name?: string, price?: string, quantity?: string}>({});
   const [debugInfo, setDebugInfo] = useState<{request?: any, response?: any}>({});
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   // Translations
   const getTranslation = (en: string, ru: string): string => {
@@ -279,7 +280,7 @@ export default function PaymentScreen() {
           ...credentials,
           // Mask sensitive data
           readOnlyAccessKey: credentials.readOnlyAccessKey.substring(0, 4) + '...',
-          clientSecret: credentials.clientSecret ? '****' : undefined
+          clientSecret: credentials.clientSecret ? credentials.clientSecret.substring(0, 4) + '...' : undefined
         },
         amount: numAmount,
         products: products.length > 0 ? products : undefined,
@@ -289,6 +290,9 @@ export default function PaymentScreen() {
       setDebugInfo({
         request: requestObj
       });
+      
+      // Show debug info before making the request
+      console.log('Payment request:', JSON.stringify(requestObj, null, 2));
       
       const result = await createTransaction(
         credentials,
@@ -302,6 +306,12 @@ export default function PaymentScreen() {
         ...prev,
         response: result
       }));
+      
+      // Show debug info after getting the response
+      console.log('Payment response:', JSON.stringify(result, null, 2));
+      
+      // Always show debug info in an alert
+      setShowDebugInfo(true);
       
       if (result.success && result.transaction) {
         // Add transaction to store
@@ -371,7 +381,7 @@ export default function PaymentScreen() {
   };
   
   // Show debug info in a popup
-  const showDebugInfoPopup = () => {
+  const displayDebugInfo = () => {
     if (!debugInfo.request && !debugInfo.response) {
       Alert.alert(
         getTranslation('Debug Info', 'Отладочная информация'),
@@ -380,12 +390,11 @@ export default function PaymentScreen() {
       return;
     }
     
+    const debugText = JSON.stringify(debugInfo, null, 2);
+    
     Alert.alert(
       getTranslation('Debug Info', 'Отладочная информация'),
-      getTranslation(
-        'Request and response data is available in the console.',
-        'Данные запроса и ответа доступны в консоли.'
-      ),
+      debugText.length > 1000 ? debugText.substring(0, 1000) + '...' : debugText,
       [
         {
           text: 'OK',
@@ -398,6 +407,29 @@ export default function PaymentScreen() {
       ]
     );
   };
+  
+  // Effect to show debug info when payment is created
+  useEffect(() => {
+    if (showDebugInfo && debugInfo.response) {
+      const debugText = JSON.stringify(debugInfo, null, 2);
+      
+      Alert.alert(
+        getTranslation('Payment Request Debug', 'Отладка запроса платежа'),
+        debugText.length > 1000 ? debugText.substring(0, 1000) + '...' : debugText,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setShowDebugInfo(false);
+              console.log('=== PAYMENT DEBUG INFO ===');
+              console.log('REQUEST:', JSON.stringify(debugInfo.request, null, 2));
+              console.log('RESPONSE:', JSON.stringify(debugInfo.response, null, 2));
+            }
+          }
+        ]
+      );
+    }
+  }, [showDebugInfo, debugInfo]);
   
   return (
     <KeyboardAvoidingView
@@ -424,7 +456,7 @@ export default function PaymentScreen() {
           {/* Debug button */}
           <TouchableOpacity 
             style={styles.debugButton}
-            onPress={showDebugInfoPopup}
+            onPress={displayDebugInfo}
           >
             <Text style={[styles.debugButtonText, { color: theme.placeholder }]}>
               Debug

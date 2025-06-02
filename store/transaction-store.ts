@@ -9,7 +9,6 @@ interface TransactionState {
   updateTransaction: (transaction: Transaction) => void;
   removeTransaction: (id: string) => void;
   clearTransactions: () => void;
-  getTransactionById: (id: string) => Transaction | null;
 }
 
 export const useTransactionStore = create<TransactionState>()(
@@ -49,12 +48,7 @@ export const useTransactionStore = create<TransactionState>()(
       
       clearTransactions: () => {
         set({ transactions: [] });
-      },
-      
-      getTransactionById: (id: string) => {
-        const state = get();
-        return state.transactions.find(t => t.id === id) || null;
-      },
+      }
     }),
     {
       name: 'transaction-storage',

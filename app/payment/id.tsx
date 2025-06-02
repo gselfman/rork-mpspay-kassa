@@ -65,6 +65,7 @@ export default function PaymentDetailsScreen() {
   const [rawErrorResponse, setRawErrorResponse] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState('15:00');
   const [isExpired, setIsExpired] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   
   // Timer ref
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -326,6 +327,27 @@ export default function PaymentDetailsScreen() {
     }
   };
   
+  // Show debug info
+  const showDebugInfo = () => {
+    if (!transaction) return;
+    
+    const debugText = JSON.stringify({
+      transactionId,
+      transaction,
+      hasPaymentUrl: !!transaction.paymentUrl,
+      paymentUrl: transaction.paymentUrl || 'Not available',
+      status: transaction.status,
+      createdAt: transaction.createdAt
+    }, null, 2);
+    
+    setDebugInfo(debugText);
+    Alert.alert(
+      'Debug Info',
+      debugText,
+      [{ text: 'OK', onPress: () => setDebugInfo(null) }]
+    );
+  };
+  
   // Set up auto-refresh
   useEffect(() => {
     // Initial fetch
@@ -355,6 +377,11 @@ export default function PaymentDetailsScreen() {
   useEffect(() => {
     if (transaction && transaction.createdAt && transaction.status === 'pending') {
       startTimer(transaction.createdAt);
+    }
+    
+    // Debug transaction data
+    if (transaction) {
+      console.log('Transaction data:', JSON.stringify(transaction, null, 2));
     }
   }, [transaction]);
   
@@ -399,17 +426,25 @@ export default function PaymentDetailsScreen() {
         options={{
           title: getTranslation('Payment', 'Платеж'),
           headerRight: () => (
-            <TouchableOpacity 
-              onPress={() => fetchTransactionStatus(true)}
-              disabled={isRefreshing}
-              style={styles.refreshButton}
-            >
-              <RefreshCw 
-                size={24} 
-                color={theme.primary} 
-                style={isRefreshing ? styles.rotating : undefined} 
-              />
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity 
+                onPress={showDebugInfo}
+                style={styles.debugButton}
+              >
+                <Text style={{ color: theme.primary, fontSize: 12 }}>Debug</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => fetchTransactionStatus(true)}
+                disabled={isRefreshing}
+                style={styles.refreshButton}
+              >
+                <RefreshCw 
+                  size={24} 
+                  color={theme.primary} 
+                  style={isRefreshing ? styles.rotating : undefined} 
+                />
+              </TouchableOpacity>
+            </View>
           ),
         }} 
       />
@@ -447,27 +482,52 @@ export default function PaymentDetailsScreen() {
           )}
         </Card>
         
-        {/* QR Code Card - Show if payment has paymentUrl */}
-        {transaction.paymentUrl && (
-          <Card style={styles.qrCard}>
-            <View style={styles.qrContainer}>
+        {/* Debug Info - Always show transaction data */}
+        <Card style={styles.debugCard}>
+          <Text style={[styles.debugTitle, { color: theme.text }]}>
+            Debug Information
+          </Text>
+          <Text style={[styles.debugText, { color: theme.placeholder }]}>
+            Transaction ID: {transaction.id}{'\n'}
+            Status: {transaction.status}{'\n'}
+            Has Payment URL: {transaction.paymentUrl ? 'Yes' : 'No'}{'\n'}
+            Created At: {transaction.createdAt}
+          </Text>
+        </Card>
+        
+        {/* QR Code Card - ALWAYS show if transaction exists */}
+        <Card style={styles.qrCard}>
+          <View style={styles.qrContainer}>
+            {transaction.paymentUrl ? (
               <QRCode
                 value={transaction.paymentUrl}
                 size={200}
                 color={theme.text}
                 backgroundColor={theme.card}
               />
-            </View>
+            ) : (
+              <View style={styles.noQrContainer}>
+                <AlertCircle size={48} color={theme.notification} />
+                <Text style={[styles.noQrText, { color: theme.notification }]}>
+                  {getTranslation(
+                    'Payment URL is missing. Cannot generate QR code.',
+                    'Отсутствует URL платежа. Невозможно сгенерировать QR-код.'
+                  )}
+                </Text>
+              </View>
+            )}
+          </View>
+          
+          <View style={styles.urlContainer}>
+            <Text 
+              style={[styles.urlText, { color: theme.primary }]}
+              numberOfLines={1}
+              ellipsizeMode="middle"
+            >
+              {transaction.paymentUrl || getTranslation('No payment URL available', 'URL платежа недоступен')}
+            </Text>
             
-            <View style={styles.urlContainer}>
-              <Text 
-                style={[styles.urlText, { color: theme.primary }]}
-                numberOfLines={1}
-                ellipsizeMode="middle"
-              >
-                {transaction.paymentUrl}
-              </Text>
-              
+            {transaction.paymentUrl && (
               <View style={styles.urlButtons}>
                 <TouchableOpacity 
                   style={[styles.urlButton, { backgroundColor: theme.primary + '20' }]}
@@ -483,16 +543,16 @@ export default function PaymentDetailsScreen() {
                   <ShareIcon size={20} color={theme.primary} />
                 </TouchableOpacity>
               </View>
-            </View>
-            
-            <Text style={[styles.qrInstructions, { color: theme.placeholder }]}>
-              {getTranslation(
-                'Scan the QR code or open the payment link in your banking app.',
-                'Отсканируйте QR-код или откройте ссылку на оплату в приложении вашего банка.'
-              )}
-            </Text>
-          </Card>
-        )}
+            )}
+          </View>
+          
+          <Text style={[styles.qrInstructions, { color: theme.placeholder }]}>
+            {getTranslation(
+              'Scan the QR code or open the payment link in your banking app.',
+              'Отсканируйте QR-код или откройте ссылку на оплату в приложении вашего банка.'
+            )}
+          </Text>
+        </Card>
         
         {/* Payment Details Card */}
         <Card style={styles.detailsCard}>
@@ -725,11 +785,34 @@ const styles = StyleSheet.create({
   errorButton: {
     minWidth: 200,
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  debugButton: {
+    marginRight: scaleSpacing(12),
+    padding: scaleSpacing(4),
+  },
   refreshButton: {
     padding: scaleSpacing(8),
   },
   rotating: {
     transform: [{ rotate: '45deg' }],
+  },
+  
+  // Debug Card
+  debugCard: {
+    marginBottom: scaleSpacing(16),
+    padding: scaleSpacing(16),
+  },
+  debugTitle: {
+    fontSize: scaleFontSize(16),
+    fontWeight: 'bold',
+    marginBottom: scaleSpacing(8),
+  },
+  debugText: {
+    fontSize: scaleFontSize(12),
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   
   // Status Card
@@ -773,6 +856,19 @@ const styles = StyleSheet.create({
   qrContainer: {
     padding: scaleSpacing(16),
     marginBottom: scaleSpacing(16),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noQrContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 200,
+    width: 200,
+  },
+  noQrText: {
+    textAlign: 'center',
+    marginTop: scaleSpacing(16),
+    fontSize: scaleFontSize(14),
   },
   urlContainer: {
     flexDirection: 'row',
