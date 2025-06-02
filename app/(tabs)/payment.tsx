@@ -308,7 +308,6 @@ export default function PaymentScreen() {
         addTransaction(result.transaction);
         
         // Navigate to payment details screen with QR code
-        // Use the correct route format
         router.push({
           pathname: '/payment/id',
           params: { id: result.transaction.id }

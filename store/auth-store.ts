@@ -9,6 +9,7 @@ export interface Credentials {
   clientId: string;
   currencyAccountGuid: string;
   merchantName?: string;
+  clientSecret?: string; // Added as optional
 }
 
 interface AuthState {

@@ -54,14 +54,10 @@ export default function PaymentDetailsScreen() {
   const updateTransaction = useTransactionStore((state) => state.updateTransaction);
   
   // Find transaction by ID
-  const getTransactionById = (id: string): Transaction | null => {
-    return transactions.find(t => t.id === id) || null;
-  };
-  
-  const storedTransaction = getTransactionById(transactionId);
+  const storedTransaction = transactions.find(t => t.id === transactionId) || null;
   
   // State for transaction data
-  const [transaction, setTransaction] = useState<Transaction | null>(storedTransaction || null);
+  const [transaction, setTransaction] = useState<Transaction | null>(storedTransaction);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
