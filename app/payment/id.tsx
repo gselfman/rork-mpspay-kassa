@@ -407,7 +407,7 @@ export default function PaymentDetailsScreen() {
       </View>
     );
   }
-  
+
   return (
     <>
       <Stack.Screen 
@@ -958,5 +958,17 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     marginBottom: scaleSpacing(12),
+  },
+  idContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  idLabel: {
+    fontSize: scaleFontSize(14),
+    marginRight: scaleSpacing(8),
+  },
+  idValue: {
+    fontSize: scaleFontSize(14),
+    fontWeight: '500',
   },
 });

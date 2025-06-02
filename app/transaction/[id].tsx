@@ -1,144 +1,121 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
+  ActivityIndicator, 
   Alert,
   Platform,
   Share,
-  ActivityIndicator,
-  Modal,
-  TextInput,
+  Linking
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
 import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
-import { checkTransactionStatus } from '@/utils/api';
+import { useTransactionStore } from '@/store/transaction-store';
+import { checkTransactionStatus, mapPaymentStatusToAppStatus } from '@/utils/api';
 import { Transaction, PaymentHistoryItem } from '@/types/api';
-import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { Button } from '@/components/Button';
 import { ErrorPopup } from '@/components/ErrorPopup';
 import colors from '@/constants/colors';
 import { 
   CheckCircle, 
-  Clock, 
   XCircle, 
-  Share2, 
-  FileText, 
-  Copy,
-  Download,
-  Mail,
-  X
+  Clock, 
+  RefreshCw, 
+  ArrowLeft, 
+  Share as ShareIcon,
+  Printer,
+  AlertCircle
 } from 'lucide-react-native';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
-import * as Clipboard from 'expo-clipboard';
 
 export default function TransactionDetailsScreen() {
-  const { id, data } = useLocalSearchParams<{ id: string; data?: string }>();
+  const params = useLocalSearchParams();
   const router = useRouter();
   const credentials = useAuthStore((state) => state.credentials);
   const { language } = useLanguageStore();
   const { darkMode } = useThemeStore();
   const theme = darkMode ? colors.dark : colors.light;
+  const { transactions, addTransaction } = useTransactionStore();
   
-  const [transaction, setTransaction] = useState<Transaction | PaymentHistoryItem | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [transaction, setTransaction] = useState<Transaction | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   
-  useEffect(() => {
-    if (data) {
-      // Parse the passed data
-      try {
-        const parsedData = JSON.parse(data);
-        setTransaction(parsedData);
-      } catch (error) {
-        console.error('Error parsing transaction data:', error);
-        fetchTransactionDetails();
-      }
-    } else {
-      fetchTransactionDetails();
-    }
-  }, [id, data]);
+  // Get transaction ID from params
+  const transactionId = params.id as string;
   
-  const fetchTransactionDetails = async () => {
-    if (!credentials || !id) return;
-    
-    setIsLoading(true);
-    setError(null);
+  // Get transaction data from params if available
+  const transactionData = params.data ? JSON.parse(params.data as string) : null;
+  
+  // Translations
+  const getTranslation = (en: string, ru: string): string => {
+    return language === 'en' ? en : ru;
+  };
+  
+  // Format date
+  const formatDate = (dateString: string | undefined): string => {
+    if (!dateString) return '';
     
     try {
-      const result = await checkTransactionStatus(credentials, id);
-      
-      if (result.found && result.transaction) {
-        setTransaction(result.transaction);
-      } else {
-        setError(result.error || (language === 'en' ? 'Transaction not found' : 'Транзакция не найдена'));
-        setShowErrorPopup(true);
-      }
-    } catch (err) {
-      console.error('Error fetching transaction details:', err);
-      setError(err instanceof Error ? err.message : String(err));
-      setShowErrorPopup(true);
-    } finally {
-      setIsLoading(false);
+      const date = new Date(dateString);
+      return date.toLocaleString();
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString || '';
     }
   };
   
-  const isPaymentHistoryItem = (item: any): item is PaymentHistoryItem => {
-    return item && 'paymentStatus' in item;
-  };
-  
-  const getStatus = (): 'pending' | 'completed' | 'failed' => {
-    if (!transaction) return 'pending';
-    
-    if (isPaymentHistoryItem(transaction)) {
-      switch (transaction.paymentStatus) {
+  // Get status text
+  const getStatusText = (status: 'pending' | 'completed' | 'failed' | number): string => {
+    // If status is a number (from PaymentHistoryItem)
+    if (typeof status === 'number') {
+      switch (status) {
         case 3:
-          return 'completed';
+          return getTranslation('Completed', 'Выполнено');
         case 2:
-          return 'failed';
+          return getTranslation('Failed', 'Ошибка');
         case 1:
         default:
-          return 'pending';
+          return getTranslation('Pending', 'В обработке');
       }
-    } else {
-      return transaction.status;
     }
-  };
-  
-  const getStatusIcon = () => {
-    const status = getStatus();
+    
+    // If status is a string (from Transaction)
     switch (status) {
       case 'completed':
-        return <CheckCircle size={24} color={theme.success} />;
+        return getTranslation('Completed', 'Выполнено');
       case 'failed':
-        return <XCircle size={24} color={theme.notification} />;
+        return getTranslation('Failed', 'Ошибка');
       case 'pending':
       default:
-        return <Clock size={24} color={theme.warning} />;
+        return getTranslation('Pending', 'В обработке');
     }
   };
   
-  const getStatusText = () => {
-    const status = getStatus();
-    switch (status) {
-      case 'completed':
-        return language === 'en' ? 'Completed' : 'Выполнено';
-      case 'failed':
-        return language === 'en' ? 'Failed' : 'Ошибка';
-      case 'pending':
-      default:
-        return language === 'en' ? 'Pending' : 'В обработке';
+  // Get status color
+  const getStatusColor = (status: 'pending' | 'completed' | 'failed' | number): string => {
+    // If status is a number (from PaymentHistoryItem)
+    if (typeof status === 'number') {
+      switch (status) {
+        case 3:
+          return theme.success;
+        case 2:
+          return theme.notification;
+        case 1:
+        default:
+          return theme.warning;
+      }
     }
-  };
-  
-  const getStatusColor = () => {
-    const status = getStatus();
+    
+    // If status is a string (from Transaction)
     switch (status) {
       case 'completed':
         return theme.success;
@@ -150,324 +127,412 @@ export default function TransactionDetailsScreen() {
     }
   };
   
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return '';
+  // Get status icon
+  const getStatusIcon = (status: 'pending' | 'completed' | 'failed' | number) => {
+    // If status is a number (from PaymentHistoryItem)
+    if (typeof status === 'number') {
+      switch (status) {
+        case 3:
+          return <CheckCircle size={24} color={theme.success} />;
+        case 2:
+          return <XCircle size={24} color={theme.notification} />;
+        case 1:
+        default:
+          return <Clock size={24} color={theme.warning} />;
+      }
+    }
+    
+    // If status is a string (from Transaction)
+    switch (status) {
+      case 'completed':
+        return <CheckCircle size={24} color={theme.success} />;
+      case 'failed':
+        return <XCircle size={24} color={theme.notification} />;
+      case 'pending':
+      default:
+        return <Clock size={24} color={theme.warning} />;
+    }
+  };
+  
+  // Convert PaymentHistoryItem to Transaction
+  const convertPaymentHistoryItemToTransaction = (item: PaymentHistoryItem): Transaction => {
+    return {
+      id: item.id,
+      amount: item.amount,
+      status: mapPaymentStatusToAppStatus(item.paymentStatus),
+      createdAt: item.createdAt || new Date().toISOString(),
+      customerInfo: item.comment,
+      merchantName: item.accountToName,
+      tag: item.tag,
+      commission: item.totalCommission,
+      finishedAt: item.finishedAt
+    };
+  };
+  
+  // Fetch transaction status
+  const fetchTransactionStatus = async (showLoading = true) => {
+    if (!credentials) {
+      setError(getTranslation(
+        'You need to be logged in to view transaction details',
+        'Вы должны быть авторизованы для просмотра деталей транзакции'
+      ));
+      setShowErrorPopup(true);
+      setIsLoading(false);
+      return;
+    }
+    
+    if (showLoading) {
+      setIsRefreshing(true);
+    }
+    
     try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString(language === 'en' ? 'en-US' : 'ru-RU', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
+      const result = await checkTransactionStatus(credentials, transactionId);
+      
+      if (result.found && result.transaction) {
+        setTransaction(result.transaction);
+        addTransaction(result.transaction);
+      } else {
+        setError(result.error || getTranslation(
+          'Failed to fetch transaction details',
+          'Не удалось получить детали транзакции'
+        ));
+        setShowErrorPopup(true);
+      }
+    } catch (error) {
+      console.error('Error fetching transaction status:', error);
+      setError(getTranslation(
+        'Failed to fetch transaction details',
+        'Не удалось получить детали транзакции'
+      ));
+      setShowErrorPopup(true);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+  
+  // Share transaction details
+  const shareTransactionDetails = async () => {
+    if (!transaction) return;
+    
+    try {
+      const message = `
+${getTranslation('Transaction Details', 'Детали транзакции')}:
+${getTranslation('ID', 'ID')}: ${transaction.id}
+${getTranslation('Amount', 'Сумма')}: ₽${transaction.amount}
+${getTranslation('Status', 'Статус')}: ${getStatusText(transaction.status)}
+${getTranslation('Date', 'Дата')}: ${formatDate(transaction.createdAt)}
+${transaction.customerInfo ? `${getTranslation('Customer', 'Покупатель')}: ${transaction.customerInfo}` : ''}
+${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag}` : ''}
+`;
+      
+      await Share.share({
+        message: message.trim()
       });
     } catch (error) {
-      return dateString || '';
-    }
-  };
-  
-  const copyToClipboard = async (text: string, label: string) => {
-    try {
-      await Clipboard.setStringAsync(text);
+      console.error('Error sharing transaction details:', error);
       Alert.alert(
-        language === 'en' ? 'Copied' : 'Скопировано',
-        `${label} ${language === 'en' ? 'copied to clipboard' : 'скопировано в буфер обмена'}`
+        getTranslation('Error', 'Ошибка'),
+        getTranslation(
+          'Failed to share transaction details',
+          'Не удалось поделиться деталями транзакции'
+        )
       );
-    } catch (error) {
-      console.error('Error copying to clipboard:', error);
     }
   };
   
-  const shareTransaction = async () => {
-    if (!transaction) return;
-    
-    const status = getStatus();
-    const description = isPaymentHistoryItem(transaction) 
-      ? transaction.comment || ''
-      : transaction.customerInfo || '';
-    
-    const shareText = `${language === 'en' ? 'Transaction Details' : 'Детали транзакции'}:
-${language === 'en' ? 'ID' : 'ID'}: ${transaction.id}
-${language === 'en' ? 'Amount' : 'Сумма'}: ${transaction.amount} ₽
-${language === 'en' ? 'Status' : 'Статус'}: ${getStatusText()}
-${language === 'en' ? 'Description' : 'Описание'}: ${description}`;
-    
-    try {
-      if (Platform.OS === 'web') {
-        // Web fallback - check if navigator.share is available
-        if (navigator.share) {
-          await navigator.share({
-            title: language === 'en' ? 'Transaction Details' : 'Детали транзакции',
-            text: shareText,
-          });
-        } else {
-          // Fallback to copying to clipboard
-          await navigator.clipboard.writeText(shareText);
-          Alert.alert(
-            language === 'en' ? 'Copied' : 'Скопировано',
-            language === 'en' ? 'Transaction details copied to clipboard' : 'Детали транзакции скопированы в буфер обмена'
-          );
-        }
+  // Print receipt
+  const printReceipt = () => {
+    Alert.alert(
+      getTranslation('Print Receipt', 'Печать чека'),
+      getTranslation(
+        'This feature is not available yet',
+        'Эта функция пока недоступна'
+      )
+    );
+  };
+  
+  // Initialize transaction data
+  useEffect(() => {
+    // If we have transaction data from params, use it
+    if (transactionData) {
+      // Check if it's a PaymentHistoryItem or Transaction
+      if ('paymentStatus' in transactionData) {
+        // Convert PaymentHistoryItem to Transaction
+        const convertedTransaction = convertPaymentHistoryItemToTransaction(transactionData);
+        setTransaction(convertedTransaction);
+        addTransaction(convertedTransaction);
       } else {
-        await Share.share({
-          message: shareText,
-          title: language === 'en' ? 'Transaction Details' : 'Детали транзакции',
-        });
+        // It's already a Transaction
+        setTransaction(transactionData);
+        addTransaction(transactionData);
       }
-    } catch (error) {
-      console.error('Error sharing transaction:', error);
-      // Fallback to copying to clipboard
-      try {
-        await Clipboard.setStringAsync(shareText);
-        Alert.alert(
-          language === 'en' ? 'Copied' : 'Скопировано',
-          language === 'en' ? 'Transaction details copied to clipboard' : 'Детали транзакции скопированы в буфер обмена'
-        );
-      } catch (clipboardError) {
-        console.error('Error copying to clipboard:', clipboardError);
-      }
-    }
-  };
-  
-  const generatePDFReceipt = async () => {
-    if (!transaction) return;
-    
-    setIsGeneratingPDF(true);
-    
-    try {
-      // Simulate PDF generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      setIsLoading(false);
+    } else {
+      // Try to find transaction in store
+      const storedTransaction = transactions.find(t => t.id === transactionId);
       
-      Alert.alert(
-        language === 'en' ? 'PDF Generated' : 'PDF создан',
-        language === 'en' 
-          ? 'Receipt has been generated successfully. In a real app, this would download or share the PDF file.'
-          : 'Чек успешно создан. В реальном приложении это бы скачало или поделилось PDF файлом.',
-        [
-          {
-            text: language === 'en' ? 'OK' : 'ОК',
-            style: 'default'
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      Alert.alert(
-        language === 'en' ? 'Error' : 'Ошибка',
-        language === 'en' 
-          ? 'Failed to generate PDF receipt'
-          : 'Не удалось создать PDF чек'
-      );
-    } finally {
-      setIsGeneratingPDF(false);
+      if (storedTransaction) {
+        setTransaction(storedTransaction);
+        setIsLoading(false);
+      } else {
+        // Fetch transaction status from API
+        fetchTransactionStatus(true);
+      }
     }
-  };
+  }, [transactionId, transactionData]);
   
+  // Render loading state
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <Stack.Screen 
-          options={{ 
-            title: language === 'en' ? 'Transaction Details' : 'Детали транзакции',
-            headerStyle: { backgroundColor: theme.background },
-            headerTintColor: theme.text,
-          }} 
-        />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={[styles.loadingText, { color: theme.text }]}>
-            {language === 'en' ? 'Loading transaction details...' : 'Загрузка деталей транзакции...'}
-          </Text>
-        </View>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+        <Text style={[styles.loadingText, { color: theme.text }]}>
+          {getTranslation('Loading transaction details...', 'Загрузка деталей транзакции...')}
+        </Text>
       </View>
     );
   }
   
+  // Render error state if no transaction
   if (!transaction) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <Stack.Screen 
-          options={{ 
-            title: language === 'en' ? 'Transaction Details' : 'Детали транзакции',
-            headerStyle: { backgroundColor: theme.background },
-            headerTintColor: theme.text,
-          }} 
+      <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
+        <AlertCircle size={48} color={theme.notification} />
+        <Text style={[styles.errorTitle, { color: theme.text }]}>
+          {getTranslation('Transaction Not Found', 'Транзакция не найдена')}
+        </Text>
+        <Text style={[styles.errorText, { color: theme.placeholder }]}>
+          {getTranslation(
+            'The transaction you are looking for does not exist or has been removed.',
+            'Транзакция, которую вы ищете, не существует или была удалена.'
+          )}
+        </Text>
+        <Button
+          title={getTranslation('Go Back', 'Вернуться назад')}
+          onPress={() => router.back()}
+          style={styles.errorButton}
         />
-        <View style={styles.errorContainer}>
-          <Text style={[styles.errorText, { color: theme.notification }]}>
-            {language === 'en' ? 'Transaction not found' : 'Транзакция не найдена'}
-          </Text>
-          <Button
-            title={language === 'en' ? 'Go Back' : 'Назад'}
-            onPress={() => router.back()}
-            style={styles.backButton}
-          />
-        </View>
       </View>
     );
   }
   
-  const status = getStatus();
-  const description = isPaymentHistoryItem(transaction) 
-    ? transaction.comment || ''
-    : transaction.customerInfo || '';
-  const merchantName = isPaymentHistoryItem(transaction) 
-    ? transaction.accountToName || ''
-    : transaction.merchantName || '';
-  const createdAt = isPaymentHistoryItem(transaction) 
-    ? transaction.createdAt || ''
-    : transaction.createdAt || '';
-  const finishedAt = isPaymentHistoryItem(transaction) 
-    ? transaction.finishedAt || ''
-    : transaction.finishedAt || '';
-  
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <>
       <Stack.Screen 
-        options={{ 
-          title: language === 'en' ? 'Transaction Details' : 'Детали транзакции',
-          headerStyle: { backgroundColor: theme.background },
-          headerTintColor: theme.text,
+        options={{
+          title: getTranslation('Transaction Details', 'Детали транзакции'),
+          headerRight: () => (
+            <TouchableOpacity 
+              onPress={() => fetchTransactionStatus(true)}
+              disabled={isRefreshing}
+              style={styles.refreshButton}
+            >
+              <RefreshCw 
+                size={24} 
+                color={theme.primary} 
+                style={isRefreshing ? styles.rotating : undefined} 
+              />
+            </TouchableOpacity>
+          ),
         }} 
       />
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={[styles.container, { backgroundColor: theme.background }]}
+        contentContainerStyle={styles.contentContainer}
+      >
         {/* Status Card */}
         <Card style={styles.statusCard}>
           <View style={styles.statusHeader}>
-            {getStatusIcon()}
-            <Text style={[styles.statusText, { color: getStatusColor() }]}>
-              {getStatusText()}
+            {getStatusIcon(transaction.status)}
+            <Text style={[styles.statusText, { color: getStatusColor(transaction.status) }]}>
+              {getStatusText(transaction.status)}
             </Text>
           </View>
-          <Text style={[styles.amount, { color: theme.text }]}>
-            {transaction.amount} ₽
+          
+          <Text style={[styles.amountText, { color: theme.text }]}>
+            ₽{transaction.amount.toLocaleString()}
           </Text>
+          
+          <View style={styles.idContainer}>
+            <Text style={[styles.idLabel, { color: theme.placeholder }]}>
+              {getTranslation('Transaction ID:', 'ID транзакции:')}
+            </Text>
+            <Text style={[styles.idValue, { color: theme.text }]}>
+              {transaction.id}
+            </Text>
+          </View>
         </Card>
         
-        {/* Transaction Details */}
+        {/* Details Card */}
         <Card style={styles.detailsCard}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            {language === 'en' ? 'Transaction Details' : 'Детали транзакции'}
+            {getTranslation('Transaction Details', 'Детали транзакции')}
           </Text>
           
           <View style={styles.detailRow}>
             <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
-              {language === 'en' ? 'Transaction ID' : 'ID транзакции'}
-            </Text>
-            <TouchableOpacity 
-              style={styles.copyableValue}
-              onPress={() => copyToClipboard(transaction.id, language === 'en' ? 'Transaction ID' : 'ID транзакции')}
-            >
-              <Text style={[styles.detailValue, { color: theme.text }]}>
-                {transaction.id}
-              </Text>
-              <Copy size={16} color={theme.placeholder} />
-            </TouchableOpacity>
-          </View>
-          
-          {description && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
-                {language === 'en' ? 'Description' : 'Описание'}
-              </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]}>
-                {description}
-              </Text>
-            </View>
-          )}
-          
-          {merchantName && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
-                {language === 'en' ? 'Merchant' : 'Мерчант'}
-              </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]}>
-                {merchantName}
-              </Text>
-            </View>
-          )}
-          
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
-              {language === 'en' ? 'Created' : 'Создано'}
+              {getTranslation('Created', 'Создано')}
             </Text>
             <Text style={[styles.detailValue, { color: theme.text }]}>
-              {formatDate(createdAt)}
+              {formatDate(transaction.createdAt)}
             </Text>
           </View>
           
-          {finishedAt && (
+          {transaction.finishedAt && (
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
-                {language === 'en' ? 'Completed' : 'Завершено'}
+                {getTranslation('Completed', 'Завершено')}
               </Text>
               <Text style={[styles.detailValue, { color: theme.text }]}>
-                {formatDate(finishedAt)}
+                {formatDate(transaction.finishedAt)}
               </Text>
             </View>
           )}
           
-          {isPaymentHistoryItem(transaction) && transaction.totalCommission > 0 && (
+          {transaction.customerInfo && (
             <View style={styles.detailRow}>
               <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
-                {language === 'en' ? 'Commission' : 'Комиссия'}
+                {getTranslation('Customer', 'Покупатель')}
               </Text>
               <Text style={[styles.detailValue, { color: theme.text }]}>
-                {transaction.totalCommission} ₽
+                {transaction.customerInfo}
               </Text>
+            </View>
+          )}
+          
+          {transaction.merchantName && (
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+                {getTranslation('Merchant', 'Продавец')}
+              </Text>
+              <Text style={[styles.detailValue, { color: theme.text }]}>
+                {transaction.merchantName}
+              </Text>
+            </View>
+          )}
+          
+          {transaction.commission !== undefined && (
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+                {getTranslation('Commission', 'Комиссия')}
+              </Text>
+              <Text style={[styles.detailValue, { color: theme.text }]}>
+                ₽{transaction.commission.toLocaleString()}
+              </Text>
+            </View>
+          )}
+          
+          {transaction.tag && (
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+                {getTranslation('SBP ID', 'СБП ID')}
+              </Text>
+              <Text style={[styles.detailValue, { color: theme.text }]}>
+                {transaction.tag}
+              </Text>
+            </View>
+          )}
+          
+          {transaction.paymentUrl && (
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+                {getTranslation('Payment URL', 'URL платежа')}
+              </Text>
+              <TouchableOpacity 
+                onPress={() => Linking.openURL(transaction.paymentUrl!)}
+                style={styles.urlContainer}
+              >
+                <Text 
+                  style={[styles.urlText, { color: theme.primary }]}
+                  numberOfLines={1}
+                  ellipsizeMode="middle"
+                >
+                  {transaction.paymentUrl}
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
         </Card>
         
-        {/* Actions */}
-        <Card style={styles.actionsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            {language === 'en' ? 'Actions' : 'Действия'}
-          </Text>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: theme.primary + '20' }]}
-            onPress={shareTransaction}
-          >
-            <Share2 size={20} color={theme.primary} />
-            <Text style={[styles.actionButtonText, { color: theme.primary }]}>
-              {language === 'en' ? 'Share Transaction' : 'Поделиться транзакцией'}
+        {/* Products Card - Only show if transaction has products */}
+        {transaction.products && transaction.products.length > 0 && (
+          <Card style={styles.productsCard}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {getTranslation('Products', 'Товары')}
             </Text>
-          </TouchableOpacity>
-          
-          {status === 'completed' && (
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.success + '20' }]}
-              onPress={generatePDFReceipt}
-              disabled={isGeneratingPDF}
-            >
-              {isGeneratingPDF ? (
-                <ActivityIndicator size={20} color={theme.success} />
-              ) : (
-                <FileText size={20} color={theme.success} />
-              )}
-              <Text style={[styles.actionButtonText, { color: theme.success }]}>
-                {isGeneratingPDF 
-                  ? (language === 'en' ? 'Generating...' : 'Создание...')
-                  : (language === 'en' ? 'Generate PDF Receipt' : 'Создать PDF чек')
-                }
+            
+            {transaction.products.map((product, index) => (
+              <View 
+                key={`${product.id}-${index}`} 
+                style={[
+                  styles.productItem, 
+                  index < transaction.products!.length - 1 && { 
+                    borderBottomWidth: 1, 
+                    borderBottomColor: theme.border 
+                  }
+                ]}
+              >
+                <View style={styles.productInfo}>
+                  <Text style={[styles.productName, { color: theme.text }]}>
+                    {product.name}
+                  </Text>
+                  <Text style={[styles.productPrice, { color: theme.placeholder }]}>
+                    ₽{product.price.toLocaleString()} × {product.quantity}
+                  </Text>
+                </View>
+                <Text style={[styles.productTotal, { color: theme.text }]}>
+                  ₽{(product.price * product.quantity).toLocaleString()}
+                </Text>
+              </View>
+            ))}
+            
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalLabel, { color: theme.text }]}>
+                {getTranslation('Total', 'Итого')}
               </Text>
-            </TouchableOpacity>
-          )}
-        </Card>
+              <Text style={[styles.totalValue, { color: theme.text }]}>
+                ₽{transaction.products.reduce((sum, p) => sum + (p.price * p.quantity), 0).toLocaleString()}
+              </Text>
+            </View>
+          </Card>
+        )}
+        
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <Button
+            title={getTranslation('Share', 'Поделиться')}
+            onPress={shareTransactionDetails}
+            icon={<ShareIcon size={20} color="white" />}
+            style={styles.actionButton}
+          />
+          
+          <Button
+            title={getTranslation('Print Receipt', 'Печать чека')}
+            onPress={printReceipt}
+            icon={<Printer size={20} color="white" />}
+            style={styles.actionButton}
+          />
+          
+          <Button
+            title={getTranslation('Back', 'Назад')}
+            variant="outline"
+            onPress={() => router.back()}
+            icon={<ArrowLeft size={20} color={theme.primary} />}
+            style={styles.actionButton}
+          />
+        </View>
       </ScrollView>
       
-      {/* Error Popup */}
       <ErrorPopup
         visible={showErrorPopup}
-        message={error || (language === 'en' ? 'An error occurred' : 'Произошла ошибка')}
+        message={error || getTranslation('An error occurred', 'Произошла ошибка')}
         onClose={() => setShowErrorPopup(false)}
         darkMode={darkMode}
-        title={language === 'en' ? 'Error' : 'Ошибка'}
+        title={getTranslation('Error', 'Ошибка')}
       />
-    </View>
+    </>
   );
 }
 
@@ -475,15 +540,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
+  contentContainer: {
     padding: scaleSpacing(16),
+    paddingBottom: scaleSpacing(32),
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: scaleSpacing(24),
   },
   loadingText: {
     marginTop: scaleSpacing(16),
@@ -493,20 +557,34 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: scaleSpacing(24),
+    padding: scaleSpacing(16),
+  },
+  errorTitle: {
+    fontSize: scaleFontSize(20),
+    fontWeight: 'bold',
+    marginTop: scaleSpacing(16),
+    marginBottom: scaleSpacing(8),
+    textAlign: 'center',
   },
   errorText: {
     fontSize: scaleFontSize(16),
     textAlign: 'center',
     marginBottom: scaleSpacing(24),
   },
-  backButton: {
-    minWidth: 120,
+  errorButton: {
+    minWidth: 200,
   },
+  refreshButton: {
+    padding: scaleSpacing(8),
+  },
+  rotating: {
+    transform: Platform.OS === 'web' ? undefined : [{ rotate: '45deg' }],
+  },
+  
+  // Status Card
   statusCard: {
-    alignItems: 'center',
-    padding: scaleSpacing(24),
     marginBottom: scaleSpacing(16),
+    padding: scaleSpacing(20),
   },
   statusHeader: {
     flexDirection: 'row',
@@ -516,19 +594,30 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: scaleFontSize(18),
     fontWeight: '600',
-    marginLeft: scaleSpacing(12),
+    marginLeft: scaleSpacing(8),
   },
-  amount: {
+  amountText: {
     fontSize: scaleFontSize(32),
     fontWeight: 'bold',
-  },
-  detailsCard: {
-    padding: scaleSpacing(20),
     marginBottom: scaleSpacing(16),
   },
-  actionsCard: {
+  idContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  idLabel: {
+    fontSize: scaleFontSize(14),
+    marginRight: scaleSpacing(8),
+  },
+  idValue: {
+    fontSize: scaleFontSize(14),
+    fontWeight: '500',
+  },
+  
+  // Details Card
+  detailsCard: {
+    marginBottom: scaleSpacing(16),
     padding: scaleSpacing(20),
-    marginBottom: scaleSpacing(24),
   },
   sectionTitle: {
     fontSize: scaleFontSize(18),
@@ -536,7 +625,7 @@ const styles = StyleSheet.create({
     marginBottom: scaleSpacing(16),
   },
   detailRow: {
-    marginBottom: scaleSpacing(16),
+    marginBottom: scaleSpacing(12),
   },
   detailLabel: {
     fontSize: scaleFontSize(14),
@@ -546,21 +635,61 @@ const styles = StyleSheet.create({
     fontSize: scaleFontSize(16),
     fontWeight: '500',
   },
-  copyableValue: {
+  urlContainer: {
+    marginTop: scaleSpacing(4),
+  },
+  urlText: {
+    fontSize: scaleFontSize(14),
+    textDecorationLine: 'underline',
+  },
+  
+  // Products Card
+  productsCard: {
+    marginBottom: scaleSpacing(16),
+    padding: scaleSpacing(20),
+  },
+  productItem: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: scaleSpacing(12),
   },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: scaleSpacing(16),
-    borderRadius: 12,
-    marginBottom: scaleSpacing(12),
+  productInfo: {
+    flex: 1,
   },
-  actionButtonText: {
+  productName: {
     fontSize: scaleFontSize(16),
     fontWeight: '500',
-    marginLeft: scaleSpacing(12),
+    marginBottom: scaleSpacing(4),
+  },
+  productPrice: {
+    fontSize: scaleFontSize(14),
+  },
+  productTotal: {
+    fontSize: scaleFontSize(16),
+    fontWeight: '500',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: scaleSpacing(16),
+    paddingTop: scaleSpacing(16),
+    borderTopWidth: 1,
+  },
+  totalLabel: {
+    fontSize: scaleFontSize(16),
+    fontWeight: '600',
+  },
+  totalValue: {
+    fontSize: scaleFontSize(18),
+    fontWeight: 'bold',
+  },
+  
+  // Action Buttons
+  actionButtons: {
+    gap: scaleSpacing(12),
+  },
+  actionButton: {
+    marginBottom: 0,
   },
 });

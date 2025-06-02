@@ -14,10 +14,10 @@ export interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      darkMode: Appearance.getColorScheme() === 'dark',
+      darkMode: false, // Default to light theme
       setDarkMode: (darkMode: boolean) => set({ darkMode }),
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
-      useSystemTheme: true,
+      useSystemTheme: false, // Default to not using system theme
       setUseSystemTheme: (useSystemTheme: boolean) => set({ useSystemTheme }),
     }),
     {
