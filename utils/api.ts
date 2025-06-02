@@ -702,17 +702,32 @@ export const createTransaction = async (
     
     console.log('Payment creation response:', responseData);
     
-    // Create transaction record from API response, handling nested structure
+    // Extract payment URL and ID from the nested value structure
+    let paymentUrl = '';
+    let paymentId = '';
+    let createdAt = new Date().toISOString();
+    
+    if (responseData.value) {
+      paymentUrl = responseData.value.paymentUrl || '';
+      paymentId = responseData.value.id?.toString() || `T${Date.now()}`;
+      createdAt = responseData.value.createdAt || new Date().toISOString();
+    } else if (responseData.paymentUrl) {
+      paymentUrl = responseData.paymentUrl;
+      paymentId = responseData.id?.toString() || `T${Date.now()}`;
+      createdAt = responseData.createdAt || new Date().toISOString();
+    }
+    
+    // Create transaction record from API response
     const transaction: Transaction = {
-      id: responseData.value?.id?.toString() || `T${Date.now()}`,
+      id: paymentId,
       amount: integerAmount,
       status: 'pending',
-      createdAt: responseData.value?.createdAt || new Date().toISOString(),
+      createdAt: createdAt,
       customerInfo: description,
       merchantName: credentials.merchantName || '',
       tag: responseData.value?.orderId?.toString() || `Order-${Date.now()}`,
-      mpspayId: responseData.value?.id?.toString() || '',
-      paymentUrl: responseData.value?.paymentUrl || '',
+      mpspayId: paymentId,
+      paymentUrl: paymentUrl,
       products: products
     };
     
@@ -1140,7 +1155,8 @@ export const checkTransactionStatus = async (
         tag: value.tag || '',
         mpspayId: value.id?.toString() || '',
         commission: value.totalCommission || 0,
-        finishedAt: value.finishedAt || ''
+        finishedAt: value.finishedAt || '',
+        paymentUrl: value.paymentUrl || ''
       };
       
       return {
@@ -1158,7 +1174,8 @@ export const checkTransactionStatus = async (
         customerInfo: responseData.description || '',
         merchantName: credentials.merchantName || '',
         tag: responseData.orderId?.toString() || '',
-        mpspayId: responseData.id?.toString() || ''
+        mpspayId: responseData.id?.toString() || '',
+        paymentUrl: responseData.paymentUrl || ''
       };
       
       return {

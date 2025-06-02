@@ -72,34 +72,11 @@ export default function SettingsScreen() {
   };
   
   const handleLanguageChange = () => {
-    Alert.alert(
-      language === 'en' ? 'Language' : 'Язык',
-      language === 'en' ? 'Select language:' : 'Выберите язык:',
-      [
-        {
-          text: 'English',
-          onPress: () => {
-            setLanguage('en');
-            // Force refresh UI
-            setTimeout(() => {}, 100);
-          },
-          style: language === 'en' ? 'default' : 'default',
-        },
-        {
-          text: 'Русский',
-          onPress: () => {
-            setLanguage('ru');
-            // Force refresh UI
-            setTimeout(() => {}, 100);
-          },
-          style: language === 'ru' ? 'default' : 'default',
-        },
-        {
-          text: language === 'en' ? 'Cancel' : 'Отмена',
-          style: 'cancel',
-        },
-      ]
-    );
+    const newLanguage = language === 'en' ? 'ru' : 'en';
+    setLanguage(newLanguage);
+    
+    // Force refresh UI
+    setTimeout(() => {}, 100);
   };
   
   const handleEditProfile = () => {
