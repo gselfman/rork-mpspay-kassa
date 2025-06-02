@@ -720,7 +720,7 @@ export const createTransaction = async (
     let paymentUrl = '';
     let paymentId = '';
     let createdAt = new Date().toISOString();
-    let status = 'pending';
+    let status: 'pending' | 'completed' | 'failed' = 'pending';
     
     if (responseData.value) {
       paymentUrl = responseData.value.paymentUrl || '';

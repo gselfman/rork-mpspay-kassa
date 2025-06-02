@@ -64,7 +64,6 @@ export default function PaymentDetailsScreen() {
   const [rawErrorResponse, setRawErrorResponse] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState('15:00');
   const [isExpired, setIsExpired] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   
   // Timer ref
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -332,27 +331,6 @@ export default function PaymentDetailsScreen() {
     }
   };
   
-  // Show debug info
-  const showDebugInfo = () => {
-    if (!transaction) return;
-    
-    const debugText = JSON.stringify({
-      transactionId,
-      transaction,
-      hasPaymentUrl: !!transaction.paymentUrl,
-      paymentUrl: transaction.paymentUrl || 'Not available',
-      status: transaction.status,
-      createdAt: transaction.createdAt
-    }, null, 2);
-    
-    setDebugInfo(debugText);
-    Alert.alert(
-      'Debug Info',
-      debugText,
-      [{ text: 'OK', onPress: () => setDebugInfo(null) }]
-    );
-  };
-  
   // Set up auto-refresh
   useEffect(() => {
     // Initial fetch if we don't have a transaction or it doesn't have a paymentUrl
@@ -436,25 +414,17 @@ export default function PaymentDetailsScreen() {
         options={{
           title: getTranslation('Payment', 'Платеж'),
           headerRight: () => (
-            <View style={styles.headerButtons}>
-              <TouchableOpacity 
-                onPress={showDebugInfo}
-                style={styles.debugButton}
-              >
-                <Text style={{ color: theme.primary, fontSize: 12 }}>Debug</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={() => fetchTransactionStatus(true)}
-                disabled={isRefreshing}
-                style={styles.refreshButton}
-              >
-                <RefreshCw 
-                  size={24} 
-                  color={theme.primary} 
-                  style={isRefreshing ? styles.rotating : undefined} 
-                />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              onPress={() => fetchTransactionStatus(true)}
+              disabled={isRefreshing}
+              style={styles.refreshButton}
+            >
+              <RefreshCw 
+                size={24} 
+                color={theme.primary} 
+                style={isRefreshing ? styles.rotating : undefined} 
+              />
+            </TouchableOpacity>
           ),
         }} 
       />
@@ -490,19 +460,6 @@ export default function PaymentDetailsScreen() {
               </Text>
             </View>
           )}
-        </Card>
-        
-        {/* Debug Info - Always show transaction data */}
-        <Card style={styles.debugCard}>
-          <Text style={[styles.debugTitle, { color: theme.text }]}>
-            Debug Information
-          </Text>
-          <Text style={[styles.debugText, { color: theme.placeholder }]}>
-            Transaction ID: {transaction.id}{'\n'}
-            Status: {transaction.status}{'\n'}
-            Has Payment URL: {transaction.paymentUrl ? 'Yes' : 'No'}{'\n'}
-            Created At: {transaction.createdAt}
-          </Text>
         </Card>
         
         {/* QR Code Card - ALWAYS show if transaction exists */}
@@ -795,34 +752,11 @@ const styles = StyleSheet.create({
   errorButton: {
     minWidth: 200,
   },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  debugButton: {
-    marginRight: scaleSpacing(12),
-    padding: scaleSpacing(4),
-  },
   refreshButton: {
     padding: scaleSpacing(8),
   },
   rotating: {
     transform: [{ rotate: '45deg' }],
-  },
-  
-  // Debug Card
-  debugCard: {
-    marginBottom: scaleSpacing(16),
-    padding: scaleSpacing(16),
-  },
-  debugTitle: {
-    fontSize: scaleFontSize(16),
-    fontWeight: 'bold',
-    marginBottom: scaleSpacing(8),
-  },
-  debugText: {
-    fontSize: scaleFontSize(12),
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   
   // Status Card

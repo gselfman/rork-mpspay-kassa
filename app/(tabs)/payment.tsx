@@ -49,8 +49,6 @@ export default function PaymentScreen() {
   const [productPrice, setProductPrice] = useState('');
   const [productQuantity, setProductQuantity] = useState('1');
   const [productErrors, setProductErrors] = useState<{name?: string, price?: string, quantity?: string}>({});
-  const [debugInfo, setDebugInfo] = useState<{request?: any, response?: any}>({});
-  const [showDebugInfo, setShowDebugInfo] = useState(false);
   
   // Translations
   const getTranslation = (en: string, ru: string): string => {
@@ -274,44 +272,12 @@ export default function PaymentScreen() {
         paymentComment = `${merchantPrefix}: ${getTranslation('Manual amount', 'Сумма вручную')} (${dateTimeStr})`;
       }
       
-      // Create request object for debugging
-      const requestObj = {
-        credentials: {
-          ...credentials,
-          // Mask sensitive data
-          readOnlyAccessKey: credentials.readOnlyAccessKey.substring(0, 4) + '...',
-          clientSecret: credentials.clientSecret ? credentials.clientSecret.substring(0, 4) + '...' : undefined
-        },
-        amount: numAmount,
-        products: products.length > 0 ? products : undefined,
-        comment: paymentComment
-      };
-      
-      setDebugInfo({
-        request: requestObj
-      });
-      
-      // Show debug info before making the request
-      console.log('Payment request:', JSON.stringify(requestObj, null, 2));
-      
       const result = await createTransaction(
         credentials,
         numAmount,
         products.length > 0 ? products : undefined,
         paymentComment
       );
-      
-      // Update debug info with response
-      setDebugInfo(prev => ({
-        ...prev,
-        response: result
-      }));
-      
-      // Show debug info after getting the response
-      console.log('Payment response:', JSON.stringify(result, null, 2));
-      
-      // Always show debug info in an alert
-      setShowDebugInfo(true);
       
       if (result.success && result.transaction) {
         // Add transaction to store
@@ -358,15 +324,6 @@ export default function PaymentScreen() {
       setError(errorMsg);
       setRawErrorResponse(rawError);
       setShowErrorPopup(true);
-      
-      // Update debug info with error
-      setDebugInfo(prev => ({
-        ...prev,
-        response: {
-          error: errorMsg,
-          rawError
-        }
-      }));
     } finally {
       setIsLoading(false);
     }
@@ -379,57 +336,6 @@ export default function PaymentScreen() {
     
     return products.reduce((sum, p) => sum + (p.price * p.quantity), 0);
   };
-  
-  // Show debug info in a popup
-  const displayDebugInfo = () => {
-    if (!debugInfo.request && !debugInfo.response) {
-      Alert.alert(
-        getTranslation('Debug Info', 'Отладочная информация'),
-        getTranslation('No debug information available yet.', 'Отладочная информация пока недоступна.')
-      );
-      return;
-    }
-    
-    const debugText = JSON.stringify(debugInfo, null, 2);
-    
-    Alert.alert(
-      getTranslation('Debug Info', 'Отладочная информация'),
-      debugText.length > 1000 ? debugText.substring(0, 1000) + '...' : debugText,
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            console.log('=== DEBUG INFO ===');
-            console.log('REQUEST:', JSON.stringify(debugInfo.request, null, 2));
-            console.log('RESPONSE:', JSON.stringify(debugInfo.response, null, 2));
-          }
-        }
-      ]
-    );
-  };
-  
-  // Effect to show debug info when payment is created
-  useEffect(() => {
-    if (showDebugInfo && debugInfo.response) {
-      const debugText = JSON.stringify(debugInfo, null, 2);
-      
-      Alert.alert(
-        getTranslation('Payment Request Debug', 'Отладка запроса платежа'),
-        debugText.length > 1000 ? debugText.substring(0, 1000) + '...' : debugText,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setShowDebugInfo(false);
-              console.log('=== PAYMENT DEBUG INFO ===');
-              console.log('REQUEST:', JSON.stringify(debugInfo.request, null, 2));
-              console.log('RESPONSE:', JSON.stringify(debugInfo.response, null, 2));
-            }
-          }
-        ]
-      );
-    }
-  }, [showDebugInfo, debugInfo]);
   
   return (
     <KeyboardAvoidingView
@@ -452,16 +358,6 @@ export default function PaymentScreen() {
           }]}>
             {getTranslation('Create Payment', 'Создать платеж')}
           </Text>
-          
-          {/* Debug button */}
-          <TouchableOpacity 
-            style={styles.debugButton}
-            onPress={displayDebugInfo}
-          >
-            <Text style={[styles.debugButtonText, { color: theme.placeholder }]}>
-              Debug
-            </Text>
-          </TouchableOpacity>
         </View>
         
         <Card style={styles.card}>
@@ -754,12 +650,6 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: 'bold',
     flex: 1,
-  },
-  debugButton: {
-    padding: scaleSpacing(8),
-  },
-  debugButtonText: {
-    fontSize: scaleFontSize(12),
   },
   card: {
     marginBottom: scaleSpacing(16),
