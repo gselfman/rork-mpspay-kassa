@@ -1184,6 +1184,7 @@ export const checkTransactionStatus = async (
         mpspayId: value.id?.toString() || '',
         commission: value.totalCommission || 0,
         finishedAt: value.finishedAt || '',
+        // NOTE: paymentUrl is not returned in status check API, so we keep it if it exists
         paymentUrl: value.paymentUrl || ''
       };
       
@@ -1203,6 +1204,7 @@ export const checkTransactionStatus = async (
         merchantName: credentials.merchantName || '',
         tag: responseData.orderId?.toString() || '',
         mpspayId: responseData.id?.toString() || '',
+        // NOTE: paymentUrl is not returned in status check API, so we keep it if it exists
         paymentUrl: responseData.paymentUrl || ''
       };
       

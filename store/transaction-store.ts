@@ -21,8 +21,11 @@ export const useTransactionStore = create<TransactionState>()(
           // Check if transaction already exists
           const existingIndex = state.transactions.findIndex(t => t.id === transaction.id);
           if (existingIndex >= 0) {
-            // Update existing transaction
+            // Update existing transaction but preserve paymentUrl if it exists and the new one doesn't
             const updatedTransactions = [...state.transactions];
+            if (!transaction.paymentUrl && updatedTransactions[existingIndex].paymentUrl) {
+              transaction.paymentUrl = updatedTransactions[existingIndex].paymentUrl;
+            }
             updatedTransactions[existingIndex] = transaction;
             return { transactions: updatedTransactions };
           } else {
@@ -33,11 +36,21 @@ export const useTransactionStore = create<TransactionState>()(
       },
       
       updateTransaction: (transaction: Transaction) => {
-        set((state) => ({
-          transactions: state.transactions.map(t => 
-            t.id === transaction.id ? transaction : t
-          )
-        }));
+        set((state) => {
+          const existingTransaction = state.transactions.find(t => t.id === transaction.id);
+          
+          // If the transaction exists and has a paymentUrl but the new one doesn't,
+          // preserve the existing paymentUrl
+          if (existingTransaction && existingTransaction.paymentUrl && !transaction.paymentUrl) {
+            transaction.paymentUrl = existingTransaction.paymentUrl;
+          }
+          
+          return {
+            transactions: state.transactions.map(t => 
+              t.id === transaction.id ? transaction : t
+            )
+          };
+        });
       },
       
       removeTransaction: (id: string) => {

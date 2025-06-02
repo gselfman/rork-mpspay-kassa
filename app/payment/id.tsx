@@ -50,7 +50,6 @@ export default function PaymentDetailsScreen() {
   
   // Get transaction from store
   const transactions = useTransactionStore((state) => state.transactions);
-  const addTransaction = useTransactionStore((state) => state.addTransaction);
   const updateTransaction = useTransactionStore((state) => state.updateTransaction);
   
   // Find transaction by ID
@@ -201,6 +200,12 @@ export default function PaymentDetailsScreen() {
       const result = await checkTransactionStatus(credentials, transactionId);
       
       if (result.found && result.transaction) {
+        // IMPORTANT: Preserve the paymentUrl from the original transaction
+        // since the status check API doesn't return it
+        if (transaction && transaction.paymentUrl && !result.transaction.paymentUrl) {
+          result.transaction.paymentUrl = transaction.paymentUrl;
+        }
+        
         setTransaction(result.transaction);
         updateTransaction(result.transaction);
         
@@ -350,9 +355,14 @@ export default function PaymentDetailsScreen() {
   
   // Set up auto-refresh
   useEffect(() => {
-    // Initial fetch
-    setIsLoading(true);
-    fetchTransactionStatus(false).finally(() => setIsLoading(false));
+    // Initial fetch if we don't have a transaction or it doesn't have a paymentUrl
+    if (!transaction || !transaction.paymentUrl) {
+      setIsLoading(true);
+      fetchTransactionStatus(false).finally(() => setIsLoading(false));
+    } else if (transaction && transaction.status === 'pending') {
+      // Start timer if transaction is pending
+      startTimer(transaction.createdAt);
+    }
     
     // Set up auto-refresh every 30 seconds if transaction is pending
     const autoRefreshInterval = setInterval(() => {
