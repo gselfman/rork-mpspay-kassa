@@ -989,7 +989,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   rotating: {
-    transform: [{ rotate: '45deg' }],
+    transform: Platform.OS === 'web' ? undefined : [{ rotate: '45deg' }],
   },
   balanceAmount: {
     fontWeight: 'bold',

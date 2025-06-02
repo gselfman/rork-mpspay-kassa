@@ -529,6 +529,27 @@ export default function PaymentDetailsScreen() {
             </View>
           )}
           
+          {transaction.paymentUrl && (
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+                {language === 'en' ? 'Payment URL' : 'Ссылка на оплату'}
+              </Text>
+              <TouchableOpacity 
+                style={styles.copyableValue}
+                onPress={() => copyToClipboard(transaction.paymentUrl || '', language === 'en' ? 'Payment URL' : 'Ссылка на оплату')}
+              >
+                <Text 
+                  style={[styles.detailValue, { color: theme.primary }]}
+                  numberOfLines={1}
+                  ellipsizeMode="middle"
+                >
+                  {transaction.paymentUrl}
+                </Text>
+                <Copy size={16} color={theme.primary} />
+              </TouchableOpacity>
+            </View>
+          )}
+          
           {transaction.products && transaction.products.length > 0 && (
             <View style={styles.productsContainer}>
               <Text style={[styles.productsTitle, { color: theme.text }]}>
@@ -828,6 +849,6 @@ const styles = StyleSheet.create({
     lineHeight: scaleFontSize(20),
   },
   rotating: {
-    transform: [{ rotate: '45deg' }],
+    transform: Platform.OS === 'web' ? undefined : [{ rotate: '45deg' }],
   },
 });

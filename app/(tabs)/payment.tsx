@@ -10,7 +10,6 @@ import {
   Platform,
   ActivityIndicator,
   Image,
-  Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Input } from '@/components/Input';

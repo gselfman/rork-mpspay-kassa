@@ -12,7 +12,7 @@ import {
   Modal,
   ScrollView,
   Image,
-  TextInput,
+  TextInput as RNTextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TransactionItem } from '@/components/TransactionItem';
@@ -39,7 +39,6 @@ export default function HistoryScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rawErrorResponse, setRawErrorResponse] = useState<string | null>(null);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [filterDateRange, setFilterDateRange] = useState<'today' | 'week' | 'month' | 'custom' | null>('month');
   const [showDateFilterModal, setShowDateFilterModal] = useState(false);
@@ -61,7 +60,6 @@ export default function HistoryScreen() {
     }
     
     setError(null);
-    setRawErrorResponse(null);
     
     try {
       console.log('Fetching all transactions for the last 30 days...');
@@ -98,22 +96,14 @@ export default function HistoryScreen() {
       
       // Create detailed error message
       let errorMsg = '';
-      let rawError = '';
       
       if (err instanceof Error) {
         errorMsg = `Failed to load transaction history: ${err.message}`;
-        rawError = JSON.stringify({
-          name: err.name,
-          message: err.message,
-          stack: err.stack
-        }, null, 2);
       } else {
         errorMsg = `Failed to load transaction history: ${String(err)}`;
-        rawError = String(err);
       }
       
       setError(errorMsg);
-      setRawErrorResponse(rawError);
       setShowErrorPopup(true);
     } finally {
       setIsLoading(false);
@@ -571,7 +561,7 @@ export default function HistoryScreen() {
                       borderColor: theme.border,
                       backgroundColor: theme.inputBackground
                     }]}>
-                      <TextInput
+                      <RNTextInput
                         placeholder="YYYY-MM-DD"
                         value={customStartDate}
                         onChangeText={setCustomStartDate}
@@ -589,7 +579,7 @@ export default function HistoryScreen() {
                       borderColor: theme.border,
                       backgroundColor: theme.inputBackground
                     }]}>
-                      <TextInput
+                      <RNTextInput
                         placeholder="YYYY-MM-DD"
                         value={customEndDate}
                         onChangeText={setCustomEndDate}
@@ -673,7 +663,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   rotating: {
-    transform: [{ rotate: '45deg' }],
+    transform: Platform.OS === 'web' ? undefined : [{ rotate: '45deg' }],
   },
   listContent: {
     padding: scaleSpacing(16),

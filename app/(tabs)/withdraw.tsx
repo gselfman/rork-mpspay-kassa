@@ -312,6 +312,7 @@ export default function WithdrawScreen() {
               keyboardType="numeric"
               error={errors.amount}
               darkMode={darkMode}
+              icon={<Wallet size={20} color={theme.primary} />}
             />
             <Text style={[styles.helperText, { color: theme.placeholder }]}>
               {getTranslation(
@@ -335,6 +336,7 @@ export default function WithdrawScreen() {
               autoCapitalize="none"
               error={errors.walletAddress}
               darkMode={darkMode}
+              icon={<TrendingUp size={20} color={theme.primary} />}
             />
             <Text style={[styles.helperText, { color: theme.placeholder }]}>
               {getTranslation(
@@ -363,6 +365,7 @@ export default function WithdrawScreen() {
               autoCapitalize="none"
               error={errors.telegramContact}
               darkMode={darkMode}
+              icon={<MessageCircle size={20} color={theme.primary} />}
             />
             <Text style={[styles.helperText, { color: theme.placeholder }]}>
               {getTranslation(
