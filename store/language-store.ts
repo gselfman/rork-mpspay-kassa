@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, NativeModules } from 'react-native';
 
-// Определение типа для языка
+// Define language type
 export type Language = 'en' | 'ru';
 
 /**
@@ -12,7 +12,7 @@ export type Language = 'en' | 'ru';
  */
 const getDeviceLanguage = (): Language => {
   try {
-    // Получаем язык устройства
+    // Get device language
     let deviceLanguage: string;
     
     if (Platform.OS === 'ios') {
@@ -22,24 +22,24 @@ const getDeviceLanguage = (): Language => {
     } else if (Platform.OS === 'android') {
       deviceLanguage = NativeModules.I18nManager.localeIdentifier || 'ru';
     } else {
-      // Для веб и других платформ
+      // For web and other platforms
       deviceLanguage = navigator.language || 'ru';
     }
     
-    // Проверяем, начинается ли язык с 'en'
+    // Check if language starts with 'en'
     if (deviceLanguage.startsWith('en')) {
       return 'en';
     }
     
-    // По умолчанию используем русский
+    // Default to Russian
     return 'ru';
   } catch (error) {
-    console.error('Ошибка при определении языка устройства:', error);
-    return 'ru'; // По умолчанию русский
+    console.error('Error determining device language:', error);
+    return 'ru'; // Default to Russian
   }
 };
 
-// Интерфейс для хранилища языка
+// Interface for language store
 interface LanguageState {
   language: Language;
   setLanguage: (language: Language) => void;

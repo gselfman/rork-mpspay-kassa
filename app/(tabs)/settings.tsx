@@ -74,9 +74,6 @@ export default function SettingsScreen() {
   const handleLanguageChange = () => {
     const newLanguage = language === 'en' ? 'ru' : 'en';
     setLanguage(newLanguage);
-    
-    // Force refresh UI
-    setTimeout(() => {}, 100);
   };
   
   const handleEditProfile = () => {
