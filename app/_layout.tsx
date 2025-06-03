@@ -31,6 +31,7 @@ export default function Layout() {
           backgroundColor: theme.background,
         },
         headerShown: true,
+        headerTitle: '', // Remove header title to hide (tabs) text
       }}
     />
   );

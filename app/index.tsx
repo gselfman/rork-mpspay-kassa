@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter, Redirect, Stack } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { ErrorPopup } from '@/components/ErrorPopup';
@@ -251,7 +251,6 @@ export default function AuthScreen() {
   if (!showSetupForm) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <Stack.Screen options={{ headerShown: false }} />
         <StatusBar style={darkMode ? "light" : "dark"} />
         <View style={styles.welcomeContainer}>
           <View style={styles.logoContainer}>
@@ -286,7 +285,6 @@ export default function AuthScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Stack.Screen options={{ headerShown: false }} />
       <StatusBar style={darkMode ? "light" : "dark"} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

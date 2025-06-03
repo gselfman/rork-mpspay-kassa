@@ -14,7 +14,7 @@ import {
   Image,
   TextInput,
 } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/Button';
@@ -198,7 +198,6 @@ export default function HistoryScreen() {
     
     if (filterDateRange) {
       const now = new Date();
-      now.setHours(0, 0, 0, 0); // Start of today
       
       switch (filterDateRange) {
         case 'today':
@@ -206,13 +205,13 @@ export default function HistoryScreen() {
             if (!t.createdAt) return false;
             
             const transactionDate = new Date(t.createdAt);
-            const transactionDay = new Date(transactionDate);
-            transactionDay.setHours(0, 0, 0, 0); // Start of transaction day
-            
             const today = new Date();
-            today.setHours(0, 0, 0, 0); // Start of today
             
-            return transactionDay.getTime() === today.getTime();
+            return (
+              transactionDate.getDate() === today.getDate() &&
+              transactionDate.getMonth() === today.getMonth() &&
+              transactionDate.getFullYear() === today.getFullYear()
+            );
           });
           
           console.log(`Filtered to ${dateFiltered.length} transactions for today`);
@@ -532,7 +531,6 @@ export default function HistoryScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Stack.Screen options={{ headerShown: false }} />
       {renderHeader()}
       
       {renderStatusFilters()}

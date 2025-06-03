@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -342,7 +342,6 @@ export default function PaymentScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, { backgroundColor: theme.background }]}
     >
-      <Stack.Screen options={{ headerShown: false }} />
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"

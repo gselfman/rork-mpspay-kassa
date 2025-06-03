@@ -14,7 +14,7 @@ import {
   KeyboardAvoidingView,
   Modal
 } from 'react-native';
-import { useRouter, useFocusEffect, Stack } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { TransactionItem } from '@/components/TransactionItem';
@@ -110,10 +110,12 @@ export default function HomeScreen() {
     const successfulTransactionsToday = successfulTransactions.filter(t => {
       if (!t.createdAt) return false;
       const transactionDate = new Date(t.createdAt);
-      const transactionDay = new Date(transactionDate);
-      transactionDay.setHours(0, 0, 0, 0); // Start of transaction day
       
-      return transactionDay.getTime() === today.getTime();
+      return (
+        transactionDate.getDate() === today.getDate() &&
+        transactionDate.getMonth() === today.getMonth() &&
+        transactionDate.getFullYear() === today.getFullYear()
+      );
     });
     
     // Count successful transactions for today
@@ -377,7 +379,6 @@ export default function HomeScreen() {
         style={[styles.container, { backgroundColor: theme.background }]} 
         contentContainerStyle={[styles.contentContainer, { padding: containerPadding }]}
       >
-        <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.header}>
           <View style={styles.skeletonLogo} />
           <View style={styles.headerTextContainer}>
@@ -419,7 +420,6 @@ export default function HomeScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1 }}
     >
-      <Stack.Screen options={{ headerShown: false }} />
       <ScrollView 
         style={[styles.container, { backgroundColor: theme.background }]} 
         contentContainerStyle={[styles.contentContainer, { padding: containerPadding }]}
