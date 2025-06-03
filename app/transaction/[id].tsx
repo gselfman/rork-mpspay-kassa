@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -11,7 +11,7 @@ import {
   Share,
   Linking
 } from 'react-native';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
 import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
@@ -170,7 +170,7 @@ export default function TransactionDetailsScreen() {
   };
   
   // Fetch transaction status
-  const fetchTransactionStatus = async (showLoading = true) => {
+  const fetchTransactionStatus = useCallback(async (showLoading = true) => {
     if (!credentials) {
       setError(getTranslation(
         'You need to be logged in to view transaction details',
@@ -209,7 +209,7 @@ export default function TransactionDetailsScreen() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [credentials, transactionId, getTranslation, addTransaction]);
   
   // Share transaction details
   const shareTransactionDetails = async () => {
@@ -280,14 +280,14 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
         fetchTransactionStatus(true);
       }
     }
-  }, [transactionId, transactionData]);
+  }, [transactionId, transactionData, transactions, addTransaction, fetchTransactionStatus]);
   
   // Render loading state
   if (isLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={[styles.loadingText, { color: theme.text }]}>
+        <Text style={[styles.loadingText, { color: theme.text }]} allowFontScaling={false}>
           {getTranslation('Loading transaction details...', 'Загрузка деталей транзакции...')}
         </Text>
       </View>
@@ -299,10 +299,10 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     return (
       <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
         <AlertCircle size={48} color={theme.notification} />
-        <Text style={[styles.errorTitle, { color: theme.text }]}>
+        <Text style={[styles.errorTitle, { color: theme.text }]} allowFontScaling={false}>
           {getTranslation('Transaction Not Found', 'Транзакция не найдена')}
         </Text>
-        <Text style={[styles.errorText, { color: theme.placeholder }]}>
+        <Text style={[styles.errorText, { color: theme.placeholder }]} allowFontScaling={false}>
           {getTranslation(
             'The transaction you are looking for does not exist or has been removed.',
             'Транзакция, которую вы ищете, не существует или была удалена.'
@@ -317,49 +317,49 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     );
   }
   
+  const screenTitle = getTranslation('Transaction Details', 'Детали транзакции');
+  
   return (
     <>
-      <Stack.Screen 
-        options={{
-          title: getTranslation('Transaction Details', 'Детали транзакции'),
-          headerRight: () => (
-            <TouchableOpacity 
-              onPress={() => fetchTransactionStatus(true)}
-              disabled={isRefreshing}
-              style={styles.refreshButton}
-            >
-              <RefreshCw 
-                size={24} 
-                color={theme.primary} 
-                style={isRefreshing ? styles.rotating : undefined} 
-              />
-            </TouchableOpacity>
-          ),
-        }} 
-      />
-      
       <ScrollView 
         style={[styles.container, { backgroundColor: theme.background }]}
         contentContainerStyle={styles.contentContainer}
       >
+        <View style={styles.headerContainer}>
+          <Text style={[styles.headerTitle, { color: theme.text }]} allowFontScaling={false}>
+            {screenTitle}
+          </Text>
+          <TouchableOpacity 
+            onPress={() => fetchTransactionStatus(true)}
+            disabled={isRefreshing}
+            style={styles.refreshButton}
+          >
+            <RefreshCw 
+              size={24} 
+              color={theme.primary} 
+              style={isRefreshing ? styles.rotating : undefined} 
+            />
+          </TouchableOpacity>
+        </View>
+        
         {/* Status Card */}
         <Card style={styles.statusCard}>
           <View style={styles.statusHeader}>
             {getStatusIcon(transaction.status)}
-            <Text style={[styles.statusText, { color: getStatusColor(transaction.status) }]}>
+            <Text style={[styles.statusText, { color: getStatusColor(transaction.status) }]} allowFontScaling={false}>
               {getStatusText(transaction.status)}
             </Text>
           </View>
           
-          <Text style={[styles.amountText, { color: theme.text }]}>
+          <Text style={[styles.amountText, { color: theme.text }]} allowFontScaling={false}>
             ₽{transaction.amount.toLocaleString()}
           </Text>
           
           <View style={styles.idContainer}>
-            <Text style={[styles.idLabel, { color: theme.placeholder }]}>
+            <Text style={[styles.idLabel, { color: theme.placeholder }]} allowFontScaling={false}>
               {getTranslation('Transaction ID:', 'ID транзакции:')}
             </Text>
-            <Text style={[styles.idValue, { color: theme.text }]}>
+            <Text style={[styles.idValue, { color: theme.text }]} allowFontScaling={false}>
               {transaction.id}
             </Text>
           </View>
@@ -367,25 +367,25 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
         
         {/* Details Card */}
         <Card style={styles.detailsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
             {getTranslation('Transaction Details', 'Детали транзакции')}
           </Text>
           
           <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+            <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
               {getTranslation('Created', 'Создано')}
             </Text>
-            <Text style={[styles.detailValue, { color: theme.text }]}>
+            <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
               {formatDate(transaction.createdAt)}
             </Text>
           </View>
           
           {transaction.finishedAt && (
             <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                 {getTranslation('Completed', 'Завершено')}
               </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]}>
+              <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
                 {formatDate(transaction.finishedAt)}
               </Text>
             </View>
@@ -393,10 +393,10 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
           
           {transaction.customerInfo && (
             <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                 {getTranslation('Customer', 'Покупатель')}
               </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]}>
+              <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
                 {transaction.customerInfo}
               </Text>
             </View>
@@ -404,10 +404,10 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
           
           {transaction.merchantName && (
             <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                 {getTranslation('Merchant', 'Продавец')}
               </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]}>
+              <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
                 {transaction.merchantName}
               </Text>
             </View>
@@ -415,10 +415,10 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
           
           {transaction.commission !== undefined && (
             <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                 {getTranslation('Commission', 'Комиссия')}
               </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]}>
+              <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
                 ₽{transaction.commission.toLocaleString()}
               </Text>
             </View>
@@ -426,10 +426,10 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
           
           {transaction.tag && (
             <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                 {getTranslation('SBP ID', 'СБП ID')}
               </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]}>
+              <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
                 {transaction.tag}
               </Text>
             </View>
@@ -437,7 +437,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
           
           {transaction.paymentUrl && (
             <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                 {getTranslation('Payment URL', 'URL платежа')}
               </Text>
               <TouchableOpacity 
@@ -448,6 +448,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
                   style={[styles.urlText, { color: theme.primary }]}
                   numberOfLines={1}
                   ellipsizeMode="middle"
+                  allowFontScaling={false}
                 >
                   {transaction.paymentUrl}
                 </Text>
@@ -459,7 +460,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
         {/* Products Card - Only show if transaction has products */}
         {transaction.products && transaction.products.length > 0 && (
           <Card style={styles.productsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
               {getTranslation('Products', 'Товары')}
             </Text>
             
@@ -475,24 +476,24 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
                 ]}
               >
                 <View style={styles.productInfo}>
-                  <Text style={[styles.productName, { color: theme.text }]}>
+                  <Text style={[styles.productName, { color: theme.text }]} allowFontScaling={false}>
                     {product.name}
                   </Text>
-                  <Text style={[styles.productPrice, { color: theme.placeholder }]}>
+                  <Text style={[styles.productPrice, { color: theme.placeholder }]} allowFontScaling={false}>
                     ₽{product.price.toLocaleString()} × {product.quantity}
                   </Text>
                 </View>
-                <Text style={[styles.productTotal, { color: theme.text }]}>
+                <Text style={[styles.productTotal, { color: theme.text }]} allowFontScaling={false}>
                   ₽{(product.price * product.quantity).toLocaleString()}
                 </Text>
               </View>
             ))}
             
             <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: theme.text }]}>
+              <Text style={[styles.totalLabel, { color: theme.text }]} allowFontScaling={false}>
                 {getTranslation('Total', 'Итого')}
               </Text>
-              <Text style={[styles.totalValue, { color: theme.text }]}>
+              <Text style={[styles.totalValue, { color: theme.text }]} allowFontScaling={false}>
                 ₽{transaction.products.reduce((sum, p) => sum + (p.price * p.quantity), 0).toLocaleString()}
               </Text>
             </View>
@@ -543,6 +544,16 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: scaleSpacing(16),
     paddingBottom: scaleSpacing(32),
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: scaleSpacing(16),
+  },
+  headerTitle: {
+    fontSize: scaleFontSize(20),
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,

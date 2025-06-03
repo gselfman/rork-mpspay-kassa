@@ -22,7 +22,7 @@ export const Input: React.FC<InputProps> = ({
   return (
     <View style={styles.container}>
       {label ? (
-        <Text style={[styles.label, { color: theme.text }]}>
+        <Text style={[styles.label, { color: theme.text }]} allowFontScaling={false}>
           {label}
         </Text>
       ) : null}
@@ -40,11 +40,12 @@ export const Input: React.FC<InputProps> = ({
             style
           ]}
           placeholderTextColor={theme.placeholder}
+          allowFontScaling={false}
           {...props}
         />
       </View>
       {error ? (
-        <Text style={[styles.error, { color: theme.notification }]}>
+        <Text style={[styles.error, { color: theme.notification }]} allowFontScaling={false}>
           {error}
         </Text>
       ) : null}
@@ -77,6 +78,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: Platform.OS === 'ios' ? 12 : 8,
     fontSize: 16,
+    minHeight: 48, // Ensure minimum height for better touch targets
   },
   inputWithIcon: {
     paddingLeft: 40,

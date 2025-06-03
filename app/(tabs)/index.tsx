@@ -436,10 +436,10 @@ export default function HomeScreen() {
             resizeMode="contain"
           />
           <View style={styles.headerTextContainer}>
-            <Text style={[styles.title, { color: theme.text, fontSize: scaleFontSize(24) }]}>
+            <Text style={[styles.title, { color: theme.text, fontSize: scaleFontSize(24) }]} allowFontScaling={false}>
               MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
             </Text>
-            <Text style={[styles.subtitle, { color: theme.placeholder, fontSize: scaleFontSize(14) }]}>
+            <Text style={[styles.subtitle, { color: theme.placeholder, fontSize: scaleFontSize(14) }]} allowFontScaling={false}>
               {language === 'en' 
                 ? 'Mobile terminal for accepting payments' 
                 : 'Мобильная касса для приёма платежей'}
@@ -453,7 +453,7 @@ export default function HomeScreen() {
             <Text style={[styles.balanceTitle, { 
               color: theme.text,
               fontSize: scaleFontSize(16)
-            }]}>
+            }]} allowFontScaling={false}>
               {language === 'en' ? 'Current Balance' : 'Текущий баланс'}
             </Text>
             <TouchableOpacity 
@@ -472,12 +472,12 @@ export default function HomeScreen() {
           <Text style={[styles.balanceAmount, { 
             color: theme.text,
             fontSize: scaleFontSize(isSmallDevice ? 28 : isLargeDevice ? 36 : 32)
-          }]}>
+          }]} allowFontScaling={false}>
             ₽{balance !== null ? balance.toLocaleString(undefined, {maximumFractionDigits: 2}) : '—'}
           </Text>
           
           {accountName && (
-            <Text style={[styles.accountName, { color: theme.placeholder }]}>
+            <Text style={[styles.accountName, { color: theme.placeholder }]} allowFontScaling={false}>
               {accountName}
             </Text>
           )}
@@ -488,7 +488,7 @@ export default function HomeScreen() {
               <Text style={[styles.lastRefreshedText, { 
                 color: theme.placeholder,
                 fontSize: scaleFontSize(12)
-              }]}>
+              }]} allowFontScaling={false}>
                 {language === 'en' ? 'Last updated: ' : 'Последнее обновление: '}
                 {lastRefreshed.toLocaleTimeString()}
               </Text>
@@ -498,7 +498,7 @@ export default function HomeScreen() {
         
         {/* Quick Actions - MOVED BEFORE STATISTICS */}
         <View style={styles.actionsContainer}>
-          <Text style={[styles.sectionTitle, { color: theme.text, fontSize: scaleFontSize(18) }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text, fontSize: scaleFontSize(18) }]} allowFontScaling={false}>
             {language === 'en' ? 'Quick Actions' : 'Быстрые действия'}
           </Text>
           
@@ -513,7 +513,7 @@ export default function HomeScreen() {
               <Text style={[styles.actionButtonText, { 
                 color: theme.text,
                 fontSize: scaleFontSize(isSmallDevice ? 12 : 14)
-              }]}>
+              }]} allowFontScaling={false}>
                 {language === 'en' ? 'New Payment' : 'Новый платеж'}
               </Text>
             </TouchableOpacity>
@@ -528,7 +528,7 @@ export default function HomeScreen() {
               <Text style={[styles.actionButtonText, { 
                 color: theme.text,
                 fontSize: scaleFontSize(isSmallDevice ? 12 : 14)
-              }]}>
+              }]} allowFontScaling={false}>
                 {language === 'en' ? 'Withdraw' : 'Вывод средств'}
               </Text>
             </TouchableOpacity>
@@ -543,7 +543,7 @@ export default function HomeScreen() {
               <Text style={[styles.actionButtonText, { 
                 color: theme.text,
                 fontSize: scaleFontSize(isSmallDevice ? 12 : 14)
-              }]}>
+              }]} allowFontScaling={false}>
                 {language === 'en' ? 'History' : 'История'}
               </Text>
             </TouchableOpacity>
@@ -555,7 +555,7 @@ export default function HomeScreen() {
           <Text style={[styles.sectionTitle, { 
             color: theme.text,
             fontSize: scaleFontSize(18),
-          }]}>
+          }]} allowFontScaling={false}>
             {language === 'en' ? 'Statistics' : 'Статистика'}
           </Text>
           <TouchableOpacity 
@@ -580,13 +580,13 @@ export default function HomeScreen() {
               <Text style={[styles.statValue, { 
                 color: theme.text,
                 fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
-              }]}>
+              }]} allowFontScaling={false}>
                 {stats.successfulOperationsMonth}
               </Text>
               <Text style={[styles.statLabel, { 
                 color: theme.placeholder,
                 fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
-              }]}>
+              }]} allowFontScaling={false}>
                 {language === 'en' ? 'Operations (30 days)' : 'Операций (30 дней)'}
               </Text>
             </Card>
@@ -598,13 +598,13 @@ export default function HomeScreen() {
               <Text style={[styles.statValue, { 
                 color: theme.text,
                 fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
-              }]}>
+              }]} allowFontScaling={false}>
                 {stats.successfulOperationsToday}
               </Text>
               <Text style={[styles.statLabel, { 
                 color: theme.placeholder,
                 fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
-              }]}>
+              }]} allowFontScaling={false}>
                 {language === 'en' ? 'Operations Today' : 'Операций сегодня'}
               </Text>
             </Card>
@@ -618,13 +618,13 @@ export default function HomeScreen() {
               <Text style={[styles.statValue, { 
                 color: theme.text,
                 fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
-              }]}>
+              }]} allowFontScaling={false}>
                 ₽{stats.incomeMonth.toLocaleString(undefined, {maximumFractionDigits: 2})}
               </Text>
               <Text style={[styles.statLabel, { 
                 color: theme.placeholder,
                 fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
-              }]}>
+              }]} allowFontScaling={false}>
                 {language === 'en' ? 'Income (30 days)' : 'Доход (30 дней)'}
               </Text>
             </Card>
@@ -636,13 +636,13 @@ export default function HomeScreen() {
               <Text style={[styles.statValue, { 
                 color: theme.text,
                 fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
-              }]}>
+              }]} allowFontScaling={false}>
                 ₽{stats.incomeToday.toLocaleString(undefined, {maximumFractionDigits: 2})}
               </Text>
               <Text style={[styles.statLabel, { 
                 color: theme.placeholder,
                 fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
-              }]}>
+              }]} allowFontScaling={false}>
                 {language === 'en' ? 'Income Today' : 'Доход сегодня'}
               </Text>
             </Card>
@@ -655,14 +655,14 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { 
               color: theme.text,
               fontSize: scaleFontSize(18)
-            }]}>
+            }]} allowFontScaling={false}>
               {language === 'en' ? 'Recent Transactions' : 'Последние операции'}
             </Text>
             <TouchableOpacity onPress={handleViewHistory}>
               <Text style={[styles.viewAllText, { 
                 color: theme.primary,
                 fontSize: scaleFontSize(14)
-              }]}>
+              }]} allowFontScaling={false}>
                 {language === 'en' ? 'View All' : 'Смотреть все'}
               </Text>
             </TouchableOpacity>
@@ -684,7 +684,7 @@ export default function HomeScreen() {
                   onPress={() => handleViewTransactionDetails(transaction.id)}
                 >
                   <View style={styles.transactionHeader}>
-                    <Text style={[styles.transactionIdLarge, { color: theme.text }]}>
+                    <Text style={[styles.transactionIdLarge, { color: theme.text }]} allowFontScaling={false}>
                       {transaction.id}
                     </Text>
                     <View style={styles.statusContainer}>
@@ -704,7 +704,7 @@ export default function HomeScreen() {
                               ? theme.notification 
                               : theme.warning 
                         }
-                      ]}>
+                      ]} allowFontScaling={false}>
                         {transaction.paymentStatus === 3 
                           ? (language === 'en' ? 'Completed' : 'Оплачен') 
                           : transaction.paymentStatus === 2 
@@ -716,20 +716,20 @@ export default function HomeScreen() {
                   
                   <View style={styles.transactionDetails}>
                     <View style={styles.transactionDetail}>
-                      <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+                      <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                         {language === 'en' ? 'Amount:' : 'Сумма:'}
                       </Text>
-                      <Text style={[styles.detailValue, { color: theme.text }]}>
+                      <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
                         ₽{transaction.amount.toLocaleString(undefined, {maximumFractionDigits: 2})}
                       </Text>
                     </View>
                     
                     {transaction.finishedAt && (
                       <View style={styles.transactionDetail}>
-                        <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+                        <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                           {language === 'en' ? 'Date:' : 'Дата:'}
                         </Text>
-                        <Text style={[styles.detailValue, { color: theme.text }]}>
+                        <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
                           {new Date(transaction.finishedAt).toLocaleString()}
                         </Text>
                       </View>
@@ -737,13 +737,14 @@ export default function HomeScreen() {
                     
                     {transaction.comment && (
                       <View style={styles.transactionDetail}>
-                        <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+                        <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                           {language === 'en' ? 'Comment:' : 'Комментарий:'}
                         </Text>
                         <Text 
                           style={[styles.detailValue, { color: theme.text }]}
                           numberOfLines={1}
                           ellipsizeMode="tail"
+                          allowFontScaling={false}
                         >
                           {transaction.comment}
                         </Text>
@@ -752,13 +753,14 @@ export default function HomeScreen() {
                     
                     {transaction.paymentStatus === 3 && transaction.tag && (
                       <View style={styles.transactionDetail}>
-                        <Text style={[styles.detailLabel, { color: theme.placeholder }]}>
+                        <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                           {language === 'en' ? 'SBP ID:' : 'СБП ID:'}
                         </Text>
                         <Text 
                           style={[styles.detailValue, { color: theme.text }]}
                           numberOfLines={1}
                           ellipsizeMode="tail"
+                          allowFontScaling={false}
                         >
                           {transaction.tag}
                         </Text>
@@ -777,7 +779,7 @@ export default function HomeScreen() {
               <Text style={[styles.emptyTransactionsText, { 
                 color: theme.placeholder,
                 fontSize: scaleFontSize(14)
-              }]}>
+              }]} allowFontScaling={false}>
                 {language === 'en' 
                   ? 'No recent transactions found' 
                   : 'Нет недавних транзакций'}
@@ -788,7 +790,7 @@ export default function HomeScreen() {
         
         {/* Transaction Check Form */}
         <Card style={styles.transactionCheckCard}>
-          <Text style={[styles.transactionCheckTitle, { color: theme.text }]}>
+          <Text style={[styles.transactionCheckTitle, { color: theme.text }]} allowFontScaling={false}>
             {language === 'en' ? 'Check Transaction Status' : 'Проверить статус операции'}
           </Text>
           
@@ -807,6 +809,7 @@ export default function HomeScreen() {
               value={transactionIdToCheck}
               onChangeText={setTransactionIdToCheck}
               keyboardType="numeric"
+              allowFontScaling={false}
             />
             
             <Button
@@ -819,7 +822,7 @@ export default function HomeScreen() {
           </View>
           
           {transactionCheckError ? (
-            <Text style={[styles.transactionCheckError, { color: theme.notification }]}>
+            <Text style={[styles.transactionCheckError, { color: theme.notification }]} allowFontScaling={false}>
               {transactionCheckError}
             </Text>
           ) : null}
@@ -843,7 +846,7 @@ export default function HomeScreen() {
                         ? theme.notification 
                         : theme.warning 
                   }
-                ]}>
+                ]} allowFontScaling={false}>
                   {checkedTransaction.status === 'completed' 
                     ? (language === 'en' ? 'Completed' : 'Оплачен') 
                     : checkedTransaction.status === 'failed' 
@@ -854,20 +857,20 @@ export default function HomeScreen() {
               
               <View style={styles.checkedTransactionDetails}>
                 <View style={styles.checkedTransactionDetail}>
-                  <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]}>
+                  <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                     {language === 'en' ? 'Amount:' : 'Сумма:'}
                   </Text>
-                  <Text style={[styles.checkedTransactionValue, { color: theme.text }]}>
+                  <Text style={[styles.checkedTransactionValue, { color: theme.text }]} allowFontScaling={false}>
                     ₽{checkedTransaction.amount.toLocaleString(undefined, {maximumFractionDigits: 2})}
                   </Text>
                 </View>
                 
                 {checkedTransaction.commission !== undefined && (
                   <View style={styles.checkedTransactionDetail}>
-                    <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]}>
+                    <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                       {language === 'en' ? 'Commission:' : 'Комиссия:'}
                     </Text>
-                    <Text style={[styles.checkedTransactionValue, { color: theme.text }]}>
+                    <Text style={[styles.checkedTransactionValue, { color: theme.text }]} allowFontScaling={false}>
                       ₽{checkedTransaction.commission.toLocaleString(undefined, {maximumFractionDigits: 2})}
                     </Text>
                   </View>
@@ -875,10 +878,10 @@ export default function HomeScreen() {
                 
                 {checkedTransaction.customerInfo && (
                   <View style={styles.checkedTransactionDetail}>
-                    <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]}>
+                    <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                       {language === 'en' ? 'Comment:' : 'Комментарий:'}
                     </Text>
-                    <Text style={[styles.checkedTransactionValue, { color: theme.text }]}>
+                    <Text style={[styles.checkedTransactionValue, { color: theme.text }]} allowFontScaling={false}>
                       {checkedTransaction.customerInfo}
                     </Text>
                   </View>
@@ -886,13 +889,14 @@ export default function HomeScreen() {
                 
                 {checkedTransaction.tag && (
                   <View style={styles.checkedTransactionDetail}>
-                    <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]}>
+                    <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                       {language === 'en' ? 'SBP ID:' : 'СБП ID:'}
                     </Text>
                     <Text 
                       style={[styles.checkedTransactionValue, { color: theme.text }]}
                       numberOfLines={1}
                       ellipsizeMode="tail"
+                      allowFontScaling={false}
                     >
                       {checkedTransaction.tag}
                     </Text>
@@ -914,13 +918,13 @@ export default function HomeScreen() {
             <Text style={[styles.merchantName, { 
               color: theme.text,
               fontSize: scaleFontSize(16)
-            }]}>
+            }]} allowFontScaling={false}>
               {credentials.merchantName || (language === 'en' ? 'Your Account' : 'Ваш аккаунт')}
             </Text>
             <Text style={[styles.merchantId, { 
               color: theme.placeholder,
               fontSize: scaleFontSize(14)
-            }]}>
+            }]} allowFontScaling={false}>
               ID: {credentials.clientId}
             </Text>
           </View>

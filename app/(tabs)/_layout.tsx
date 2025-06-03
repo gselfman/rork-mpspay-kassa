@@ -65,6 +65,7 @@ export default function TabLayout() {
         options={{
           title: language === 'en' ? 'Home' : 'Главная',
           tabBarIcon: ({ color }) => <Home size={tabBarConfig.iconSize} color={color} />,
+          headerTitle: language === 'en' ? 'Home' : 'Главная',
         }}
       />
       
@@ -73,6 +74,7 @@ export default function TabLayout() {
         options={{
           title: language === 'en' ? 'Payment' : 'Оплата',
           tabBarIcon: ({ color }) => <CreditCard size={tabBarConfig.iconSize} color={color} />,
+          headerTitle: language === 'en' ? 'Payment' : 'Оплата',
         }}
       />
       
@@ -81,6 +83,7 @@ export default function TabLayout() {
         options={{
           title: language === 'en' ? 'Withdraw' : 'Вывод',
           tabBarIcon: ({ color }) => <DollarSign size={tabBarConfig.iconSize} color={color} />,
+          headerTitle: language === 'en' ? 'Withdraw' : 'Вывод',
         }}
       />
       
@@ -89,6 +92,7 @@ export default function TabLayout() {
         options={{
           title: language === 'en' ? 'History' : 'История',
           tabBarIcon: ({ color }) => <History size={tabBarConfig.iconSize} color={color} />,
+          headerTitle: language === 'en' ? 'History' : 'История',
         }}
       />
       
@@ -97,6 +101,7 @@ export default function TabLayout() {
         options={{
           title: language === 'en' ? 'Settings' : 'Настройки',
           tabBarIcon: ({ color }) => <Settings size={tabBarConfig.iconSize} color={color} />,
+          headerTitle: language === 'en' ? 'Settings' : 'Настройки',
         }}
       />
     </Tabs>

@@ -198,20 +198,19 @@ export default function HistoryScreen() {
     
     if (filterDateRange) {
       const now = new Date();
-      let startDate: Date;
       
       switch (filterDateRange) {
         case 'today':
           // Start of today (00:00:00)
-          startDate = new Date(now);
-          startDate.setHours(0, 0, 0, 0);
+          const startOfToday = new Date(now);
+          startOfToday.setHours(0, 0, 0, 0);
           
           dateFiltered = allTransactions.filter(t => {
             // Use createdAt for filtering
             if (!t.createdAt) return false;
             
             const transactionDate = new Date(t.createdAt);
-            return !isNaN(transactionDate.getTime()) && transactionDate >= startDate;
+            return !isNaN(transactionDate.getTime()) && transactionDate >= startOfToday;
           });
           
           console.log(`Filtered to ${dateFiltered.length} transactions for today`);
@@ -219,15 +218,15 @@ export default function HistoryScreen() {
           
         case 'week':
           // 7 days ago
-          startDate = new Date(now);
-          startDate.setDate(now.getDate() - 7);
+          const weekAgo = new Date(now);
+          weekAgo.setDate(now.getDate() - 7);
           
           dateFiltered = allTransactions.filter(t => {
             // Use createdAt for filtering
             if (!t.createdAt) return false;
             
             const transactionDate = new Date(t.createdAt);
-            return !isNaN(transactionDate.getTime()) && transactionDate >= startDate;
+            return !isNaN(transactionDate.getTime()) && transactionDate >= weekAgo;
           });
           
           console.log(`Filtered to ${dateFiltered.length} transactions for last 7 days`);
@@ -299,7 +298,7 @@ export default function HistoryScreen() {
       <Text style={[styles.title, { 
         color: theme.text,
         fontSize: scaleFontSize(Platform.OS === 'android' ? 20 : 22)
-      }]}>
+      }]} allowFontScaling={false}>
         {language === 'en' ? 'Report' : 'Отчёт'}
       </Text>
       
@@ -334,7 +333,7 @@ export default function HistoryScreen() {
           <Text style={[styles.loadingText, { 
             color: theme.text,
             fontSize: scaleFontSize(16)
-          }]}>
+          }]} allowFontScaling={false}>
             {language === 'en' ? 'Loading transactions...' : 'Загрузка транзакций...'}
           </Text>
         </View>
@@ -410,7 +409,7 @@ export default function HistoryScreen() {
         <Text style={[styles.filterText, { 
           color: theme.text,
           fontSize: scaleFontSize(14)
-        }]}>
+        }]} allowFontScaling={false}>
           {filterText}
         </Text>
         
@@ -425,7 +424,7 @@ export default function HistoryScreen() {
           <Text style={[styles.clearFilterText, { 
             color: theme.primary,
             fontSize: scaleFontSize(14)
-          }]}>
+          }]} allowFontScaling={false}>
             {language === 'en' ? 'Clear' : 'Очистить'}
           </Text>
         </TouchableOpacity>
@@ -439,7 +438,7 @@ export default function HistoryScreen() {
       onPress={() => router.push('/transaction/check')}
     >
       <CheckCircle size={20} color={theme.primary} />
-      <Text style={[styles.checkStatusText, { color: theme.text }]}>
+      <Text style={[styles.checkStatusText, { color: theme.text }]} allowFontScaling={false}>
         {language === 'en' ? 'Check Transaction Status' : 'Проверить статус транзакции'}
       </Text>
     </TouchableOpacity>
@@ -458,7 +457,7 @@ export default function HistoryScreen() {
         <Text style={[
           styles.statusFilterButtonText,
           { color: showSuccessful ? theme.primary : theme.text }
-        ]}>
+        ]} allowFontScaling={false}>
           {language === 'en' ? 'Successful' : 'Успешные'}
         </Text>
       </TouchableOpacity>
@@ -474,7 +473,7 @@ export default function HistoryScreen() {
         <Text style={[
           styles.statusFilterButtonText,
           { color: showPending ? theme.primary : theme.text }
-        ]}>
+        ]} allowFontScaling={false}>
           {language === 'en' ? 'Pending' : 'В ожидании'}
         </Text>
       </TouchableOpacity>
@@ -494,7 +493,7 @@ export default function HistoryScreen() {
         <Text style={[
           styles.dateButtonText,
           { color: filterDateRange === 'today' ? theme.primary : theme.text }
-        ]}>
+        ]} allowFontScaling={false}>
           {language === 'en' ? 'Today' : 'Сегодня'}
         </Text>
       </TouchableOpacity>
@@ -510,7 +509,7 @@ export default function HistoryScreen() {
         <Text style={[
           styles.dateButtonText,
           { color: filterDateRange === 'week' ? theme.primary : theme.text }
-        ]}>
+        ]} allowFontScaling={false}>
           {language === 'en' ? 'Week' : 'Неделя'}
         </Text>
       </TouchableOpacity>
@@ -526,7 +525,7 @@ export default function HistoryScreen() {
         <Text style={[
           styles.dateButtonText,
           { color: filterDateRange === 'month' ? theme.primary : theme.text }
-        ]}>
+        ]} allowFontScaling={false}>
           {language === 'en' ? 'Month' : 'Месяц'}
         </Text>
       </TouchableOpacity>
@@ -569,7 +568,7 @@ export default function HistoryScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]} allowFontScaling={false}>
               {language === 'en' ? 'Custom Date Range' : 'Произвольный период'}
             </Text>
             
@@ -577,7 +576,7 @@ export default function HistoryScreen() {
               <View style={[styles.customDateContainer, { borderColor: theme.border }]}>
                 <View style={styles.customDateInputs}>
                   <View style={styles.dateInputContainer}>
-                    <Text style={[styles.dateInputLabel, { color: theme.placeholder }]}>
+                    <Text style={[styles.dateInputLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                       {language === 'en' ? 'From' : 'С'}
                     </Text>
                     <View style={[styles.dateInput, { 
@@ -590,12 +589,13 @@ export default function HistoryScreen() {
                         onChangeText={setCustomStartDate}
                         style={{ color: theme.text }}
                         placeholderTextColor={theme.placeholder}
+                        allowFontScaling={false}
                       />
                     </View>
                   </View>
                   
                   <View style={styles.dateInputContainer}>
-                    <Text style={[styles.dateInputLabel, { color: theme.placeholder }]}>
+                    <Text style={[styles.dateInputLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                       {language === 'en' ? 'To' : 'По'}
                     </Text>
                     <View style={[styles.dateInput, { 
@@ -608,13 +608,14 @@ export default function HistoryScreen() {
                         onChangeText={setCustomEndDate}
                         style={{ color: theme.text }}
                         placeholderTextColor={theme.placeholder}
+                        allowFontScaling={false}
                       />
                     </View>
                   </View>
                 </View>
                 
                 {dateFilterError && (
-                  <Text style={[styles.dateFilterError, { color: theme.notification }]}>
+                  <Text style={[styles.dateFilterError, { color: theme.notification }]} allowFontScaling={false}>
                     {dateFilterError}
                   </Text>
                 )}

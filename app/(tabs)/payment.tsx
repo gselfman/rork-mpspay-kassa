@@ -355,14 +355,14 @@ export default function PaymentScreen() {
           <Text style={[styles.title, { 
             color: theme.text,
             fontSize: scaleFontSize(24)
-          }]}>
+          }]} allowFontScaling={false}>
             {getTranslation('Create Payment', 'Создать платеж')}
           </Text>
         </View>
         
         <Card style={styles.card}>
           <View style={styles.amountContainer}>
-            <Text style={[styles.amountLabel, { color: theme.text }]}>
+            <Text style={[styles.amountLabel, { color: theme.text }]} allowFontScaling={false}>
               {getTranslation('Amount, RUB', 'Сумма, руб')}
             </Text>
             <View style={styles.amountInputContainer}>
@@ -382,14 +382,14 @@ export default function PaymentScreen() {
               />
             </View>
             {error && error.includes(getTranslation('Amount', 'Сумма')) && (
-              <Text style={[styles.errorText, { color: theme.notification }]}>
+              <Text style={[styles.errorText, { color: theme.notification }]} allowFontScaling={false}>
                 {error}
               </Text>
             )}
           </View>
           
           <View style={styles.customerContainer}>
-            <Text style={[styles.customerLabel, { color: theme.text }]}>
+            <Text style={[styles.customerLabel, { color: theme.text }]} allowFontScaling={false}>
               {getTranslation('Customer', 'Покупатель')}
             </Text>
             <Input
@@ -405,7 +405,7 @@ export default function PaymentScreen() {
         
         <Card style={styles.productsCard}>
           <View style={styles.productsHeader}>
-            <Text style={[styles.cardTitle, { color: theme.text }]}>
+            <Text style={[styles.cardTitle, { color: theme.text }]} allowFontScaling={false}>
               {getTranslation('Products', 'Товары')}
             </Text>
             <View style={styles.productActions}>
@@ -414,7 +414,7 @@ export default function PaymentScreen() {
                 onPress={() => setShowProductSelector(true)}
               >
                 <ShoppingBag size={16} color="white" />
-                <Text style={styles.selectProductButtonText}>
+                <Text style={styles.selectProductButtonText} allowFontScaling={false}>
                   {getTranslation('Select', 'Выбрать')}
                 </Text>
               </TouchableOpacity>
@@ -432,14 +432,14 @@ export default function PaymentScreen() {
               {products.map((product) => (
                 <View key={product.id} style={[styles.productItem, { backgroundColor: theme.card }]}>
                   <View style={styles.productInfo}>
-                    <Text style={[styles.productName, { color: theme.text }]}>
+                    <Text style={[styles.productName, { color: theme.text }]} allowFontScaling={false}>
                       {product.name}
                     </Text>
                     <View style={styles.productDetails}>
-                      <Text style={[styles.productPrice, { color: theme.text }]}>
+                      <Text style={[styles.productPrice, { color: theme.text }]} allowFontScaling={false}>
                         ₽{product.price.toFixed(2)} × {product.quantity}
                       </Text>
-                      <Text style={[styles.productTotal, { color: theme.text }]}>
+                      <Text style={[styles.productTotal, { color: theme.text }]} allowFontScaling={false}>
                         ₽{(product.price * product.quantity).toFixed(2)}
                       </Text>
                     </View>
@@ -469,10 +469,10 @@ export default function PaymentScreen() {
               ))}
               
               <View style={[styles.totalRow, { borderTopColor: theme.border }]}>
-                <Text style={[styles.totalLabel, { color: theme.text }]}>
+                <Text style={[styles.totalLabel, { color: theme.text }]} allowFontScaling={false}>
                   {getTranslation('Total', 'Итого')}
                 </Text>
-                <Text style={[styles.totalAmount, { color: theme.text }]}>
+                <Text style={[styles.totalAmount, { color: theme.text }]} allowFontScaling={false}>
                   ₽{calculateTotal().toFixed(2)}
                 </Text>
               </View>
@@ -480,7 +480,7 @@ export default function PaymentScreen() {
           ) : (
             <View style={styles.emptyProductsContainer}>
               <ShoppingBag size={48} color={theme.placeholder} style={styles.emptyProductsIcon} />
-              <Text style={[styles.emptyProductsText, { color: theme.text }]}>
+              <Text style={[styles.emptyProductsText, { color: theme.text }]} allowFontScaling={false}>
                 {getTranslation(
                   'No products added yet. Add products or enter amount directly.',
                   'Товары еще не добавлены. Добавьте товары или введите сумму напрямую.'
@@ -491,7 +491,7 @@ export default function PaymentScreen() {
           
           {showProductForm && (
             <View style={[styles.productForm, { backgroundColor: theme.card }]}>
-              <Text style={[styles.productFormTitle, { color: theme.text }]}>
+              <Text style={[styles.productFormTitle, { color: theme.text }]} allowFontScaling={false}>
                 {getTranslation('Add Product', 'Добавить товар')}
               </Text>
               
@@ -556,7 +556,7 @@ export default function PaymentScreen() {
           
           {showProductSelector && storeProducts.length > 0 && (
             <View style={[styles.productSelector, { backgroundColor: theme.card }]}>
-              <Text style={[styles.productSelectorTitle, { color: theme.text }]}>
+              <Text style={[styles.productSelectorTitle, { color: theme.text }]} allowFontScaling={false}>
                 {getTranslation('Select Product', 'Выбрать товар')}
               </Text>
               
@@ -567,10 +567,10 @@ export default function PaymentScreen() {
                     style={[styles.productSelectorItem, { borderBottomColor: theme.border }]}
                     onPress={() => handleSelectProduct(product)}
                   >
-                    <Text style={[styles.productSelectorName, { color: theme.text }]}>
+                    <Text style={[styles.productSelectorName, { color: theme.text }]} allowFontScaling={false}>
                       {product.name}
                     </Text>
-                    <Text style={[styles.productSelectorPrice, { color: theme.text }]}>
+                    <Text style={[styles.productSelectorPrice, { color: theme.text }]} allowFontScaling={false}>
                       ₽{product.price.toFixed(2)}
                     </Text>
                   </TouchableOpacity>
@@ -588,10 +588,10 @@ export default function PaymentScreen() {
           
           {showProductSelector && storeProducts.length === 0 && (
             <View style={[styles.productSelector, { backgroundColor: theme.card }]}>
-              <Text style={[styles.productSelectorTitle, { color: theme.text }]}>
+              <Text style={[styles.productSelectorTitle, { color: theme.text }]} allowFontScaling={false}>
                 {getTranslation('No Products Available', 'Нет доступных товаров')}
               </Text>
-              <Text style={[styles.emptyProductsText, { color: theme.text }]}>
+              <Text style={[styles.emptyProductsText, { color: theme.text }]} allowFontScaling={false}>
                 {getTranslation(
                   'You have not added any products yet. Add a new product first.',
                   'Вы еще не добавили ни одного товара. Сначала добавьте новый товар.'
