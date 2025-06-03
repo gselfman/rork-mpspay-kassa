@@ -14,7 +14,7 @@ import {
   Image,
   TextInput,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/Button';
@@ -198,19 +198,21 @@ export default function HistoryScreen() {
     
     if (filterDateRange) {
       const now = new Date();
+      now.setHours(0, 0, 0, 0); // Start of today
       
       switch (filterDateRange) {
         case 'today':
-          // Start of today (00:00:00)
-          const startOfToday = new Date(now);
-          startOfToday.setHours(0, 0, 0, 0);
-          
           dateFiltered = allTransactions.filter(t => {
-            // Use createdAt for filtering
             if (!t.createdAt) return false;
             
             const transactionDate = new Date(t.createdAt);
-            return !isNaN(transactionDate.getTime()) && transactionDate >= startOfToday;
+            const transactionDay = new Date(transactionDate);
+            transactionDay.setHours(0, 0, 0, 0); // Start of transaction day
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Start of today
+            
+            return transactionDay.getTime() === today.getTime();
           });
           
           console.log(`Filtered to ${dateFiltered.length} transactions for today`);
@@ -222,11 +224,10 @@ export default function HistoryScreen() {
           weekAgo.setDate(now.getDate() - 7);
           
           dateFiltered = allTransactions.filter(t => {
-            // Use createdAt for filtering
             if (!t.createdAt) return false;
             
             const transactionDate = new Date(t.createdAt);
-            return !isNaN(transactionDate.getTime()) && transactionDate >= weekAgo;
+            return transactionDate >= weekAgo;
           });
           
           console.log(`Filtered to ${dateFiltered.length} transactions for last 7 days`);
@@ -240,13 +241,10 @@ export default function HistoryScreen() {
             endDate.setHours(23, 59, 59, 999);
             
             dateFiltered = allTransactions.filter(t => {
-              // Use createdAt for filtering
               if (!t.createdAt) return false;
               
               const transactionDate = new Date(t.createdAt);
-              return !isNaN(transactionDate.getTime()) && 
-                     transactionDate >= startDate && 
-                     transactionDate <= endDate;
+              return transactionDate >= startDate && transactionDate <= endDate;
             });
             
             console.log(`Filtered to ${dateFiltered.length} transactions for custom range`);
@@ -534,6 +532,7 @@ export default function HistoryScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Stack.Screen options={{ headerShown: false }} />
       {renderHeader()}
       
       {renderStatusFilters()}

@@ -11,7 +11,7 @@ import {
   Share,
   Linking
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
 import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
@@ -282,10 +282,14 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     }
   }, [transactionId, transactionData, transactions, addTransaction, fetchTransactionStatus]);
   
+  // Set screen title
+  const screenTitle = getTranslation('Transaction Details', 'Детали транзакции');
+  
   // Render loading state
   if (isLoading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <Stack.Screen options={{ title: screenTitle, headerShown: true }} />
         <ActivityIndicator size="large" color={theme.primary} />
         <Text style={[styles.loadingText, { color: theme.text }]} allowFontScaling={false}>
           {getTranslation('Loading transaction details...', 'Загрузка деталей транзакции...')}
@@ -298,6 +302,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
   if (!transaction) {
     return (
       <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
+        <Stack.Screen options={{ title: screenTitle, headerShown: true }} />
         <AlertCircle size={48} color={theme.notification} />
         <Text style={[styles.errorTitle, { color: theme.text }]} allowFontScaling={false}>
           {getTranslation('Transaction Not Found', 'Транзакция не найдена')}
@@ -317,10 +322,9 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     );
   }
   
-  const screenTitle = getTranslation('Transaction Details', 'Детали транзакции');
-  
   return (
     <>
+      <Stack.Screen options={{ title: screenTitle, headerShown: true }} />
       <ScrollView 
         style={[styles.container, { backgroundColor: theme.background }]}
         contentContainerStyle={styles.contentContainer}

@@ -30,6 +30,7 @@ export default function Layout() {
         contentStyle: {
           backgroundColor: theme.background,
         },
+        headerShown: true,
       }}
     />
   );
