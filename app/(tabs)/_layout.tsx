@@ -9,7 +9,7 @@ import { useLanguageStore } from '@/store/language-store';
 export default function TabsLayout() {
   const colorScheme = useColorScheme();
   const { darkMode, setDarkMode } = useThemeStore();
-  const { language } = useLanguageStore();
+  const { language, setLanguage } = useLanguageStore();
   
   // Set theme based on device settings
   useEffect(() => {
@@ -17,6 +17,11 @@ export default function TabsLayout() {
       setDarkMode(colorScheme === 'dark');
     }
   }, [colorScheme]);
+  
+  // Set default language to Russian
+  useEffect(() => {
+    setLanguage('ru');
+  }, []);
   
   const theme = darkMode ? colors.dark : colors.light;
   
@@ -44,6 +49,7 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'Home' : 'Главная',
           tabBarIcon: ({ color }) => <Home size={24} color={color} />,
+          headerTitle: '',
         }}
       />
       <Tabs.Screen
@@ -51,6 +57,7 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'Payment' : 'Оплата',
           tabBarIcon: ({ color }) => <CreditCard size={24} color={color} />,
+          headerTitle: '',
         }}
       />
       <Tabs.Screen
@@ -58,6 +65,7 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'History' : 'История',
           tabBarIcon: ({ color }) => <Clock size={24} color={color} />,
+          headerTitle: '',
         }}
       />
       <Tabs.Screen
@@ -65,6 +73,7 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'Settings' : 'Настройки',
           tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
+          headerTitle: '',
         }}
       />
     </Tabs>

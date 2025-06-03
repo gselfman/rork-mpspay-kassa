@@ -14,7 +14,7 @@ import {
   Image,
   TextInput,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { TransactionItem } from '@/components/TransactionItem';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/Button';
@@ -129,10 +129,8 @@ export default function HistoryScreen() {
   const handleTransactionPress = (transaction: PaymentHistoryItem) => {
     // Navigate to transaction details with the payment history item data
     router.push({
-      pathname: '/transaction/[id]',
+      pathname: `/transaction/${transaction.id}`,
       params: { 
-        id: transaction.id,
-        // Pass additional data as JSON string
         data: JSON.stringify(transaction)
       }
     });
@@ -198,6 +196,7 @@ export default function HistoryScreen() {
     
     if (filterDateRange) {
       const now = new Date();
+      now.setHours(0, 0, 0, 0); // Start of today
       
       switch (filterDateRange) {
         case 'today':
@@ -206,12 +205,12 @@ export default function HistoryScreen() {
             
             const transactionDate = new Date(t.createdAt);
             const today = new Date();
+            today.setHours(0, 0, 0, 0); // Start of today
             
-            return (
-              transactionDate.getDate() === today.getDate() &&
-              transactionDate.getMonth() === today.getMonth() &&
-              transactionDate.getFullYear() === today.getFullYear()
-            );
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
+            
+            return transactionDate >= today && transactionDate < tomorrow;
           });
           
           console.log(`Filtered to ${dateFiltered.length} transactions for today`);
@@ -235,6 +234,8 @@ export default function HistoryScreen() {
         case 'custom':
           if (customStartDate && customEndDate) {
             const startDate = new Date(customStartDate);
+            startDate.setHours(0, 0, 0, 0); // Start of start date
+            
             // Set end date to end of the day (23:59:59.999)
             const endDate = new Date(customEndDate);
             endDate.setHours(23, 59, 59, 999);
@@ -530,123 +531,132 @@ export default function HistoryScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {renderHeader()}
-      
-      {renderStatusFilters()}
-      
-      {renderDateButtons()}
-      
-      {renderFilterBanner()}
-      
-      <FlatList
-        data={filteredTransactions}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={renderEmpty}
-        ListFooterComponent={renderCheckStatusButton}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            colors={[theme.primary]}
-            tintColor={theme.primary}
-          />
-        }
+    <>
+      <Stack.Screen 
+        options={{
+          title: language === 'en' ? 'History' : 'История',
+          headerShown: false
+        }}
       />
       
-      {/* Date Filter Modal */}
-      <Modal
-        visible={showDateFilterModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowDateFilterModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]} allowFontScaling={false}>
-              {language === 'en' ? 'Custom Date Range' : 'Произвольный период'}
-            </Text>
-            
-            <ScrollView style={styles.modalScroll}>
-              <View style={[styles.customDateContainer, { borderColor: theme.border }]}>
-                <View style={styles.customDateInputs}>
-                  <View style={styles.dateInputContainer}>
-                    <Text style={[styles.dateInputLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                      {language === 'en' ? 'From' : 'С'}
-                    </Text>
-                    <View style={[styles.dateInput, { 
-                      borderColor: theme.border,
-                      backgroundColor: theme.inputBackground
-                    }]}>
-                      <TextInput
-                        placeholder="YYYY-MM-DD"
-                        value={customStartDate}
-                        onChangeText={setCustomStartDate}
-                        style={{ color: theme.text }}
-                        placeholderTextColor={theme.placeholder}
-                        allowFontScaling={false}
-                      />
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        {renderHeader()}
+        
+        {renderStatusFilters()}
+        
+        {renderDateButtons()}
+        
+        {renderFilterBanner()}
+        
+        <FlatList
+          data={filteredTransactions}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={renderEmpty}
+          ListFooterComponent={renderCheckStatusButton}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[theme.primary]}
+              tintColor={theme.primary}
+            />
+          }
+        />
+        
+        {/* Date Filter Modal */}
+        <Modal
+          visible={showDateFilterModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowDateFilterModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]} allowFontScaling={false}>
+                {language === 'en' ? 'Custom Date Range' : 'Произвольный период'}
+              </Text>
+              
+              <ScrollView style={styles.modalScroll}>
+                <View style={[styles.customDateContainer, { borderColor: theme.border }]}>
+                  <View style={styles.customDateInputs}>
+                    <View style={styles.dateInputContainer}>
+                      <Text style={[styles.dateInputLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                        {language === 'en' ? 'From' : 'С'}
+                      </Text>
+                      <View style={[styles.dateInput, { 
+                        borderColor: theme.border,
+                        backgroundColor: theme.inputBackground
+                      }]}>
+                        <TextInput
+                          placeholder="YYYY-MM-DD"
+                          value={customStartDate}
+                          onChangeText={setCustomStartDate}
+                          style={{ color: theme.text }}
+                          placeholderTextColor={theme.placeholder}
+                          allowFontScaling={false}
+                        />
+                      </View>
+                    </View>
+                    
+                    <View style={styles.dateInputContainer}>
+                      <Text style={[styles.dateInputLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                        {language === 'en' ? 'To' : 'По'}
+                      </Text>
+                      <View style={[styles.dateInput, { 
+                        borderColor: theme.border,
+                        backgroundColor: theme.inputBackground
+                      }]}>
+                        <TextInput
+                          placeholder="YYYY-MM-DD"
+                          value={customEndDate}
+                          onChangeText={setCustomEndDate}
+                          style={{ color: theme.text }}
+                          placeholderTextColor={theme.placeholder}
+                          allowFontScaling={false}
+                        />
+                      </View>
                     </View>
                   </View>
                   
-                  <View style={styles.dateInputContainer}>
-                    <Text style={[styles.dateInputLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                      {language === 'en' ? 'To' : 'По'}
+                  {dateFilterError && (
+                    <Text style={[styles.dateFilterError, { color: theme.notification }]} allowFontScaling={false}>
+                      {dateFilterError}
                     </Text>
-                    <View style={[styles.dateInput, { 
-                      borderColor: theme.border,
-                      backgroundColor: theme.inputBackground
-                    }]}>
-                      <TextInput
-                        placeholder="YYYY-MM-DD"
-                        value={customEndDate}
-                        onChangeText={setCustomEndDate}
-                        style={{ color: theme.text }}
-                        placeholderTextColor={theme.placeholder}
-                        allowFontScaling={false}
-                      />
-                    </View>
-                  </View>
+                  )}
+                  
+                  <Button
+                    title={language === 'en' ? 'Apply Custom Range' : 'Применить'}
+                    onPress={() => applyDateFilter('custom')}
+                    style={styles.applyCustomButton}
+                    size="small"
+                  />
                 </View>
-                
-                {dateFilterError && (
-                  <Text style={[styles.dateFilterError, { color: theme.notification }]} allowFontScaling={false}>
-                    {dateFilterError}
-                  </Text>
-                )}
-                
+              </ScrollView>
+              
+              <View style={styles.modalButtons}>
                 <Button
-                  title={language === 'en' ? 'Apply Custom Range' : 'Применить'}
-                  onPress={() => applyDateFilter('custom')}
-                  style={styles.applyCustomButton}
-                  size="small"
+                  title={language === 'en' ? 'Close' : 'Закрыть'}
+                  variant="outline"
+                  onPress={() => setShowDateFilterModal(false)}
+                  style={styles.modalButton}
                 />
               </View>
-            </ScrollView>
-            
-            <View style={styles.modalButtons}>
-              <Button
-                title={language === 'en' ? 'Close' : 'Закрыть'}
-                variant="outline"
-                onPress={() => setShowDateFilterModal(false)}
-                style={styles.modalButton}
-              />
             </View>
           </View>
-        </View>
-      </Modal>
-      
-      {/* Error Popup */}
-      <ErrorPopup
-        visible={showErrorPopup}
-        message={error || (language === 'en' ? 'An error occurred' : 'Произошла ошибка')}
-        onClose={() => setShowErrorPopup(false)}
-        darkMode={darkMode}
-        title={language === 'en' ? 'Error' : 'Ошибка'}
-      />
-    </View>
+        </Modal>
+        
+        {/* Error Popup */}
+        <ErrorPopup
+          visible={showErrorPopup}
+          message={error || (language === 'en' ? 'An error occurred' : 'Произошла ошибка')}
+          onClose={() => setShowErrorPopup(false)}
+          darkMode={darkMode}
+          title={language === 'en' ? 'Error' : 'Ошибка'}
+        />
+      </View>
+    </>
   );
 }
 

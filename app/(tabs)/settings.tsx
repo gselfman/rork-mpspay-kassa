@@ -9,7 +9,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
 import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
@@ -133,159 +133,174 @@ export default function SettingsScreen() {
   );
   
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Image 
-            source={{ uri: IMAGES.PAYMENT_LOGO }} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={[styles.title, { 
-            color: theme.text,
-            fontSize: scaleFontSize(Platform.OS === 'android' ? 20 : 22)
-          }]}>
-            {language === 'en' ? 'Settings' : 'Настройки'}
-          </Text>
-        </View>
-        
-        {/* Profile Section */}
-        <Card style={styles.profileCard}>
-          <View style={styles.profileInfo}>
-            <View style={[styles.profileAvatar, { backgroundColor: theme.primary + '20' }]}>
-              <User size={32} color={theme.primary} />
-            </View>
-            <View style={styles.profileText}>
-              <Text style={[styles.profileName, { color: theme.text }]}>
-                {credentials?.merchantName || (language === 'en' ? 'Merchant' : 'Мерчант')}
-              </Text>
-              <Text style={[styles.profileEmail, { color: theme.placeholder }]}>
-                {language === 'en' ? 'Client ID' : 'ID клиента'}: {credentials?.clientId || 'N/A'}
-              </Text>
-            </View>
+    <>
+      <Stack.Screen 
+        options={{
+          title: language === 'en' ? 'Settings' : 'Настройки',
+          headerShown: false
+        }}
+      />
+      
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Image 
+              source={{ uri: IMAGES.PAYMENT_LOGO }} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={[styles.title, { 
+              color: theme.text,
+              fontSize: scaleFontSize(Platform.OS === 'android' ? 20 : 22)
+            }]}>
+              {language === 'en' ? 'Settings' : 'Настройки'}
+            </Text>
           </View>
-          <Button
-            title={language === 'en' ? 'Edit Profile' : 'Редактировать профиль'}
-            variant="outline"
-            size="small"
-            onPress={handleEditProfile}
-            style={styles.editButton}
-          />
-        </Card>
-        
-        {/* App Settings */}
-        <Card style={styles.settingsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            {language === 'en' ? 'App Settings' : 'Настройки приложения'}
-          </Text>
           
-          {renderSettingItem(
-            <Globe size={20} color={theme.primary} />,
-            language === 'en' ? 'Language' : 'Язык',
-            language === 'en' ? 'English' : 'Русский',
-            handleLanguageChange
-          )}
+          {/* Profile Section */}
+          <Card style={styles.profileCard}>
+            <View style={styles.profileInfo}>
+              <View style={[styles.profileAvatar, { backgroundColor: theme.primary + '20' }]}>
+                <User size={32} color={theme.primary} />
+              </View>
+              <View style={styles.profileText}>
+                <Text style={[styles.profileName, { color: theme.text }]}>
+                  {credentials?.merchantName || (language === 'en' ? 'Merchant' : 'Мерчант')}
+                </Text>
+                <Text style={[styles.profileEmail, { color: theme.placeholder }]}>
+                  {language === 'en' ? 'Client ID' : 'ID клиента'}: {credentials?.clientId || 'N/A'}
+                </Text>
+              </View>
+            </View>
+            <Button
+              title={language === 'en' ? 'Edit Profile' : 'Редактировать профиль'}
+              variant="outline"
+              size="small"
+              onPress={handleEditProfile}
+              style={styles.editButton}
+            />
+          </Card>
           
-          {renderSettingItem(
-            darkMode ? <Moon size={20} color={theme.primary} /> : <Sun size={20} color={theme.primary} />,
-            language === 'en' ? 'Theme' : 'Тема',
-            darkMode ? (language === 'en' ? 'Dark' : 'Тёмная') : (language === 'en' ? 'Light' : 'Светлая'),
-            toggleDarkMode
-          )}
-          
-          {renderSettingItem(
-            <Bell size={20} color={theme.primary} />,
-            language === 'en' ? 'Notifications' : 'Уведомления',
-            language === 'en' ? 'Manage notification settings' : 'Управление уведомлениями',
-            () => Alert.alert(
+          {/* App Settings */}
+          <Card style={styles.settingsCard}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {language === 'en' ? 'App Settings' : 'Настройки приложения'}
+            </Text>
+            
+            {renderSettingItem(
+              <Globe size={20} color={theme.primary} />,
+              language === 'en' ? 'Language' : 'Язык',
+              language === 'en' ? 'English' : 'Русский',
+              handleLanguageChange
+            )}
+            
+            {renderSettingItem(
+              darkMode ? <Moon size={20} color={theme.primary} /> : <Sun size={20} color={theme.primary} />,
+              language === 'en' ? 'Theme' : 'Тема',
+              darkMode ? (language === 'en' ? 'Dark' : 'Тёмная') : (language === 'en' ? 'Light' : 'Светлая'),
+              toggleDarkMode
+            )}
+            
+            {renderSettingItem(
+              <Bell size={20} color={theme.primary} />,
               language === 'en' ? 'Notifications' : 'Уведомления',
-              language === 'en' ? 'Notification settings will be available in future updates.' : 'Настройки уведомлений будут доступны в будущих обновлениях.'
-            )
-          )}
-        </Card>
-        
-        {/* Products Management */}
-        <Card style={styles.settingsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            {language === 'en' ? 'Products' : 'Товары'}
-          </Text>
+              language === 'en' ? 'Manage notification settings' : 'Управление уведомлениями',
+              () => Alert.alert(
+                language === 'en' ? 'Notifications' : 'Уведомления',
+                language === 'en' ? 'Notification settings will be available in future updates.' : 'Настройки уведомлений будут доступны в будущих обновлениях.'
+              )
+            )}
+          </Card>
           
-          {renderSettingItem(
-            <ShoppingBag size={20} color={theme.primary} />,
-            language === 'en' ? 'Manage Products' : 'Управление товарами',
-            language === 'en' ? 'Add, edit or remove products' : 'Добавление, редактирование или удаление товаров',
-            handleManageProducts
-          )}
-        </Card>
-        
-        {/* Security */}
-        <Card style={styles.settingsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            {language === 'en' ? 'Security' : 'Безопасность'}
-          </Text>
+          {/* Products Management */}
+          <Card style={styles.settingsCard}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {language === 'en' ? 'Products' : 'Товары'}
+            </Text>
+            
+            {renderSettingItem(
+              <ShoppingBag size={20} color={theme.primary} />,
+              language === 'en' ? 'Manage Products' : 'Управление товарами',
+              language === 'en' ? 'Add, edit or remove products' : 'Добавление, редактирование или удаление товаров',
+              handleManageProducts
+            )}
+          </Card>
           
-          {renderSettingItem(
-            <Shield size={20} color={theme.primary} />,
-            language === 'en' ? 'Privacy & Security' : 'Конфиденциальность и безопасность',
-            language === 'en' ? 'Manage your privacy settings' : 'Управление настройками конфиденциальности',
-            () => Alert.alert(
+          {/* Security */}
+          <Card style={styles.settingsCard}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {language === 'en' ? 'Security' : 'Безопасность'}
+            </Text>
+            
+            {renderSettingItem(
+              <Shield size={20} color={theme.primary} />,
               language === 'en' ? 'Privacy & Security' : 'Конфиденциальность и безопасность',
-              language === 'en' ? 'Privacy settings will be available in future updates.' : 'Настройки конфиденциальности будут доступны в будущих обновлениях.'
-            )
-          )}
-        </Card>
-        
-        {/* Support */}
-        <Card style={styles.settingsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            {language === 'en' ? 'Support' : 'Поддержка'}
-          </Text>
+              language === 'en' ? 'Manage your privacy settings' : 'Управление настройками конфиденциальности',
+              () => Alert.alert(
+                language === 'en' ? 'Privacy & Security' : 'Конфиденциальность и безопасность',
+                language === 'en' ? 'Privacy settings will be available in future updates.' : 'Настройки конфиденциальности будут доступны в будущих обновлениях.'
+              )
+            )}
+          </Card>
           
-          {renderSettingItem(
-            <HelpCircle size={20} color={theme.primary} />,
-            language === 'en' ? 'Help & Support' : 'Помощь и поддержка',
-            language === 'en' ? 'Get help with the app' : 'Получить помощь с приложением',
-            () => Alert.alert(
+          {/* Support */}
+          <Card style={styles.settingsCard}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {language === 'en' ? 'Support' : 'Поддержка'}
+            </Text>
+            
+            {renderSettingItem(
+              <HelpCircle size={20} color={theme.primary} />,
               language === 'en' ? 'Help & Support' : 'Помощь и поддержка',
-              language === 'en' ? 'Support features will be available in future updates.' : 'Функции поддержки будут доступны в будущих обновлениях.'
-            )
-          )}
-          
-          {renderSettingItem(
-            <MessageCircle size={20} color={theme.primary} />,
-            language === 'en' ? 'Telegram Support' : 'Поддержка в Telegram',
-            '@max_support_main',
-            handleTelegramSupport
-          )}
-          
-          {renderSettingItem(
-            <Info size={20} color={theme.primary} />,
-            language === 'en' ? 'About' : 'О приложении',
-            language === 'en' ? 'Version 1.0.10' : 'Версия 1.0.10',
-            () => Alert.alert(
+              language === 'en' ? 'Get help with the app' : 'Получить помощь с приложением',
+              () => Alert.alert(
+                language === 'en' ? 'Help & Support' : 'Помощь и поддержка',
+                language === 'en' ? 'Support features will be available in future updates.' : 'Функции поддержки будут доступны в будущих обновлениях.'
+              )
+            )}
+            
+            {renderSettingItem(
+              <MessageCircle size={20} color={theme.primary} />,
+              language === 'en' ? 'Telegram Support' : 'Поддержка в Telegram',
+              '@max_support_main',
+              handleTelegramSupport
+            )}
+            
+            {renderSettingItem(
+              <Info size={20} color={theme.primary} />,
               language === 'en' ? 'About' : 'О приложении',
-              language === 'en' 
-                ? 'MPS Pay Mobile App\nVersion 1.0.10\n\nA secure payment processing application for merchants.'
-                : 'Мобильное приложение MPS Pay\nВерсия 1.0.10\n\nБезопасное приложение для обработки платежей для мерчантов.'
-            )
-          )}
-        </Card>
-        
-        {/* Logout */}
-        <Card style={styles.logoutCard}>
-          <Button
-            title={language === 'en' ? 'Logout' : 'Выйти'}
-            variant="outline"
-            onPress={handleLogout}
-            loading={isLoggingOut}
-            style={styles.logoutButton}
-            textStyle={{ color: theme.notification }}
-            icon={<LogOut size={20} color={theme.notification} />}
-          />
-        </Card>
-      </ScrollView>
-    </View>
+              language === 'en' ? 'Version 1.0.10' : 'Версия 1.0.10',
+              () => Alert.alert(
+                language === 'en' ? 'About' : 'О приложении',
+                language === 'en' 
+                  ? 'MPS Pay Mobile App
+Version 1.0.10
+
+A secure payment processing application for merchants.'
+                  : 'Мобильное приложение MPS Pay
+Версия 1.0.10
+
+Безопасное приложение для обработки платежей для мерчантов.'
+              )
+            )}
+          </Card>
+          
+          {/* Logout */}
+          <Card style={styles.logoutCard}>
+            <Button
+              title={language === 'en' ? 'Logout' : 'Выйти'}
+              variant="outline"
+              onPress={handleLogout}
+              loading={isLoggingOut}
+              style={styles.logoutButton}
+              textStyle={{ color: theme.notification }}
+              icon={<LogOut size={20} color={theme.notification} />}
+            />
+          </Card>
+        </ScrollView>
+      </View>
+    </>
   );
 }
 

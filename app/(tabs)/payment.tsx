@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -338,294 +338,303 @@ export default function PaymentScreen() {
   };
   
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={[styles.container, { backgroundColor: theme.background }]}
-    >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <>
+      <Stack.Screen 
+        options={{
+          title: language === 'en' ? 'Create Payment' : 'Создать платеж',
+          headerShown: false
+        }}
+      />
+      
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={[styles.container, { backgroundColor: theme.background }]}
       >
-        <View style={styles.header}>
-          <Image 
-            source={{ uri: IMAGES.LOGO }} 
-            style={styles.logo} 
-            resizeMode="contain"
-          />
-          <Text style={[styles.title, { 
-            color: theme.text,
-            fontSize: scaleFontSize(24)
-          }]} allowFontScaling={false}>
-            {getTranslation('Create Payment', 'Создать платеж')}
-          </Text>
-        </View>
-        
-        <Card style={styles.card}>
-          <View style={styles.amountContainer}>
-            <Text style={[styles.amountLabel, { color: theme.text }]} allowFontScaling={false}>
-              {getTranslation('Amount, RUB', 'Сумма, руб')}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <Image 
+              source={{ uri: IMAGES.LOGO }} 
+              style={styles.logo} 
+              resizeMode="contain"
+            />
+            <Text style={[styles.title, { 
+              color: theme.text,
+              fontSize: scaleFontSize(24)
+            }]} allowFontScaling={false}>
+              {getTranslation('Create Payment', 'Создать платеж')}
             </Text>
-            <View style={styles.amountInputContainer}>
+          </View>
+          
+          <Card style={styles.card}>
+            <View style={styles.amountContainer}>
+              <Text style={[styles.amountLabel, { color: theme.text }]} allowFontScaling={false}>
+                {getTranslation('Amount, RUB', 'Сумма, руб')}
+              </Text>
+              <View style={styles.amountInputContainer}>
+                <Input
+                  value={amount}
+                  onChangeText={(text) => {
+                    // Only allow integer values
+                    const integerValue = text.replace(/[^0-9]/g, '');
+                    setAmount(integerValue);
+                  }}
+                  placeholder="0"
+                  keyboardType="numeric"
+                  style={styles.amountInput}
+                  darkMode={darkMode}
+                  editable={products.length === 0} // Disable if products are added
+                  placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
+                />
+              </View>
+              {error && error.includes(getTranslation('Amount', 'Сумма')) && (
+                <Text style={[styles.errorText, { color: theme.notification }]} allowFontScaling={false}>
+                  {error}
+                </Text>
+              )}
+            </View>
+            
+            <View style={styles.customerContainer}>
+              <Text style={[styles.customerLabel, { color: theme.text }]} allowFontScaling={false}>
+                {getTranslation('Customer', 'Покупатель')}
+              </Text>
               <Input
-                value={amount}
-                onChangeText={(text) => {
-                  // Only allow integer values
-                  const integerValue = text.replace(/[^0-9]/g, '');
-                  setAmount(integerValue);
-                }}
-                placeholder="0"
-                keyboardType="numeric"
-                style={styles.amountInput}
+                value={customerInfo}
+                onChangeText={setCustomerInfo}
+                placeholder={getTranslation('Full name', 'ФИО')}
+                style={styles.customerInput}
                 darkMode={darkMode}
-                editable={products.length === 0} // Disable if products are added
                 placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
               />
             </View>
-            {error && error.includes(getTranslation('Amount', 'Сумма')) && (
-              <Text style={[styles.errorText, { color: theme.notification }]} allowFontScaling={false}>
-                {error}
+          </Card>
+          
+          <Card style={styles.productsCard}>
+            <View style={styles.productsHeader}>
+              <Text style={[styles.cardTitle, { color: theme.text }]} allowFontScaling={false}>
+                {getTranslation('Products', 'Товары')}
               </Text>
-            )}
-          </View>
-          
-          <View style={styles.customerContainer}>
-            <Text style={[styles.customerLabel, { color: theme.text }]} allowFontScaling={false}>
-              {getTranslation('Customer', 'Покупатель')}
-            </Text>
-            <Input
-              value={customerInfo}
-              onChangeText={setCustomerInfo}
-              placeholder={getTranslation('Full name', 'ФИО')}
-              style={styles.customerInput}
-              darkMode={darkMode}
-              placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
-            />
-          </View>
-        </Card>
-        
-        <Card style={styles.productsCard}>
-          <View style={styles.productsHeader}>
-            <Text style={[styles.cardTitle, { color: theme.text }]} allowFontScaling={false}>
-              {getTranslation('Products', 'Товары')}
-            </Text>
-            <View style={styles.productActions}>
-              <TouchableOpacity 
-                style={[styles.selectProductButton, { backgroundColor: theme.secondary }]}
-                onPress={() => setShowProductSelector(true)}
-              >
-                <ShoppingBag size={16} color="white" />
-                <Text style={styles.selectProductButtonText} allowFontScaling={false}>
-                  {getTranslation('Select', 'Выбрать')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.addProductButton, { backgroundColor: theme.primary }]}
-                onPress={() => setShowProductForm(true)}
-              >
-                <Plus size={20} color="white" />
-              </TouchableOpacity>
+              <View style={styles.productActions}>
+                <TouchableOpacity 
+                  style={[styles.selectProductButton, { backgroundColor: theme.secondary }]}
+                  onPress={() => setShowProductSelector(true)}
+                >
+                  <ShoppingBag size={16} color="white" />
+                  <Text style={styles.selectProductButtonText} allowFontScaling={false}>
+                    {getTranslation('Select', 'Выбрать')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.addProductButton, { backgroundColor: theme.primary }]}
+                  onPress={() => setShowProductForm(true)}
+                >
+                  <Plus size={20} color="white" />
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-          
-          {products.length > 0 ? (
-            <View style={styles.productsList}>
-              {products.map((product) => (
-                <View key={product.id} style={[styles.productItem, { backgroundColor: theme.card }]}>
-                  <View style={styles.productInfo}>
-                    <Text style={[styles.productName, { color: theme.text }]} allowFontScaling={false}>
-                      {product.name}
-                    </Text>
-                    <View style={styles.productDetails}>
-                      <Text style={[styles.productPrice, { color: theme.text }]} allowFontScaling={false}>
-                        ₽{product.price.toFixed(2)} × {product.quantity}
+            
+            {products.length > 0 ? (
+              <View style={styles.productsList}>
+                {products.map((product) => (
+                  <View key={product.id} style={[styles.productItem, { backgroundColor: theme.card }]}>
+                    <View style={styles.productInfo}>
+                      <Text style={[styles.productName, { color: theme.text }]} allowFontScaling={false}>
+                        {product.name}
                       </Text>
-                      <Text style={[styles.productTotal, { color: theme.text }]} allowFontScaling={false}>
-                        ₽{(product.price * product.quantity).toFixed(2)}
-                      </Text>
+                      <View style={styles.productDetails}>
+                        <Text style={[styles.productPrice, { color: theme.text }]} allowFontScaling={false}>
+                          ₽{product.price.toFixed(2)} × {product.quantity}
+                        </Text>
+                        <Text style={[styles.productTotal, { color: theme.text }]} allowFontScaling={false}>
+                          ₽{(product.price * product.quantity).toFixed(2)}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.productActions}>
+                      <TouchableOpacity 
+                        style={[styles.quantityButton, { backgroundColor: theme.primary + '20' }]}
+                        onPress={() => handleIncreaseQuantity(product.id)}
+                      >
+                        <Plus size={16} color={theme.primary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.quantityButton, { backgroundColor: theme.secondary + '20' }]}
+                        onPress={() => handleDecreaseQuantity(product.id)}
+                        disabled={product.quantity <= 1}
+                      >
+                        <Minus size={16} color={product.quantity <= 1 ? theme.inactive : theme.secondary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.removeProductButton, { backgroundColor: theme.notification + '20' }]}
+                        onPress={() => handleRemoveProduct(product.id)}
+                      >
+                        <Minus size={16} color={theme.notification} />
+                      </TouchableOpacity>
                     </View>
                   </View>
-                  <View style={styles.productActions}>
-                    <TouchableOpacity 
-                      style={[styles.quantityButton, { backgroundColor: theme.primary + '20' }]}
-                      onPress={() => handleIncreaseQuantity(product.id)}
-                    >
-                      <Plus size={16} color={theme.primary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.quantityButton, { backgroundColor: theme.secondary + '20' }]}
-                      onPress={() => handleDecreaseQuantity(product.id)}
-                      disabled={product.quantity <= 1}
-                    >
-                      <Minus size={16} color={product.quantity <= 1 ? theme.inactive : theme.secondary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.removeProductButton, { backgroundColor: theme.notification + '20' }]}
-                      onPress={() => handleRemoveProduct(product.id)}
-                    >
-                      <Minus size={16} color={theme.notification} />
-                    </TouchableOpacity>
+                ))}
+                
+                <View style={[styles.totalRow, { borderTopColor: theme.border }]}>
+                  <Text style={[styles.totalLabel, { color: theme.text }]} allowFontScaling={false}>
+                    {getTranslation('Total', 'Итого')}
+                  </Text>
+                  <Text style={[styles.totalAmount, { color: theme.text }]} allowFontScaling={false}>
+                    ₽{calculateTotal().toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.emptyProductsContainer}>
+                <ShoppingBag size={48} color={theme.placeholder} style={styles.emptyProductsIcon} />
+                <Text style={[styles.emptyProductsText, { color: theme.text }]} allowFontScaling={false}>
+                  {getTranslation(
+                    'No products added yet. Add products or enter amount directly.',
+                    'Товары еще не добавлены. Добавьте товары или введите сумму напрямую.'
+                  )}
+                </Text>
+              </View>
+            )}
+            
+            {showProductForm && (
+              <View style={[styles.productForm, { backgroundColor: theme.card }]}>
+                <Text style={[styles.productFormTitle, { color: theme.text }]} allowFontScaling={false}>
+                  {getTranslation('Add Product', 'Добавить товар')}
+                </Text>
+                
+                <Input
+                  label={getTranslation('Product Name', 'Название товара')}
+                  value={productName}
+                  onChangeText={setProductName}
+                  placeholder={getTranslation('Enter product name', 'Введите название товара')}
+                  error={productErrors.name}
+                  darkMode={darkMode}
+                  placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
+                />
+                
+                <View style={styles.productFormRow}>
+                  <View style={styles.priceInput}>
+                    <Input
+                      label={getTranslation('Price', 'Цена')}
+                      value={productPrice}
+                      onChangeText={setProductPrice}
+                      placeholder="0.00"
+                      keyboardType="numeric"
+                      error={productErrors.price}
+                      darkMode={darkMode}
+                      placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
+                    />
+                  </View>
+                  
+                  <View style={styles.quantityInput}>
+                    <Input
+                      label={getTranslation('Quantity', 'Количество')}
+                      value={productQuantity}
+                      onChangeText={setProductQuantity}
+                      placeholder="1"
+                      keyboardType="numeric"
+                      error={productErrors.quantity}
+                      darkMode={darkMode}
+                      placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
+                    />
                   </View>
                 </View>
-              ))}
-              
-              <View style={[styles.totalRow, { borderTopColor: theme.border }]}>
-                <Text style={[styles.totalLabel, { color: theme.text }]} allowFontScaling={false}>
-                  {getTranslation('Total', 'Итого')}
-                </Text>
-                <Text style={[styles.totalAmount, { color: theme.text }]} allowFontScaling={false}>
-                  ₽{calculateTotal().toFixed(2)}
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.emptyProductsContainer}>
-              <ShoppingBag size={48} color={theme.placeholder} style={styles.emptyProductsIcon} />
-              <Text style={[styles.emptyProductsText, { color: theme.text }]} allowFontScaling={false}>
-                {getTranslation(
-                  'No products added yet. Add products or enter amount directly.',
-                  'Товары еще не добавлены. Добавьте товары или введите сумму напрямую.'
-                )}
-              </Text>
-            </View>
-          )}
-          
-          {showProductForm && (
-            <View style={[styles.productForm, { backgroundColor: theme.card }]}>
-              <Text style={[styles.productFormTitle, { color: theme.text }]} allowFontScaling={false}>
-                {getTranslation('Add Product', 'Добавить товар')}
-              </Text>
-              
-              <Input
-                label={getTranslation('Product Name', 'Название товара')}
-                value={productName}
-                onChangeText={setProductName}
-                placeholder={getTranslation('Enter product name', 'Введите название товара')}
-                error={productErrors.name}
-                darkMode={darkMode}
-                placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
-              />
-              
-              <View style={styles.productFormRow}>
-                <View style={styles.priceInput}>
-                  <Input
-                    label={getTranslation('Price', 'Цена')}
-                    value={productPrice}
-                    onChangeText={setProductPrice}
-                    placeholder="0.00"
-                    keyboardType="numeric"
-                    error={productErrors.price}
-                    darkMode={darkMode}
-                    placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
-                  />
-                </View>
                 
-                <View style={styles.quantityInput}>
-                  <Input
-                    label={getTranslation('Quantity', 'Количество')}
-                    value={productQuantity}
-                    onChangeText={setProductQuantity}
-                    placeholder="1"
-                    keyboardType="numeric"
-                    error={productErrors.quantity}
-                    darkMode={darkMode}
-                    placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
+                <View style={styles.productFormButtons}>
+                  <Button
+                    title={getTranslation('Cancel', 'Отмена')}
+                    variant="outline"
+                    onPress={() => {
+                      setShowProductForm(false);
+                      setProductErrors({});
+                    }}
+                    style={styles.cancelProductButton}
+                  />
+                  
+                  <Button
+                    title={getTranslation('Add', 'Добавить')}
+                    onPress={handleAddProduct}
+                    style={styles.confirmProductButton}
+                    icon={<Check size={20} color="white" />}
                   />
                 </View>
               </View>
-              
-              <View style={styles.productFormButtons}>
+            )}
+            
+            {showProductSelector && storeProducts.length > 0 && (
+              <View style={[styles.productSelector, { backgroundColor: theme.card }]}>
+                <Text style={[styles.productSelectorTitle, { color: theme.text }]} allowFontScaling={false}>
+                  {getTranslation('Select Product', 'Выбрать товар')}
+                </Text>
+                
+                <ScrollView style={styles.productSelectorList}>
+                  {storeProducts.map((product) => (
+                    <TouchableOpacity
+                      key={product.id}
+                      style={[styles.productSelectorItem, { borderBottomColor: theme.border }]}
+                      onPress={() => handleSelectProduct(product)}
+                    >
+                      <Text style={[styles.productSelectorName, { color: theme.text }]} allowFontScaling={false}>
+                        {product.name}
+                      </Text>
+                      <Text style={[styles.productSelectorPrice, { color: theme.text }]} allowFontScaling={false}>
+                        ₽{product.price.toFixed(2)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                
                 <Button
                   title={getTranslation('Cancel', 'Отмена')}
                   variant="outline"
-                  onPress={() => {
-                    setShowProductForm(false);
-                    setProductErrors({});
-                  }}
-                  style={styles.cancelProductButton}
-                />
-                
-                <Button
-                  title={getTranslation('Add', 'Добавить')}
-                  onPress={handleAddProduct}
-                  style={styles.confirmProductButton}
-                  icon={<Check size={20} color="white" />}
+                  onPress={() => setShowProductSelector(false)}
+                  style={styles.cancelSelectorButton}
                 />
               </View>
-            </View>
-          )}
+            )}
+            
+            {showProductSelector && storeProducts.length === 0 && (
+              <View style={[styles.productSelector, { backgroundColor: theme.card }]}>
+                <Text style={[styles.productSelectorTitle, { color: theme.text }]} allowFontScaling={false}>
+                  {getTranslation('No Products Available', 'Нет доступных товаров')}
+                </Text>
+                <Text style={[styles.emptyProductsText, { color: theme.text }]} allowFontScaling={false}>
+                  {getTranslation(
+                    'You have not added any products yet. Add a new product first.',
+                    'Вы еще не добавили ни одного товара. Сначала добавьте новый товар.'
+                  )}
+                </Text>
+                <Button
+                  title={getTranslation('Close', 'Закрыть')}
+                  variant="outline"
+                  onPress={() => setShowProductSelector(false)}
+                  style={styles.cancelSelectorButton}
+                />
+              </View>
+            )}
+          </Card>
           
-          {showProductSelector && storeProducts.length > 0 && (
-            <View style={[styles.productSelector, { backgroundColor: theme.card }]}>
-              <Text style={[styles.productSelectorTitle, { color: theme.text }]} allowFontScaling={false}>
-                {getTranslation('Select Product', 'Выбрать товар')}
-              </Text>
-              
-              <ScrollView style={styles.productSelectorList}>
-                {storeProducts.map((product) => (
-                  <TouchableOpacity
-                    key={product.id}
-                    style={[styles.productSelectorItem, { borderBottomColor: theme.border }]}
-                    onPress={() => handleSelectProduct(product)}
-                  >
-                    <Text style={[styles.productSelectorName, { color: theme.text }]} allowFontScaling={false}>
-                      {product.name}
-                    </Text>
-                    <Text style={[styles.productSelectorPrice, { color: theme.text }]} allowFontScaling={false}>
-                      ₽{product.price.toFixed(2)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-              
-              <Button
-                title={getTranslation('Cancel', 'Отмена')}
-                variant="outline"
-                onPress={() => setShowProductSelector(false)}
-                style={styles.cancelSelectorButton}
-              />
-            </View>
-          )}
-          
-          {showProductSelector && storeProducts.length === 0 && (
-            <View style={[styles.productSelector, { backgroundColor: theme.card }]}>
-              <Text style={[styles.productSelectorTitle, { color: theme.text }]} allowFontScaling={false}>
-                {getTranslation('No Products Available', 'Нет доступных товаров')}
-              </Text>
-              <Text style={[styles.emptyProductsText, { color: theme.text }]} allowFontScaling={false}>
-                {getTranslation(
-                  'You have not added any products yet. Add a new product first.',
-                  'Вы еще не добавили ни одного товара. Сначала добавьте новый товар.'
-                )}
-              </Text>
-              <Button
-                title={getTranslation('Close', 'Закрыть')}
-                variant="outline"
-                onPress={() => setShowProductSelector(false)}
-                style={styles.cancelSelectorButton}
-              />
-            </View>
-          )}
-        </Card>
+          <Button
+            title={getTranslation('Create Payment', 'Создать платеж')}
+            onPress={handleCreatePayment}
+            loading={isLoading}
+            disabled={isLoading || !amount || parseInt(amount) <= 0}
+            icon={!isLoading ? <CreditCard size={20} color="white" /> : undefined}
+            style={styles.createButton}
+          />
+        </ScrollView>
         
-        <Button
-          title={getTranslation('Create Payment', 'Создать платеж')}
-          onPress={handleCreatePayment}
-          loading={isLoading}
-          disabled={isLoading || !amount || parseInt(amount) <= 0}
-          icon={!isLoading ? <CreditCard size={20} color="white" /> : undefined}
-          style={styles.createButton}
+        <ErrorPopup
+          visible={showErrorPopup}
+          message={error || getTranslation('An error occurred', 'Произошла ошибка')}
+          onClose={() => setShowErrorPopup(false)}
+          darkMode={darkMode}
+          title={getTranslation('Error', 'Ошибка')}
+          rawResponse={rawErrorResponse}
         />
-      </ScrollView>
-      
-      <ErrorPopup
-        visible={showErrorPopup}
-        message={error || getTranslation('An error occurred', 'Произошла ошибка')}
-        onClose={() => setShowErrorPopup(false)}
-        darkMode={darkMode}
-        title={getTranslation('Error', 'Ошибка')}
-        rawResponse={rawErrorResponse}
-      />
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </>
   );
 }
 

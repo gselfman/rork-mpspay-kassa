@@ -12,9 +12,10 @@ import {
   ActivityIndicator,
   RefreshControl,
   KeyboardAvoidingView,
-  Modal
+  Modal,
+  Linking
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, Stack } from 'expo-router';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { TransactionItem } from '@/components/TransactionItem';
@@ -49,7 +50,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  X
+  X,
+  ExternalLink
 } from 'lucide-react-native';
 import {
   scaleFontSize,
@@ -369,6 +371,10 @@ export default function HomeScreen() {
     router.push(`/transaction/${id}`);
   };
 
+  const handleOpenPersonalCabinet = () => {
+    Linking.openURL('https://merch.mpspay.ru');
+  };
+
   // Determine container padding based on device size
   const containerPadding = getContainerPadding();
 
@@ -416,536 +422,568 @@ export default function HomeScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1 }}
-    >
-      <ScrollView 
-        style={[styles.container, { backgroundColor: theme.background }]} 
-        contentContainerStyle={[styles.contentContainer, { padding: containerPadding }]}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={() => fetchData(true)}
-            colors={[theme.primary]}
-            tintColor={theme.primary}
-          />
-        }
-        keyboardShouldPersistTaps="handled"
+    <>
+      <Stack.Screen 
+        options={{
+          title: language === 'en' ? 'Home' : 'Главная',
+          headerShown: false
+        }}
+      />
+      
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
       >
-        {/* Header with Logo and Title */}
-        <View style={styles.header}>
-          <Image 
-            source={{ uri: IMAGES.LOGO }} 
-            style={styles.logo} 
-            resizeMode="contain"
-          />
-          <View style={styles.headerTextContainer}>
-            <Text style={[styles.title, { color: theme.text, fontSize: scaleFontSize(24) }]} allowFontScaling={false}>
-              MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
-            </Text>
-            <Text style={[styles.subtitle, { color: theme.placeholder, fontSize: scaleFontSize(14) }]} allowFontScaling={false}>
-              {language === 'en' 
-                ? 'Mobile terminal for accepting payments' 
-                : 'Мобильная касса для приёма платежей'}
-            </Text>
+        <ScrollView 
+          style={[styles.container, { backgroundColor: theme.background }]} 
+          contentContainerStyle={[styles.contentContainer, { padding: containerPadding }]}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => fetchData(true)}
+              colors={[theme.primary]}
+              tintColor={theme.primary}
+            />
+          }
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header with Logo and Title */}
+          <View style={styles.header}>
+            <Image 
+              source={{ uri: IMAGES.LOGO }} 
+              style={styles.logo} 
+              resizeMode="contain"
+            />
+            <View style={styles.headerTextContainer}>
+              <Text style={[styles.title, { color: theme.text, fontSize: scaleFontSize(24) }]} allowFontScaling={false}>
+                MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
+              </Text>
+              <Text style={[styles.subtitle, { color: theme.placeholder, fontSize: scaleFontSize(14) }]} allowFontScaling={false}>
+                {language === 'en' 
+                  ? 'Mobile terminal for accepting payments' 
+                  : 'Мобильная касса для приёма платежей'}
+              </Text>
+            </View>
           </View>
-        </View>
-        
-        {/* Current Balance Card */}
-        <Card style={styles.balanceCard}>
-          <View style={styles.balanceHeader}>
-            <Text style={[styles.balanceTitle, { 
+          
+          {/* Current Balance Card */}
+          <Card style={styles.balanceCard}>
+            <View style={styles.balanceHeader}>
+              <Text style={[styles.balanceTitle, { 
+                color: theme.text,
+                fontSize: scaleFontSize(16)
+              }]} allowFontScaling={false}>
+                {language === 'en' ? 'Current Balance' : 'Текущий баланс'}
+              </Text>
+              <TouchableOpacity 
+                onPress={handleRefreshBalance}
+                style={styles.refreshButton}
+                disabled={isRefreshing}
+              >
+                <RefreshCw 
+                  size={20} 
+                  color={theme.primary} 
+                  style={isRefreshing ? styles.rotating : undefined}
+                />
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={[styles.balanceAmount, { 
               color: theme.text,
-              fontSize: scaleFontSize(16)
+              fontSize: scaleFontSize(isSmallDevice ? 28 : isLargeDevice ? 36 : 32)
             }]} allowFontScaling={false}>
-              {language === 'en' ? 'Current Balance' : 'Текущий баланс'}
+              ₽{balance !== null ? balance.toLocaleString(undefined, {maximumFractionDigits: 2}) : '—'}
+            </Text>
+            
+            {accountName && (
+              <Text style={[styles.accountName, { color: theme.placeholder }]} allowFontScaling={false}>
+                {accountName}
+              </Text>
+            )}
+            
+            {lastRefreshed && (
+              <View style={styles.lastRefreshedContainer}>
+                <Clock size={12} color={theme.placeholder} />
+                <Text style={[styles.lastRefreshedText, { 
+                  color: theme.placeholder,
+                  fontSize: scaleFontSize(12)
+                }]} allowFontScaling={false}>
+                  {language === 'en' ? 'Last updated: ' : 'Последнее обновление: '}
+                  {lastRefreshed.toLocaleTimeString()}
+                </Text>
+              </View>
+            )}
+          </Card>
+          
+          {/* Quick Actions - MOVED BEFORE STATISTICS */}
+          <View style={styles.actionsContainer}>
+            <Text style={[styles.sectionTitle, { color: theme.text, fontSize: scaleFontSize(18) }]} allowFontScaling={false}>
+              {language === 'en' ? 'Quick Actions' : 'Быстрые действия'}
+            </Text>
+            
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity 
+                style={[styles.actionButton, { backgroundColor: theme.card }]}
+                onPress={handleCreatePayment}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: theme.primary }]}>
+                  <CreditCard size={24} color="white" />
+                </View>
+                <Text style={[styles.actionButtonText, { 
+                  color: theme.text,
+                  fontSize: scaleFontSize(isSmallDevice ? 12 : 14)
+                }]} allowFontScaling={false}>
+                  {language === 'en' ? 'New Payment' : 'Новый платеж'}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.actionButton, { backgroundColor: theme.card }]}
+                onPress={handleWithdraw}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: theme.secondary }]}>
+                  <TrendingUp size={24} color="white" />
+                </View>
+                <Text style={[styles.actionButtonText, { 
+                  color: theme.text,
+                  fontSize: scaleFontSize(isSmallDevice ? 12 : 14)
+                }]} allowFontScaling={false}>
+                  {language === 'en' ? 'Withdraw' : 'Вывод средств'}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.actionButton, { backgroundColor: theme.card }]}
+                onPress={handleViewHistory}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: '#6c5ce7' }]}>
+                  <Clock size={24} color="white" />
+                </View>
+                <Text style={[styles.actionButtonText, { 
+                  color: theme.text,
+                  fontSize: scaleFontSize(isSmallDevice ? 12 : 14)
+                }]} allowFontScaling={false}>
+                  {language === 'en' ? 'History' : 'История'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          {/* Stats Cards - MOVED AFTER QUICK ACTIONS */}
+          <View style={styles.statsHeaderContainer}>
+            <Text style={[styles.sectionTitle, { 
+              color: theme.text,
+              fontSize: scaleFontSize(18),
+            }]} allowFontScaling={false}>
+              {language === 'en' ? 'Statistics' : 'Статистика'}
             </Text>
             <TouchableOpacity 
-              onPress={handleRefreshBalance}
+              onPress={handleRefreshStats}
               style={styles.refreshButton}
-              disabled={isRefreshing}
+              disabled={isRefreshingStats}
             >
               <RefreshCw 
                 size={20} 
                 color={theme.primary} 
-                style={isRefreshing ? styles.rotating : undefined}
+                style={isRefreshingStats ? styles.rotating : undefined}
               />
             </TouchableOpacity>
           </View>
           
-          <Text style={[styles.balanceAmount, { 
-            color: theme.text,
-            fontSize: scaleFontSize(isSmallDevice ? 28 : isLargeDevice ? 36 : 32)
-          }]} allowFontScaling={false}>
-            ₽{balance !== null ? balance.toLocaleString(undefined, {maximumFractionDigits: 2}) : '—'}
-          </Text>
-          
-          {accountName && (
-            <Text style={[styles.accountName, { color: theme.placeholder }]} allowFontScaling={false}>
-              {accountName}
-            </Text>
-          )}
-          
-          {lastRefreshed && (
-            <View style={styles.lastRefreshedContainer}>
-              <Clock size={12} color={theme.placeholder} />
-              <Text style={[styles.lastRefreshedText, { 
-                color: theme.placeholder,
-                fontSize: scaleFontSize(12)
-              }]} allowFontScaling={false}>
-                {language === 'en' ? 'Last updated: ' : 'Последнее обновление: '}
-                {lastRefreshed.toLocaleTimeString()}
-              </Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statsRow}>
+              <Card style={styles.statCard}>
+                <View style={[styles.statIconContainer, { backgroundColor: theme.background }]}>
+                  <ShoppingBag size={20} color={theme.primary} />
+                </View>
+                <Text style={[styles.statValue, { 
+                  color: theme.text,
+                  fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
+                }]} allowFontScaling={false}>
+                  {stats.successfulOperationsMonth}
+                </Text>
+                <Text style={[styles.statLabel, { 
+                  color: theme.placeholder,
+                  fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
+                }]} allowFontScaling={false}>
+                  {language === 'en' ? 'Operations (30 days)' : 'Операций (30 дней)'}
+                </Text>
+              </Card>
+              
+              <Card style={styles.statCard}>
+                <View style={[styles.statIconContainer, { backgroundColor: theme.background }]}>
+                  <Calendar size={20} color="#6c5ce7" />
+                </View>
+                <Text style={[styles.statValue, { 
+                  color: theme.text,
+                  fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
+                }]} allowFontScaling={false}>
+                  {stats.successfulOperationsToday}
+                </Text>
+                <Text style={[styles.statLabel, { 
+                  color: theme.placeholder,
+                  fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
+                }]} allowFontScaling={false}>
+                  {language === 'en' ? 'Operations Today' : 'Операций сегодня'}
+                </Text>
+              </Card>
             </View>
-          )}
-        </Card>
-        
-        {/* Quick Actions - MOVED BEFORE STATISTICS */}
-        <View style={styles.actionsContainer}>
-          <Text style={[styles.sectionTitle, { color: theme.text, fontSize: scaleFontSize(18) }]} allowFontScaling={false}>
-            {language === 'en' ? 'Quick Actions' : 'Быстрые действия'}
-          </Text>
-          
-          <View style={styles.actionButtonsContainer}>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.card }]}
-              onPress={handleCreatePayment}
-            >
-              <View style={[styles.actionIconContainer, { backgroundColor: theme.primary }]}>
-                <CreditCard size={24} color="white" />
-              </View>
-              <Text style={[styles.actionButtonText, { 
-                color: theme.text,
-                fontSize: scaleFontSize(isSmallDevice ? 12 : 14)
-              }]} allowFontScaling={false}>
-                {language === 'en' ? 'New Payment' : 'Новый платеж'}
-              </Text>
-            </TouchableOpacity>
             
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.card }]}
-              onPress={handleWithdraw}
-            >
-              <View style={[styles.actionIconContainer, { backgroundColor: theme.secondary }]}>
-                <TrendingUp size={24} color="white" />
-              </View>
-              <Text style={[styles.actionButtonText, { 
-                color: theme.text,
-                fontSize: scaleFontSize(isSmallDevice ? 12 : 14)
-              }]} allowFontScaling={false}>
-                {language === 'en' ? 'Withdraw' : 'Вывод средств'}
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.card }]}
-              onPress={handleViewHistory}
-            >
-              <View style={[styles.actionIconContainer, { backgroundColor: '#6c5ce7' }]}>
-                <Clock size={24} color="white" />
-              </View>
-              <Text style={[styles.actionButtonText, { 
-                color: theme.text,
-                fontSize: scaleFontSize(isSmallDevice ? 12 : 14)
-              }]} allowFontScaling={false}>
-                {language === 'en' ? 'History' : 'История'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        
-        {/* Stats Cards - MOVED AFTER QUICK ACTIONS */}
-        <View style={styles.statsHeaderContainer}>
-          <Text style={[styles.sectionTitle, { 
-            color: theme.text,
-            fontSize: scaleFontSize(18),
-          }]} allowFontScaling={false}>
-            {language === 'en' ? 'Statistics' : 'Статистика'}
-          </Text>
-          <TouchableOpacity 
-            onPress={handleRefreshStats}
-            style={styles.refreshButton}
-            disabled={isRefreshingStats}
-          >
-            <RefreshCw 
-              size={20} 
-              color={theme.primary} 
-              style={isRefreshingStats ? styles.rotating : undefined}
-            />
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.statsContainer}>
-          <View style={styles.statsRow}>
-            <Card style={styles.statCard}>
-              <View style={[styles.statIconContainer, { backgroundColor: theme.background }]}>
-                <ShoppingBag size={20} color={theme.primary} />
-              </View>
-              <Text style={[styles.statValue, { 
-                color: theme.text,
-                fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
-              }]} allowFontScaling={false}>
-                {stats.successfulOperationsMonth}
-              </Text>
-              <Text style={[styles.statLabel, { 
-                color: theme.placeholder,
-                fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
-              }]} allowFontScaling={false}>
-                {language === 'en' ? 'Operations (30 days)' : 'Операций (30 дней)'}
-              </Text>
-            </Card>
-            
-            <Card style={styles.statCard}>
-              <View style={[styles.statIconContainer, { backgroundColor: theme.background }]}>
-                <Calendar size={20} color="#6c5ce7" />
-              </View>
-              <Text style={[styles.statValue, { 
-                color: theme.text,
-                fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
-              }]} allowFontScaling={false}>
-                {stats.successfulOperationsToday}
-              </Text>
-              <Text style={[styles.statLabel, { 
-                color: theme.placeholder,
-                fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
-              }]} allowFontScaling={false}>
-                {language === 'en' ? 'Operations Today' : 'Операций сегодня'}
-              </Text>
-            </Card>
-          </View>
-          
-          <View style={styles.statsRow}>
-            <Card style={styles.statCard}>
-              <View style={[styles.statIconContainer, { backgroundColor: theme.background }]}>
-                <TrendingUp size={20} color={theme.secondary} />
-              </View>
-              <Text style={[styles.statValue, { 
-                color: theme.text,
-                fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
-              }]} allowFontScaling={false}>
-                ₽{stats.incomeMonth.toLocaleString(undefined, {maximumFractionDigits: 2})}
-              </Text>
-              <Text style={[styles.statLabel, { 
-                color: theme.placeholder,
-                fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
-              }]} allowFontScaling={false}>
-                {language === 'en' ? 'Income (30 days)' : 'Доход (30 дней)'}
-              </Text>
-            </Card>
-            
-            <Card style={styles.statCard}>
-              <View style={[styles.statIconContainer, { backgroundColor: theme.background }]}>
-                <BarChart size={20} color="#00b894" />
-              </View>
-              <Text style={[styles.statValue, { 
-                color: theme.text,
-                fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
-              }]} allowFontScaling={false}>
-                ₽{stats.incomeToday.toLocaleString(undefined, {maximumFractionDigits: 2})}
-              </Text>
-              <Text style={[styles.statLabel, { 
-                color: theme.placeholder,
-                fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
-              }]} allowFontScaling={false}>
-                {language === 'en' ? 'Income Today' : 'Доход сегодня'}
-              </Text>
-            </Card>
-          </View>
-        </View>
-        
-        {/* Recent Transactions */}
-        <View style={styles.recentTransactionsContainer}>
-          <View style={styles.recentTransactionsHeader}>
-            <Text style={[styles.sectionTitle, { 
-              color: theme.text,
-              fontSize: scaleFontSize(18)
-            }]} allowFontScaling={false}>
-              {language === 'en' ? 'Recent Transactions' : 'Последние операции'}
-            </Text>
-            <TouchableOpacity onPress={handleViewHistory}>
-              <Text style={[styles.viewAllText, { 
-                color: theme.primary,
-                fontSize: scaleFontSize(14)
-              }]} allowFontScaling={false}>
-                {language === 'en' ? 'View All' : 'Смотреть все'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          
-          {isLoadingTransactions ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={theme.primary} />
+            <View style={styles.statsRow}>
+              <Card style={styles.statCard}>
+                <View style={[styles.statIconContainer, { backgroundColor: theme.background }]}>
+                  <TrendingUp size={20} color={theme.secondary} />
+                </View>
+                <Text style={[styles.statValue, { 
+                  color: theme.text,
+                  fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
+                }]} allowFontScaling={false}>
+                  ₽{stats.incomeMonth.toLocaleString(undefined, {maximumFractionDigits: 2})}
+                </Text>
+                <Text style={[styles.statLabel, { 
+                  color: theme.placeholder,
+                  fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
+                }]} allowFontScaling={false}>
+                  {language === 'en' ? 'Income (30 days)' : 'Доход (30 дней)'}
+                </Text>
+              </Card>
+              
+              <Card style={styles.statCard}>
+                <View style={[styles.statIconContainer, { backgroundColor: theme.background }]}>
+                  <BarChart size={20} color="#00b894" />
+                </View>
+                <Text style={[styles.statValue, { 
+                  color: theme.text,
+                  fontSize: scaleFontSize(isSmallDevice ? 16 : 18)
+                }]} allowFontScaling={false}>
+                  ₽{stats.incomeToday.toLocaleString(undefined, {maximumFractionDigits: 2})}
+                </Text>
+                <Text style={[styles.statLabel, { 
+                  color: theme.placeholder,
+                  fontSize: scaleFontSize(isSmallDevice ? 11 : 12)
+                }]} allowFontScaling={false}>
+                  {language === 'en' ? 'Income Today' : 'Доход сегодня'}
+                </Text>
+              </Card>
             </View>
-          ) : recentTransactions.length > 0 ? (
-            <View style={styles.transactionsList}>
-              {recentTransactions.map((transaction) => (
-                <TouchableOpacity
-                  key={transaction.id}
-                  style={[
-                    styles.transactionItem,
-                    { backgroundColor: theme.card }
-                  ]}
-                  onPress={() => handleViewTransactionDetails(transaction.id)}
-                >
-                  <View style={styles.transactionHeader}>
-                    <Text style={[styles.transactionIdLarge, { color: theme.text }]} allowFontScaling={false}>
-                      {transaction.id}
-                    </Text>
-                    <View style={styles.statusContainer}>
-                      {transaction.paymentStatus === 3 ? (
-                        <CheckCircle size={16} color={theme.success} />
-                      ) : transaction.paymentStatus === 2 ? (
-                        <XCircle size={16} color={theme.notification} />
-                      ) : (
-                        <AlertCircle size={16} color={theme.warning} />
-                      )}
-                      <Text style={[
-                        styles.statusText, 
-                        { 
-                          color: transaction.paymentStatus === 3 
-                            ? theme.success 
+          </View>
+          
+          {/* Recent Transactions */}
+          <View style={styles.recentTransactionsContainer}>
+            <View style={styles.recentTransactionsHeader}>
+              <Text style={[styles.sectionTitle, { 
+                color: theme.text,
+                fontSize: scaleFontSize(18)
+              }]} allowFontScaling={false}>
+                {language === 'en' ? 'Recent Transactions' : 'Последние операции'}
+              </Text>
+              <TouchableOpacity onPress={handleViewHistory}>
+                <Text style={[styles.viewAllText, { 
+                  color: theme.primary,
+                  fontSize: scaleFontSize(14)
+                }]} allowFontScaling={false}>
+                  {language === 'en' ? 'View All' : 'Смотреть все'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            
+            {isLoadingTransactions ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={theme.primary} />
+              </View>
+            ) : recentTransactions.length > 0 ? (
+              <View style={styles.transactionsList}>
+                {recentTransactions.map((transaction) => (
+                  <TouchableOpacity
+                    key={transaction.id}
+                    style={[
+                      styles.transactionItem,
+                      { backgroundColor: theme.card }
+                    ]}
+                    onPress={() => handleViewTransactionDetails(transaction.id)}
+                  >
+                    <View style={styles.transactionHeader}>
+                      <Text style={[styles.transactionIdLarge, { color: theme.text }]} allowFontScaling={false}>
+                        {transaction.id}
+                      </Text>
+                      <View style={styles.statusContainer}>
+                        {transaction.paymentStatus === 3 ? (
+                          <CheckCircle size={16} color={theme.success} />
+                        ) : transaction.paymentStatus === 2 ? (
+                          <XCircle size={16} color={theme.notification} />
+                        ) : (
+                          <AlertCircle size={16} color={theme.warning} />
+                        )}
+                        <Text style={[
+                          styles.statusText, 
+                          { 
+                            color: transaction.paymentStatus === 3 
+                              ? theme.success 
+                              : transaction.paymentStatus === 2 
+                                ? theme.notification 
+                                : theme.warning 
+                          }
+                        ]} allowFontScaling={false}>
+                          {transaction.paymentStatus === 3 
+                            ? (language === 'en' ? 'Completed' : 'Оплачен') 
                             : transaction.paymentStatus === 2 
-                              ? theme.notification 
-                              : theme.warning 
-                        }
-                      ]} allowFontScaling={false}>
-                        {transaction.paymentStatus === 3 
-                          ? (language === 'en' ? 'Completed' : 'Оплачен') 
-                          : transaction.paymentStatus === 2 
-                            ? (language === 'en' ? 'Failed' : 'Не оплачен') 
-                            : (language === 'en' ? 'Pending' : 'В ожидании')}
-                      </Text>
-                    </View>
-                  </View>
-                  
-                  <View style={styles.transactionDetails}>
-                    <View style={styles.transactionDetail}>
-                      <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                        {language === 'en' ? 'Amount:' : 'Сумма:'}
-                      </Text>
-                      <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                        ₽{transaction.amount.toLocaleString(undefined, {maximumFractionDigits: 2})}
-                      </Text>
+                              ? (language === 'en' ? 'Failed' : 'Не оплачен') 
+                              : (language === 'en' ? 'Pending' : 'В ожидании')}
+                        </Text>
+                      </View>
                     </View>
                     
-                    {transaction.finishedAt && (
+                    <View style={styles.transactionDetails}>
                       <View style={styles.transactionDetail}>
                         <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                          {language === 'en' ? 'Date:' : 'Дата:'}
+                          {language === 'en' ? 'Amount:' : 'Сумма:'}
                         </Text>
                         <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                          {new Date(transaction.finishedAt).toLocaleString()}
+                          ₽{transaction.amount.toLocaleString(undefined, {maximumFractionDigits: 2})}
                         </Text>
                       </View>
-                    )}
+                      
+                      {transaction.finishedAt && (
+                        <View style={styles.transactionDetail}>
+                          <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                            {language === 'en' ? 'Date:' : 'Дата:'}
+                          </Text>
+                          <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
+                            {new Date(transaction.finishedAt).toLocaleString()}
+                          </Text>
+                        </View>
+                      )}
+                      
+                      {transaction.comment && (
+                        <View style={styles.transactionDetail}>
+                          <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                            {language === 'en' ? 'Comment:' : 'Комментарий:'}
+                          </Text>
+                          <Text 
+                            style={[styles.detailValue, { color: theme.text }]}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                            allowFontScaling={false}
+                          >
+                            {transaction.comment}
+                          </Text>
+                        </View>
+                      )}
+                      
+                      {transaction.paymentStatus === 3 && transaction.tag && (
+                        <View style={styles.transactionDetail}>
+                          <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                            {language === 'en' ? 'SBP ID:' : 'СБП ID:'}
+                          </Text>
+                          <Text 
+                            style={[styles.detailValue, { color: theme.text }]}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                            allowFontScaling={false}
+                          >
+                            {transaction.tag}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
                     
-                    {transaction.comment && (
-                      <View style={styles.transactionDetail}>
-                        <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                          {language === 'en' ? 'Comment:' : 'Комментарий:'}
-                        </Text>
-                        <Text 
-                          style={[styles.detailValue, { color: theme.text }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                          allowFontScaling={false}
-                        >
-                          {transaction.comment}
-                        </Text>
-                      </View>
-                    )}
-                    
-                    {transaction.paymentStatus === 3 && transaction.tag && (
-                      <View style={styles.transactionDetail}>
-                        <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                          {language === 'en' ? 'SBP ID:' : 'СБП ID:'}
-                        </Text>
-                        <Text 
-                          style={[styles.detailValue, { color: theme.text }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                          allowFontScaling={false}
-                        >
-                          {transaction.tag}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  
-                  <View style={styles.viewDetailsContainer}>
-                    <ArrowRight size={16} color={theme.primary} />
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : (
-            <View style={[styles.emptyTransactionsContainer, { backgroundColor: theme.card }]}>
-              <Text style={[styles.emptyTransactionsText, { 
-                color: theme.placeholder,
-                fontSize: scaleFontSize(14)
-              }]} allowFontScaling={false}>
-                {language === 'en' 
-                  ? 'No recent transactions found' 
-                  : 'Нет недавних транзакций'}
-              </Text>
-            </View>
-          )}
-        </View>
-        
-        {/* Transaction Check Form */}
-        <Card style={styles.transactionCheckCard}>
-          <Text style={[styles.transactionCheckTitle, { color: theme.text }]} allowFontScaling={false}>
-            {language === 'en' ? 'Check Transaction Status' : 'Проверить статус операции'}
-          </Text>
-          
-          <View style={styles.transactionCheckForm}>
-            <TextInput
-              style={[
-                styles.transactionCheckInput,
-                { 
-                  backgroundColor: theme.background,
-                  color: theme.text,
-                  borderColor: transactionCheckError ? theme.notification : theme.border
-                }
-              ]}
-              placeholder={language === 'en' ? 'Enter transaction ID' : 'Введите ID операции'}
-              placeholderTextColor={theme.placeholder}
-              value={transactionIdToCheck}
-              onChangeText={setTransactionIdToCheck}
-              keyboardType="numeric"
-              allowFontScaling={false}
-            />
-            
-            <Button
-              title={language === 'en' ? 'Check' : 'Проверить'}
-              onPress={handleCheckTransaction}
-              loading={isCheckingTransaction}
-              icon={!isCheckingTransaction ? <Search size={18} color="white" /> : undefined}
-              style={styles.checkButton}
-            />
-          </View>
-          
-          {transactionCheckError ? (
-            <Text style={[styles.transactionCheckError, { color: theme.notification }]} allowFontScaling={false}>
-              {transactionCheckError}
-            </Text>
-          ) : null}
-          
-          {checkedTransaction && (
-            <View style={styles.checkedTransactionContainer}>
-              <View style={styles.checkedTransactionHeader}>
-                {checkedTransaction.status === 'completed' ? (
-                  <CheckCircle size={20} color={theme.success} />
-                ) : checkedTransaction.status === 'failed' ? (
-                  <XCircle size={20} color={theme.notification} />
-                ) : (
-                  <AlertCircle size={20} color={theme.warning} />
-                )}
-                <Text style={[
-                  styles.checkedTransactionStatus, 
-                  { 
-                    color: checkedTransaction.status === 'completed' 
-                      ? theme.success 
-                      : checkedTransaction.status === 'failed' 
-                        ? theme.notification 
-                        : theme.warning 
-                  }
-                ]} allowFontScaling={false}>
-                  {checkedTransaction.status === 'completed' 
-                    ? (language === 'en' ? 'Completed' : 'Оплачен') 
-                    : checkedTransaction.status === 'failed' 
-                      ? (language === 'en' ? 'Failed' : 'Не оплачен') 
-                      : (language === 'en' ? 'Pending' : 'В ожидании')}
+                    <View style={styles.viewDetailsContainer}>
+                      <ArrowRight size={16} color={theme.primary} />
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={[styles.emptyTransactionsContainer, { backgroundColor: theme.card }]}>
+                <Text style={[styles.emptyTransactionsText, { 
+                  color: theme.placeholder,
+                  fontSize: scaleFontSize(14)
+                }]} allowFontScaling={false}>
+                  {language === 'en' 
+                    ? 'No recent transactions found' 
+                    : 'Нет недавних транзакций'}
                 </Text>
               </View>
+            )}
+          </View>
+          
+          {/* Transaction Check Form */}
+          <Card style={styles.transactionCheckCard}>
+            <Text style={[styles.transactionCheckTitle, { color: theme.text }]} allowFontScaling={false}>
+              {language === 'en' ? 'Check Transaction Status' : 'Проверить статус операции'}
+            </Text>
+            
+            <View style={styles.transactionCheckForm}>
+              <TextInput
+                style={[
+                  styles.transactionCheckInput,
+                  { 
+                    backgroundColor: theme.background,
+                    color: theme.text,
+                    borderColor: transactionCheckError ? theme.notification : theme.border
+                  }
+                ]}
+                placeholder={language === 'en' ? 'Enter transaction ID' : 'Введите ID операции'}
+                placeholderTextColor={theme.placeholder}
+                value={transactionIdToCheck}
+                onChangeText={setTransactionIdToCheck}
+                keyboardType="numeric"
+                allowFontScaling={false}
+              />
               
-              <View style={styles.checkedTransactionDetails}>
-                <View style={styles.checkedTransactionDetail}>
-                  <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                    {language === 'en' ? 'Amount:' : 'Сумма:'}
-                  </Text>
-                  <Text style={[styles.checkedTransactionValue, { color: theme.text }]} allowFontScaling={false}>
-                    ₽{checkedTransaction.amount.toLocaleString(undefined, {maximumFractionDigits: 2})}
+              <Button
+                title={language === 'en' ? 'Check' : 'Проверить'}
+                onPress={handleCheckTransaction}
+                loading={isCheckingTransaction}
+                icon={!isCheckingTransaction ? <Search size={18} color="white" /> : undefined}
+                style={styles.checkButton}
+              />
+            </View>
+            
+            {transactionCheckError ? (
+              <Text style={[styles.transactionCheckError, { color: theme.notification }]} allowFontScaling={false}>
+                {transactionCheckError}
+              </Text>
+            ) : null}
+            
+            {checkedTransaction && (
+              <View style={styles.checkedTransactionContainer}>
+                <View style={styles.checkedTransactionHeader}>
+                  {checkedTransaction.status === 'completed' ? (
+                    <CheckCircle size={20} color={theme.success} />
+                  ) : checkedTransaction.status === 'failed' ? (
+                    <XCircle size={20} color={theme.notification} />
+                  ) : (
+                    <AlertCircle size={20} color={theme.warning} />
+                  )}
+                  <Text style={[
+                    styles.checkedTransactionStatus, 
+                    { 
+                      color: checkedTransaction.status === 'completed' 
+                        ? theme.success 
+                        : checkedTransaction.status === 'failed' 
+                          ? theme.notification 
+                          : theme.warning 
+                    }
+                  ]} allowFontScaling={false}>
+                    {checkedTransaction.status === 'completed' 
+                      ? (language === 'en' ? 'Completed' : 'Оплачен') 
+                      : checkedTransaction.status === 'failed' 
+                        ? (language === 'en' ? 'Failed' : 'Не оплачен') 
+                        : (language === 'en' ? 'Pending' : 'В ожидании')}
                   </Text>
                 </View>
                 
-                {checkedTransaction.commission !== undefined && (
+                <View style={styles.checkedTransactionDetails}>
                   <View style={styles.checkedTransactionDetail}>
                     <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                      {language === 'en' ? 'Commission:' : 'Комиссия:'}
+                      {language === 'en' ? 'Amount:' : 'Сумма:'}
                     </Text>
                     <Text style={[styles.checkedTransactionValue, { color: theme.text }]} allowFontScaling={false}>
-                      ₽{checkedTransaction.commission.toLocaleString(undefined, {maximumFractionDigits: 2})}
+                      ₽{checkedTransaction.amount.toLocaleString(undefined, {maximumFractionDigits: 2})}
                     </Text>
                   </View>
-                )}
+                  
+                  {checkedTransaction.commission !== undefined && (
+                    <View style={styles.checkedTransactionDetail}>
+                      <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                        {language === 'en' ? 'Commission:' : 'Комиссия:'}
+                      </Text>
+                      <Text style={[styles.checkedTransactionValue, { color: theme.text }]} allowFontScaling={false}>
+                        ₽{checkedTransaction.commission.toLocaleString(undefined, {maximumFractionDigits: 2})}
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {checkedTransaction.customerInfo && (
+                    <View style={styles.checkedTransactionDetail}>
+                      <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                        {language === 'en' ? 'Comment:' : 'Комментарий:'}
+                      </Text>
+                      <Text style={[styles.checkedTransactionValue, { color: theme.text }]} allowFontScaling={false}>
+                        {checkedTransaction.customerInfo}
+                      </Text>
+                    </View>
+                  )}
+                  
+                  {checkedTransaction.tag && (
+                    <View style={styles.checkedTransactionDetail}>
+                      <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                        {language === 'en' ? 'SBP ID:' : 'СБП ID:'}
+                      </Text>
+                      <Text 
+                        style={[styles.checkedTransactionValue, { color: theme.text }]}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        allowFontScaling={false}
+                      >
+                        {checkedTransaction.tag}
+                      </Text>
+                    </View>
+                  )}
+                </View>
                 
-                {checkedTransaction.customerInfo && (
-                  <View style={styles.checkedTransactionDetail}>
-                    <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                      {language === 'en' ? 'Comment:' : 'Комментарий:'}
-                    </Text>
-                    <Text style={[styles.checkedTransactionValue, { color: theme.text }]} allowFontScaling={false}>
-                      {checkedTransaction.customerInfo}
-                    </Text>
-                  </View>
-                )}
-                
-                {checkedTransaction.tag && (
-                  <View style={styles.checkedTransactionDetail}>
-                    <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                      {language === 'en' ? 'SBP ID:' : 'СБП ID:'}
-                    </Text>
-                    <Text 
-                      style={[styles.checkedTransactionValue, { color: theme.text }]}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                      allowFontScaling={false}
-                    >
-                      {checkedTransaction.tag}
-                    </Text>
-                  </View>
-                )}
+                <Button
+                  title={language === 'en' ? 'View Details' : 'Подробнее'}
+                  onPress={() => handleViewTransactionDetails(checkedTransaction.id)}
+                  style={styles.viewDetailsButton}
+                />
               </View>
-              
-              <Button
-                title={language === 'en' ? 'View Details' : 'Подробнее'}
-                onPress={() => handleViewTransactionDetails(checkedTransaction.id)}
-                style={styles.viewDetailsButton}
-              />
+            )}
+          </Card>
+          
+          {/* Personal Cabinet Button */}
+          <TouchableOpacity 
+            style={[styles.personalCabinetButton, { backgroundColor: theme.card }]}
+            onPress={handleOpenPersonalCabinet}
+          >
+            <View style={styles.personalCabinetContent}>
+              <View style={styles.personalCabinetIconContainer}>
+                <ExternalLink size={24} color={theme.primary} />
+              </View>
+              <View style={styles.personalCabinetTextContainer}>
+                <Text style={[styles.personalCabinetTitle, { color: theme.text }]} allowFontScaling={false}>
+                  {language === 'en' ? 'Personal Cabinet' : 'Личный кабинет'}
+                </Text>
+                <Text style={[styles.personalCabinetDescription, { color: theme.placeholder }]} allowFontScaling={false}>
+                  {language === 'en' 
+                    ? 'Account management, withdrawals, statistics, API keys' 
+                    : 'Управление счётами, вывод средств, статистика, API ключи'}
+                </Text>
+              </View>
+              <ArrowRight size={20} color={theme.primary} />
+            </View>
+          </TouchableOpacity>
+          
+          {credentials && (
+            <View style={styles.merchantInfoContainer}>
+              <Text style={[styles.merchantName, { 
+                color: theme.text,
+                fontSize: scaleFontSize(16)
+              }]} allowFontScaling={false}>
+                {credentials.merchantName || (language === 'en' ? 'Your Account' : 'Ваш аккаунт')}
+              </Text>
+              <Text style={[styles.merchantId, { 
+                color: theme.placeholder,
+                fontSize: scaleFontSize(14)
+              }]} allowFontScaling={false}>
+                ID: {credentials.clientId}
+              </Text>
             </View>
           )}
-        </Card>
+        </ScrollView>
         
-        {credentials && (
-          <View style={styles.merchantInfoContainer}>
-            <Text style={[styles.merchantName, { 
-              color: theme.text,
-              fontSize: scaleFontSize(16)
-            }]} allowFontScaling={false}>
-              {credentials.merchantName || (language === 'en' ? 'Your Account' : 'Ваш аккаунт')}
-            </Text>
-            <Text style={[styles.merchantId, { 
-              color: theme.placeholder,
-              fontSize: scaleFontSize(14)
-            }]} allowFontScaling={false}>
-              ID: {credentials.clientId}
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-      
-      {/* Error Popup */}
-      <ErrorPopup
-        visible={showErrorPopup}
-        message={error || (language === 'en' ? 'An error occurred' : 'Произошла ошибка')}
-        onClose={() => setShowErrorPopup(false)}
-        darkMode={darkMode}
-        title={language === 'en' ? 'Error' : 'Ошибка'}
-        rawResponse={errorDetails}
-      />
-    </KeyboardAvoidingView>
+        {/* Error Popup */}
+        <ErrorPopup
+          visible={showErrorPopup}
+          message={error || (language === 'en' ? 'An error occurred' : 'Произошла ошибка')}
+          onClose={() => setShowErrorPopup(false)}
+          darkMode={darkMode}
+          title={language === 'en' ? 'Error' : 'Ошибка'}
+          rawResponse={errorDetails}
+        />
+      </KeyboardAvoidingView>
+    </>
   );
 }
 
@@ -1219,6 +1257,36 @@ const styles = StyleSheet.create({
   },
   viewDetailsButton: {
     marginTop: 8,
+  },
+  // Personal Cabinet Button
+  personalCabinetButton: {
+    borderRadius: 12,
+    marginBottom: scaleSpacing(24),
+    padding: scaleSpacing(16),
+  },
+  personalCabinetContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  personalCabinetIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: scaleSpacing(12),
+  },
+  personalCabinetTextContainer: {
+    flex: 1,
+  },
+  personalCabinetTitle: {
+    fontSize: scaleFontSize(16),
+    fontWeight: '600',
+    marginBottom: scaleSpacing(4),
+  },
+  personalCabinetDescription: {
+    fontSize: scaleFontSize(12),
   },
   // Merchant info styles
   merchantInfoContainer: {

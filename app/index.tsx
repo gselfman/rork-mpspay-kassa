@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter, Redirect } from 'expo-router';
+import { useRouter, Redirect, Stack } from 'expo-router';
 import { Input } from '@/components/Input';
 import { Button } from '@/components/Button';
 import { ErrorPopup } from '@/components/ErrorPopup';
@@ -34,8 +34,8 @@ import { useLanguageStore } from '@/store/language-store';
 export default function AuthScreen() {
   const router = useRouter();
   const { isAuthenticated, setCredentials } = useAuthStore();
-  const { darkMode } = useThemeStore();
-  const { language } = useLanguageStore();
+  const { darkMode, setDarkMode } = useThemeStore();
+  const { language, setLanguage } = useLanguageStore();
   const theme = darkMode ? colors.dark : colors.light;
   
   const [showSetupForm, setShowSetupForm] = useState(false);
@@ -58,6 +58,12 @@ export default function AuthScreen() {
   // Get screen dimensions to adjust font sizes for different devices
   const { width, height } = Dimensions.get('window');
   const isSmallDevice = width < 375 || height < 700;
+
+  // Set default language to Russian
+  useEffect(() => {
+    setLanguage('ru');
+    setDarkMode(false); // Default to light theme
+  }, []);
 
   // Use Redirect component instead of programmatic navigation
   if (isAuthenticated) {
@@ -250,217 +256,235 @@ export default function AuthScreen() {
   // Display the start screen if the setup form is not shown
   if (!showSetupForm) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <StatusBar style={darkMode ? "light" : "dark"} />
-        <View style={styles.welcomeContainer}>
-          <View style={styles.logoContainer}>
-            <Image 
-              source={{ uri: IMAGES.LOGO }} 
-              style={styles.welcomeLogo} 
-              resizeMode="contain"
-            />
+      <>
+        <Stack.Screen 
+          options={{
+            title: '',
+            headerShown: false
+          }}
+        />
+        
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+          <StatusBar style={darkMode ? "light" : "dark"} />
+          <View style={styles.welcomeContainer}>
+            <View style={styles.logoContainer}>
+              <Image 
+                source={{ uri: IMAGES.LOGO }} 
+                style={styles.welcomeLogo} 
+                resizeMode="contain"
+              />
+            </View>
+            
+            <Text style={[styles.welcomeTitle, { color: theme.text }]}>
+              MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
+            </Text>
+            
+            <Text style={[styles.welcomeSubtitle, { color: theme.placeholder }]}>
+              {language === 'en' 
+                ? 'Mobile terminal for payment processing' 
+                : 'Мобильная касса для приёма платежей'}
+            </Text>
+            
+            <View style={styles.welcomeButtons}>
+              <Button
+                title={language === 'en' ? 'Setup Terminal' : 'Настроить терминал'}
+                onPress={() => setShowSetupForm(true)}
+                style={styles.setupButton}
+              />
+            </View>
           </View>
-          
-          <Text style={[styles.welcomeTitle, { color: theme.text }]}>
-            MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
-          </Text>
-          
-          <Text style={[styles.welcomeSubtitle, { color: theme.placeholder }]}>
-            {language === 'en' 
-              ? 'Mobile terminal for payment processing' 
-              : 'Мобильная касса для приёма платежей'}
-          </Text>
-          
-          <View style={styles.welcomeButtons}>
-            <Button
-              title={language === 'en' ? 'Setup Terminal' : 'Настроить терминал'}
-              onPress={() => setShowSetupForm(true)}
-              style={styles.setupButton}
-            />
-          </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar style={darkMode ? "light" : "dark"} />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoidingView}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView 
-            contentContainerStyle={[styles.scrollContent, { paddingBottom: Platform.OS === 'ios' ? 50 : 24 }]}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={styles.header}>
-              <Image 
-                source={{ uri: IMAGES.LOGO }} 
-                style={styles.logo} 
-                resizeMode="contain"
-              />
-              <Text style={[styles.title, { color: theme.text }]}>
-                MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
-              </Text>
-              <Text style={[styles.subtitle, { color: theme.placeholder }]}>
-                {language === 'en' 
-                  ? 'To work with the terminal, you need to authorize your workplace. Please prepare the following data from your personal account at merch.mpspay.ru:' 
-                  : 'Для работы в кассе вам нужно авторизовать рабочее место, для этого приготовьте следующие данные из личного кабинета merch.mpspay.ru:'}
-              </Text>
-            </View>
-            
-            {errors.form && (
-              <Text style={[styles.formError, { color: theme.notification }]}>
-                {errors.form}
-              </Text>
-            )}
-            
-            <View style={styles.form}>
-              <Input
-                label={language === 'en' ? 'Read Only Access Key' : 'Ключ доступа Read Only'}
-                placeholder={language === 'en' 
-                  ? 'GUID format: 9cda1144-63ef-496a-a4da-24e03bba2608' 
-                  : 'Формат GUID: 9cda1144-63ef-496a-a4da-24e03bba2608'}
-                value={readOnlyAccessKey}
-                onChangeText={setReadOnlyAccessKey}
-                error={errors.readOnlyAccessKey}
-                autoCapitalize="none"
-                inputStyle={getInputStyle('readOnlyAccessKey')}
-                darkMode={darkMode}
-              />
-              
-              <Input
-                label={language === 'en' ? 'Currency Code' : 'Код валюты'}
-                placeholder={language === 'en' 
-                  ? 'e.g., 112 for RUB' 
-                  : 'например, 112 для RUB'}
-                value={currencyCode}
-                onChangeText={setCurrencyCode}
-                error={errors.currencyCode}
-                keyboardType="numeric"
-                inputStyle={getInputStyle('currencyCode')}
-                darkMode={darkMode}
-              />
-              
-              <Input
-                label={language === 'en' ? 'Currency Account Number' : 'Номер счета вашей валюты'}
-                placeholder={language === 'en' 
-                  ? '5-8 digits, e.g.: 14744' 
-                  : '5-8 цифр, например: 14744'}
-                value={currencyAccountNumber}
-                onChangeText={setCurrencyAccountNumber}
-                error={errors.currencyAccountNumber}
-                keyboardType="numeric"
-                inputStyle={getInputStyle('currencyAccountNumber')}
-                darkMode={darkMode}
-              />
-              
-              <Input
-                label={language === 'en' ? 'Client ID' : 'Клиентский номер'}
-                placeholder={language === 'en' 
-                  ? '5-8 digits, e.g.: 10221' 
-                  : '5-8 цифр, например: 10221'}
-                value={clientId}
-                onChangeText={setClientId}
-                error={errors.clientId}
-                keyboardType="numeric"
-                inputStyle={getInputStyle('clientId')}
-                darkMode={darkMode}
-              />
-              
-              <Input
-                label={language === 'en' ? 'Currency Account GUID' : 'GUID счета вашей валюты'}
-                placeholder={language === 'en' 
-                  ? 'GUID format: 3a4e346b-1a30-404e-b12e-4ba3414c30f8' 
-                  : 'Формат GUID: 3a4e346b-1a30-404e-b12e-4ba3414c30f8'}
-                value={currencyAccountGuid}
-                onChangeText={setCurrencyAccountGuid}
-                error={errors.currencyAccountGuid}
-                autoCapitalize="none"
-                inputStyle={getInputStyle('currencyAccountGuid')}
-                darkMode={darkMode}
-              />
-              
-              <Input
-                label={language === 'en' ? 'Merchant Name' : 'Имя продавца'}
-                placeholder={language === 'en' 
-                  ? 'E.g.: Snow Hotel or Shoelace Online Store' 
-                  : 'Например: Отель Снежинка или Интернет магазин шнурков'}
-                value={merchantName}
-                onChangeText={setMerchantName}
-                error={errors.merchantName}
-                maxLength={50}
-                darkMode={darkMode}
-              />
-              
-              {/* Display account balance if available */}
-              {accountBalance !== null && validationStep >= 2 && (
-                <View style={[styles.balanceInfo, { backgroundColor: theme.card }]}>
-                  <Text style={[styles.balanceLabel, { color: theme.text }]}>
-                    {language === 'en' ? 'Account Balance:' : 'Баланс счета:'}
-                  </Text>
-                  <Text style={[styles.balanceValue, { color: theme.primary }]}>
-                    ₽{accountBalance.toLocaleString()}
-                  </Text>
-                </View>
-              )}
-              
-              {/* Display customer balance if available */}
-              {customerBalance !== null && validationStep >= 3 && (
-                <View style={[styles.balanceInfo, { backgroundColor: theme.card }]}>
-                  <Text style={[styles.balanceLabel, { color: theme.text }]}>
-                    {language === 'en' ? 'Customer Balance:' : 'Баланс клиента:'}
-                  </Text>
-                  <Text style={[styles.balanceValue, { color: theme.primary }]}>
-                    ₽{customerBalance.toLocaleString()}
-                  </Text>
-                </View>
-              )}
-              
-              <Button
-                title={isLoading 
-                  ? (language === 'en' ? "Checking..." : "Проверка...") 
-                  : (language === 'en' ? "Connect Workplace" : "Подключить рабочее место")}
-                onPress={handleSubmit}
-                loading={isLoading}
-                style={styles.submitButton}
-              />
-              
-              <Button
-                title={language === 'en' ? "Use Example Data" : "Использовать примеры данных"}
-                variant="outline"
-                onPress={fillExampleCredentials}
-                style={styles.testButton}
-              />
-              
-              <Button
-                title={language === 'en' ? "Go Back" : "Вернуться назад"}
-                variant="outline"
-                onPress={() => setShowSetupForm(false)}
-                style={styles.backButton}
-              />
-            </View>
-            
-            <Text style={[styles.helpText, { color: theme.placeholder }]}>
-              {language === 'en' 
-                ? 'Need help? Contact your manager or visit merch.mpspay.ru' 
-                : 'Нужна помощь? Свяжитесь с вашим менеджером или посетите merch.mpspay.ru'}
-            </Text>
-          </ScrollView>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-      
-      <ErrorPopup
-        visible={errorPopupVisible}
-        message={errorMessage}
-        onClose={() => setErrorPopupVisible(false)}
-        darkMode={darkMode}
-        title={language === 'en' ? 'Validation Error' : 'Ошибка валидации'}
-        rawResponse={rawErrorResponse || undefined}
+    <>
+      <Stack.Screen 
+        options={{
+          title: '',
+          headerShown: false
+        }}
       />
-    </SafeAreaView>
+      
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <StatusBar style={darkMode ? "light" : "dark"} />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoidingView}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <ScrollView 
+              contentContainerStyle={[styles.scrollContent, { paddingBottom: Platform.OS === 'ios' ? 50 : 24 }]}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.header}>
+                <Image 
+                  source={{ uri: IMAGES.LOGO }} 
+                  style={styles.logo} 
+                  resizeMode="contain"
+                />
+                <Text style={[styles.title, { color: theme.text }]}>
+                  MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
+                </Text>
+                <Text style={[styles.subtitle, { color: theme.placeholder }]}>
+                  {language === 'en' 
+                    ? 'To work with the terminal, you need to authorize your workplace. Please prepare the following data from your personal account at merch.mpspay.ru:' 
+                    : 'Для работы в кассе вам нужно авторизовать рабочее место, для этого приготовьте следующие данные из личного кабинета merch.mpspay.ru:'}
+                </Text>
+              </View>
+              
+              {errors.form && (
+                <Text style={[styles.formError, { color: theme.notification }]}>
+                  {errors.form}
+                </Text>
+              )}
+              
+              <View style={styles.form}>
+                <Input
+                  label={language === 'en' ? 'Read Only Access Key' : 'Ключ доступа Read Only'}
+                  placeholder={language === 'en' 
+                    ? 'GUID format: 9cda1144-63ef-496a-a4da-24e03bba2608' 
+                    : 'Формат GUID: 9cda1144-63ef-496a-a4da-24e03bba2608'}
+                  value={readOnlyAccessKey}
+                  onChangeText={setReadOnlyAccessKey}
+                  error={errors.readOnlyAccessKey}
+                  autoCapitalize="none"
+                  inputStyle={getInputStyle('readOnlyAccessKey')}
+                  darkMode={darkMode}
+                />
+                
+                <Input
+                  label={language === 'en' ? 'Currency Code' : 'Код валюты'}
+                  placeholder={language === 'en' 
+                    ? 'e.g., 112 for RUB' 
+                    : 'например, 112 для RUB'}
+                  value={currencyCode}
+                  onChangeText={setCurrencyCode}
+                  error={errors.currencyCode}
+                  keyboardType="numeric"
+                  inputStyle={getInputStyle('currencyCode')}
+                  darkMode={darkMode}
+                />
+                
+                <Input
+                  label={language === 'en' ? 'Currency Account Number' : 'Номер счета вашей валюты'}
+                  placeholder={language === 'en' 
+                    ? '5-8 digits, e.g.: 14744' 
+                    : '5-8 цифр, например: 14744'}
+                  value={currencyAccountNumber}
+                  onChangeText={setCurrencyAccountNumber}
+                  error={errors.currencyAccountNumber}
+                  keyboardType="numeric"
+                  inputStyle={getInputStyle('currencyAccountNumber')}
+                  darkMode={darkMode}
+                />
+                
+                <Input
+                  label={language === 'en' ? 'Client ID' : 'Клиентский номер'}
+                  placeholder={language === 'en' 
+                    ? '5-8 digits, e.g.: 10221' 
+                    : '5-8 цифр, например: 10221'}
+                  value={clientId}
+                  onChangeText={setClientId}
+                  error={errors.clientId}
+                  keyboardType="numeric"
+                  inputStyle={getInputStyle('clientId')}
+                  darkMode={darkMode}
+                />
+                
+                <Input
+                  label={language === 'en' ? 'Currency Account GUID' : 'GUID счета вашей валюты'}
+                  placeholder={language === 'en' 
+                    ? 'GUID format: 3a4e346b-1a30-404e-b12e-4ba3414c30f8' 
+                    : 'Формат GUID: 3a4e346b-1a30-404e-b12e-4ba3414c30f8'}
+                  value={currencyAccountGuid}
+                  onChangeText={setCurrencyAccountGuid}
+                  error={errors.currencyAccountGuid}
+                  autoCapitalize="none"
+                  inputStyle={getInputStyle('currencyAccountGuid')}
+                  darkMode={darkMode}
+                />
+                
+                <Input
+                  label={language === 'en' ? 'Merchant Name' : 'Имя продавца'}
+                  placeholder={language === 'en' 
+                    ? 'E.g.: Snow Hotel or Shoelace Online Store' 
+                    : 'Например: Отель Снежинка или Интернет магазин шнурков'}
+                  value={merchantName}
+                  onChangeText={setMerchantName}
+                  error={errors.merchantName}
+                  maxLength={50}
+                  darkMode={darkMode}
+                />
+                
+                {/* Display account balance if available */}
+                {accountBalance !== null && validationStep >= 2 && (
+                  <View style={[styles.balanceInfo, { backgroundColor: theme.card }]}>
+                    <Text style={[styles.balanceLabel, { color: theme.text }]}>
+                      {language === 'en' ? 'Account Balance:' : 'Баланс счета:'}
+                    </Text>
+                    <Text style={[styles.balanceValue, { color: theme.primary }]}>
+                      ₽{accountBalance.toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+                
+                {/* Display customer balance if available */}
+                {customerBalance !== null && validationStep >= 3 && (
+                  <View style={[styles.balanceInfo, { backgroundColor: theme.card }]}>
+                    <Text style={[styles.balanceLabel, { color: theme.text }]}>
+                      {language === 'en' ? 'Customer Balance:' : 'Баланс клиента:'}
+                    </Text>
+                    <Text style={[styles.balanceValue, { color: theme.primary }]}>
+                      ₽{customerBalance.toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+                
+                <Button
+                  title={isLoading 
+                    ? (language === 'en' ? "Checking..." : "Проверка...") 
+                    : (language === 'en' ? "Connect Workplace" : "Подключить рабочее место")}
+                  onPress={handleSubmit}
+                  loading={isLoading}
+                  style={styles.submitButton}
+                />
+                
+                <Button
+                  title={language === 'en' ? "Use Example Data" : "Использовать примеры данных"}
+                  variant="outline"
+                  onPress={fillExampleCredentials}
+                  style={styles.testButton}
+                />
+                
+                <Button
+                  title={language === 'en' ? "Go Back" : "Вернуться назад"}
+                  variant="outline"
+                  onPress={() => setShowSetupForm(false)}
+                  style={styles.backButton}
+                />
+              </View>
+              
+              <Text style={[styles.helpText, { color: theme.placeholder }]}>
+                {language === 'en' 
+                  ? 'Need help? Contact your manager or visit merch.mpspay.ru' 
+                  : 'Нужна помощь? Свяжитесь с вашим менеджером или посетите merch.mpspay.ru'}
+              </Text>
+            </ScrollView>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+        
+        <ErrorPopup
+          visible={errorPopupVisible}
+          message={errorMessage}
+          onClose={() => setErrorPopupVisible(false)}
+          darkMode={darkMode}
+          title={language === 'en' ? 'Validation Error' : 'Ошибка валидации'}
+          rawResponse={rawErrorResponse || undefined}
+        />
+      </SafeAreaView>
+    </>
   );
 }
 

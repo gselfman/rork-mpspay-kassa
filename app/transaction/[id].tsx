@@ -11,7 +11,7 @@ import {
   Share,
   Linking
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
 import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
@@ -281,44 +281,17 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
       }
     }
   }, [transactionId, transactionData, transactions, addTransaction, fetchTransactionStatus]);
-  
-  // Render loading state
-  if (isLoading) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
-        <Text style={[styles.loadingText, { color: theme.text }]} allowFontScaling={false}>
-          {getTranslation('Loading transaction details...', 'Загрузка деталей транзакции...')}
-        </Text>
-      </View>
-    );
-  }
-  
-  // Render error state if no transaction
-  if (!transaction) {
-    return (
-      <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
-        <AlertCircle size={48} color={theme.notification} />
-        <Text style={[styles.errorTitle, { color: theme.text }]} allowFontScaling={false}>
-          {getTranslation('Transaction Not Found', 'Транзакция не найдена')}
-        </Text>
-        <Text style={[styles.errorText, { color: theme.placeholder }]} allowFontScaling={false}>
-          {getTranslation(
-            'The transaction you are looking for does not exist or has been removed.',
-            'Транзакция, которую вы ищете, не существует или была удалена.'
-          )}
-        </Text>
-        <Button
-          title={getTranslation('Go Back', 'Вернуться назад')}
-          onPress={() => router.back()}
-          style={styles.errorButton}
-        />
-      </View>
-    );
-  }
 
+  // Set the header title
   return (
     <>
+      <Stack.Screen 
+        options={{
+          title: getTranslation('Transaction Details', 'Детали транзакции'),
+          headerBackTitle: getTranslation('Back', 'Назад')
+        }}
+      />
+      
       <ScrollView 
         style={[styles.container, { backgroundColor: theme.background }]}
         contentContainerStyle={styles.contentContainer}
@@ -340,188 +313,217 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
           </TouchableOpacity>
         </View>
         
-        {/* Status Card */}
-        <Card style={styles.statusCard}>
-          <View style={styles.statusHeader}>
-            {getStatusIcon(transaction.status)}
-            <Text style={[styles.statusText, { color: getStatusColor(transaction.status) }]} allowFontScaling={false}>
-              {getStatusText(transaction.status)}
+        {isLoading ? (
+          <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.loadingText, { color: theme.text }]} allowFontScaling={false}>
+              {getTranslation('Loading transaction details...', 'Загрузка деталей транзакции...')}
             </Text>
           </View>
-          
-          <Text style={[styles.amountText, { color: theme.text }]} allowFontScaling={false}>
-            ₽{transaction.amount.toLocaleString()}
-          </Text>
-          
-          <View style={styles.idContainer}>
-            <Text style={[styles.idLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-              {getTranslation('Transaction ID:', 'ID транзакции:')}
+        ) : !transaction ? (
+          <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
+            <AlertCircle size={48} color={theme.notification} />
+            <Text style={[styles.errorTitle, { color: theme.text }]} allowFontScaling={false}>
+              {getTranslation('Transaction Not Found', 'Транзакция не найдена')}
             </Text>
-            <Text style={[styles.idValue, { color: theme.text }]} allowFontScaling={false}>
-              {transaction.id}
+            <Text style={[styles.errorText, { color: theme.placeholder }]} allowFontScaling={false}>
+              {getTranslation(
+                'The transaction you are looking for does not exist or has been removed.',
+                'Транзакция, которую вы ищете, не существует или была удалена.'
+              )}
             </Text>
+            <Button
+              title={getTranslation('Go Back', 'Вернуться назад')}
+              onPress={() => router.back()}
+              style={styles.errorButton}
+            />
           </View>
-        </Card>
-        
-        {/* Details Card */}
-        <Card style={styles.detailsCard}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
-            {getTranslation('Transaction Details', 'Детали транзакции')}
-          </Text>
-          
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-              {getTranslation('Created', 'Создано')}
-            </Text>
-            <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-              {formatDate(transaction.createdAt)}
-            </Text>
-          </View>
-          
-          {transaction.finishedAt && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                {getTranslation('Completed', 'Завершено')}
-              </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                {formatDate(transaction.finishedAt)}
-              </Text>
-            </View>
-          )}
-          
-          {transaction.customerInfo && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                {getTranslation('Customer', 'Покупатель')}
-              </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                {transaction.customerInfo}
-              </Text>
-            </View>
-          )}
-          
-          {transaction.merchantName && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                {getTranslation('Merchant', 'Продавец')}
-              </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                {transaction.merchantName}
-              </Text>
-            </View>
-          )}
-          
-          {transaction.commission !== undefined && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                {getTranslation('Commission', 'Комиссия')}
-              </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                ₽{transaction.commission.toLocaleString()}
-              </Text>
-            </View>
-          )}
-          
-          {transaction.tag && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                {getTranslation('SBP ID', 'СБП ID')}
-              </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                {transaction.tag}
-              </Text>
-            </View>
-          )}
-          
-          {transaction.paymentUrl && (
-            <View style={styles.detailRow}>
-              <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
-                {getTranslation('Payment URL', 'URL платежа')}
-              </Text>
-              <TouchableOpacity 
-                onPress={() => Linking.openURL(transaction.paymentUrl!)}
-                style={styles.urlContainer}
-              >
-                <Text 
-                  style={[styles.urlText, { color: theme.primary }]}
-                  numberOfLines={1}
-                  ellipsizeMode="middle"
-                  allowFontScaling={false}
-                >
-                  {transaction.paymentUrl}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </Card>
-        
-        {/* Products Card - Only show if transaction has products */}
-        {transaction.products && transaction.products.length > 0 && (
-          <Card style={styles.productsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
-              {getTranslation('Products', 'Товары')}
-            </Text>
-            
-            {transaction.products.map((product, index) => (
-              <View 
-                key={`${product.id}-${index}`} 
-                style={[
-                  styles.productItem, 
-                  index < transaction.products!.length - 1 && { 
-                    borderBottomWidth: 1, 
-                    borderBottomColor: theme.border 
-                  }
-                ]}
-              >
-                <View style={styles.productInfo}>
-                  <Text style={[styles.productName, { color: theme.text }]} allowFontScaling={false}>
-                    {product.name}
-                  </Text>
-                  <Text style={[styles.productPrice, { color: theme.placeholder }]} allowFontScaling={false}>
-                    ₽{product.price.toLocaleString()} × {product.quantity}
-                  </Text>
-                </View>
-                <Text style={[styles.productTotal, { color: theme.text }]} allowFontScaling={false}>
-                  ₽{(product.price * product.quantity).toLocaleString()}
+        ) : (
+          <>
+            {/* Status Card */}
+            <Card style={styles.statusCard}>
+              <View style={styles.statusHeader}>
+                {getStatusIcon(transaction.status)}
+                <Text style={[styles.statusText, { color: getStatusColor(transaction.status) }]} allowFontScaling={false}>
+                  {getStatusText(transaction.status)}
                 </Text>
               </View>
-            ))}
+              
+              <Text style={[styles.amountText, { color: theme.text }]} allowFontScaling={false}>
+                ₽{transaction.amount.toLocaleString()}
+              </Text>
+              
+              <View style={styles.idContainer}>
+                <Text style={[styles.idLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                  {getTranslation('Transaction ID:', 'ID транзакции:')}
+                </Text>
+                <Text style={[styles.idValue, { color: theme.text }]} allowFontScaling={false}>
+                  {transaction.id}
+                </Text>
+              </View>
+            </Card>
             
-            <View style={styles.totalRow}>
-              <Text style={[styles.totalLabel, { color: theme.text }]} allowFontScaling={false}>
-                {getTranslation('Total', 'Итого')}
+            {/* Details Card */}
+            <Card style={styles.detailsCard}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
+                {getTranslation('Transaction Details', 'Детали транзакции')}
               </Text>
-              <Text style={[styles.totalValue, { color: theme.text }]} allowFontScaling={false}>
-                ₽{transaction.products.reduce((sum, p) => sum + (p.price * p.quantity), 0).toLocaleString()}
-              </Text>
+              
+              <View style={styles.detailRow}>
+                <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                  {getTranslation('Created', 'Создано')}
+                </Text>
+                <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
+                  {formatDate(transaction.createdAt)}
+                </Text>
+              </View>
+              
+              {transaction.finishedAt && (
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                    {getTranslation('Completed', 'Завершено')}
+                  </Text>
+                  <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
+                    {formatDate(transaction.finishedAt)}
+                  </Text>
+                </View>
+              )}
+              
+              {transaction.customerInfo && (
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                    {getTranslation('Customer', 'Покупатель')}
+                  </Text>
+                  <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
+                    {transaction.customerInfo}
+                  </Text>
+                </View>
+              )}
+              
+              {transaction.merchantName && (
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                    {getTranslation('Merchant', 'Продавец')}
+                  </Text>
+                  <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
+                    {transaction.merchantName}
+                  </Text>
+                </View>
+              )}
+              
+              {transaction.commission !== undefined && (
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                    {getTranslation('Commission', 'Комиссия')}
+                  </Text>
+                  <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
+                    ₽{transaction.commission.toLocaleString()}
+                  </Text>
+                </View>
+              )}
+              
+              {transaction.tag && (
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                    {getTranslation('SBP ID', 'СБП ID')}
+                  </Text>
+                  <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
+                    {transaction.tag}
+                  </Text>
+                </View>
+              )}
+              
+              {transaction.paymentUrl && (
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
+                    {getTranslation('Payment URL', 'URL платежа')}
+                  </Text>
+                  <TouchableOpacity 
+                    onPress={() => Linking.openURL(transaction.paymentUrl!)}
+                    style={styles.urlContainer}
+                  >
+                    <Text 
+                      style={[styles.urlText, { color: theme.primary }]}
+                      numberOfLines={1}
+                      ellipsizeMode="middle"
+                      allowFontScaling={false}
+                    >
+                      {transaction.paymentUrl}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </Card>
+            
+            {/* Products Card - Only show if transaction has products */}
+            {transaction.products && transaction.products.length > 0 && (
+              <Card style={styles.productsCard}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
+                  {getTranslation('Products', 'Товары')}
+                </Text>
+                
+                {transaction.products.map((product, index) => (
+                  <View 
+                    key={`${product.id}-${index}`} 
+                    style={[
+                      styles.productItem, 
+                      index < transaction.products!.length - 1 && { 
+                        borderBottomWidth: 1, 
+                        borderBottomColor: theme.border 
+                      }
+                    ]}
+                  >
+                    <View style={styles.productInfo}>
+                      <Text style={[styles.productName, { color: theme.text }]} allowFontScaling={false}>
+                        {product.name}
+                      </Text>
+                      <Text style={[styles.productPrice, { color: theme.placeholder }]} allowFontScaling={false}>
+                        ₽{product.price.toLocaleString()} × {product.quantity}
+                      </Text>
+                    </View>
+                    <Text style={[styles.productTotal, { color: theme.text }]} allowFontScaling={false}>
+                      ₽{(product.price * product.quantity).toLocaleString()}
+                    </Text>
+                  </View>
+                ))}
+                
+                <View style={styles.totalRow}>
+                  <Text style={[styles.totalLabel, { color: theme.text }]} allowFontScaling={false}>
+                    {getTranslation('Total', 'Итого')}
+                  </Text>
+                  <Text style={[styles.totalValue, { color: theme.text }]} allowFontScaling={false}>
+                    ₽{transaction.products.reduce((sum, p) => sum + (p.price * p.quantity), 0).toLocaleString()}
+                  </Text>
+                </View>
+              </Card>
+            )}
+            
+            {/* Action Buttons */}
+            <View style={styles.actionButtons}>
+              <Button
+                title={getTranslation('Share', 'Поделиться')}
+                onPress={shareTransactionDetails}
+                icon={<ShareIcon size={20} color="white" />}
+                style={styles.actionButton}
+              />
+              
+              <Button
+                title={getTranslation('Print Receipt', 'Печать чека')}
+                onPress={printReceipt}
+                icon={<Printer size={20} color="white" />}
+                style={styles.actionButton}
+              />
+              
+              <Button
+                title={getTranslation('Back', 'Назад')}
+                variant="outline"
+                onPress={() => router.back()}
+                icon={<ArrowLeft size={20} color={theme.primary} />}
+                style={styles.actionButton}
+              />
             </View>
-          </Card>
+          </>
         )}
-        
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <Button
-            title={getTranslation('Share', 'Поделиться')}
-            onPress={shareTransactionDetails}
-            icon={<ShareIcon size={20} color="white" />}
-            style={styles.actionButton}
-          />
-          
-          <Button
-            title={getTranslation('Print Receipt', 'Печать чека')}
-            onPress={printReceipt}
-            icon={<Printer size={20} color="white" />}
-            style={styles.actionButton}
-          />
-          
-          <Button
-            title={getTranslation('Back', 'Назад')}
-            variant="outline"
-            onPress={() => router.back()}
-            icon={<ArrowLeft size={20} color={theme.primary} />}
-            style={styles.actionButton}
-          />
-        </View>
       </ScrollView>
       
       <ErrorPopup
@@ -557,6 +559,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: scaleSpacing(24),
+    minHeight: 300,
   },
   loadingText: {
     marginTop: scaleSpacing(16),
@@ -567,6 +571,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: scaleSpacing(16),
+    minHeight: 300,
   },
   errorTitle: {
     fontSize: scaleFontSize(20),
