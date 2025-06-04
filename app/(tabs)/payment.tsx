@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Image,
+  TextInput,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { Input } from '@/components/Input';
@@ -374,7 +375,7 @@ export default function PaymentScreen() {
                 {getTranslation('Amount, RUB', 'Сумма, руб')}
               </Text>
               <View style={styles.amountInputContainer}>
-                <Input
+                <TextInput
                   value={amount}
                   onChangeText={(text) => {
                     // Only allow integer values
@@ -383,10 +384,17 @@ export default function PaymentScreen() {
                   }}
                   placeholder="0"
                   keyboardType="numeric"
-                  style={styles.amountInput}
-                  darkMode={darkMode}
+                  style={[
+                    styles.amountInput,
+                    {
+                      borderColor: error && error.includes(getTranslation('Amount', 'Сумма')) ? theme.notification : theme.border,
+                      backgroundColor: theme.inputBackground,
+                      color: theme.text
+                    }
+                  ]}
                   editable={products.length === 0} // Disable if products are added
                   placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
+                  allowFontScaling={false}
                 />
               </View>
               {error && error.includes(getTranslation('Amount', 'Сумма')) && (
@@ -682,6 +690,11 @@ const styles = StyleSheet.create({
   amountInput: {
     flex: 1,
     fontSize: scaleFontSize(24),
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
+    minHeight: 48,
   },
   customerContainer: {
     marginBottom: scaleSpacing(16),

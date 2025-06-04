@@ -27,7 +27,6 @@ import {
   Info,
   ChevronRight,
   Shield,
-  Bell,
   HelpCircle,
   ShoppingBag,
   MessageCircle
@@ -200,16 +199,6 @@ export default function SettingsScreen() {
               language === 'en' ? 'Theme' : 'Тема',
               darkMode ? (language === 'en' ? 'Dark' : 'Тёмная') : (language === 'en' ? 'Light' : 'Светлая'),
               toggleDarkMode
-            )}
-            
-            {renderSettingItem(
-              <Bell size={20} color={theme.primary} />,
-              language === 'en' ? 'Notifications' : 'Уведомления',
-              language === 'en' ? 'Manage notification settings' : 'Управление уведомлениями',
-              () => Alert.alert(
-                language === 'en' ? 'Notifications' : 'Уведомления',
-                language === 'en' ? 'Notification settings will be available in future updates.' : 'Настройки уведомлений будут доступны в будущих обновлениях.'
-              )
             )}
           </Card>
           

@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, Platform } from 'react-native';
 import { useThemeStore } from '@/store/theme-store';
 import colors from '@/constants/colors';
 import { Home, CreditCard, Clock, Settings } from 'lucide-react-native';
@@ -27,6 +27,8 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: theme.background,
           borderTopColor: theme.border,
+          paddingBottom: Platform.OS === 'android' ? 8 : 0, // Add padding for Android
+          height: Platform.OS === 'android' ? 70 : 60, // Increase height for Android
         },
         headerShown: false, // Hide all tab headers
       }}

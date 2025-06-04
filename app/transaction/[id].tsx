@@ -242,21 +242,205 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
   };
   
   // Print receipt
-  const printReceipt = () => {
-    Alert.alert(
-      getTranslation('Print Receipt', 'Печать чека'),
-      getTranslation(
-        'This feature is not available yet',
-        'Эта функция пока недоступна'
-      )
-    );
+  const printReceipt = async () => {
+    if (!transaction) return;
+    
+    try {
+      // Generate PDF receipt URL
+      const receiptData = {
+        transactionId: transaction.id,
+        amount: transaction.amount,
+        status: getStatusText(transaction.status),
+        date: formatDate(transaction.createdAt),
+        customerInfo: transaction.customerInfo || '',
+        merchantName: transaction.merchantName || '',
+        tag: transaction.tag || '',
+        commission: transaction.commission || 0
+      };
+      
+      // Create PDF content as data URL
+      const pdfContent = generateReceiptPDF(receiptData);
+      
+      // Open PDF in browser
+      if (Platform.OS === 'web') {
+        const blob = new Blob([pdfContent], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } else {
+        // For mobile, we'll use a simple HTML page that can be printed
+        const htmlContent = generateReceiptHTML(receiptData);
+        const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
+        await Linking.openURL(dataUrl);
+      }
+    } catch (error) {
+      console.error('Error printing receipt:', error);
+      Alert.alert(
+        getTranslation('Error', 'Ошибка'),
+        getTranslation(
+          'Failed to print receipt',
+          'Не удалось распечатать чек'
+        )
+      );
+    }
   };
   
-  // Initialize transaction data - Fixed to prevent infinite loop
+  // Generate PDF content (simplified)
+  const generateReceiptPDF = (data: any): string => {
+    // This is a simplified PDF generation - in a real app you'd use a proper PDF library
+    return `%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+>>
+endobj
+
+4 0 obj
+<<
+/Length 200
+>>
+stream
+BT
+/F1 12 Tf
+50 750 Td
+(MPSPAY Receipt) Tj
+0 -20 Td
+(Transaction ID: ${data.transactionId}) Tj
+0 -20 Td
+(Amount: ₽${data.amount}) Tj
+0 -20 Td
+(Status: ${data.status}) Tj
+0 -20 Td
+(Date: ${data.date}) Tj
+ET
+endstream
+endobj
+
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000206 00000 n 
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+456
+%%EOF`;
+  };
+  
+  // Generate HTML receipt
+  const generateReceiptHTML = (data: any): string => {
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Receipt - ${data.transactionId}</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+        .logo { width: 60px; height: 60px; margin: 0 auto 10px; }
+        .row { display: flex; justify-content: space-between; margin: 10px 0; }
+        .total { font-weight: bold; font-size: 1.2em; border-top: 1px solid #000; padding-top: 10px; }
+        @media print { body { margin: 0; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">📱</div>
+        <h2>MPSPAY</h2>
+        <p>Чек об оплате</p>
+    </div>
+    
+    <div class="row">
+        <span>ID транзакции:</span>
+        <span>${data.transactionId}</span>
+    </div>
+    
+    <div class="row">
+        <span>Сумма:</span>
+        <span>₽${data.amount}</span>
+    </div>
+    
+    <div class="row">
+        <span>Статус:</span>
+        <span>${data.status}</span>
+    </div>
+    
+    <div class="row">
+        <span>Дата:</span>
+        <span>${data.date}</span>
+    </div>
+    
+    ${data.customerInfo ? `
+    <div class="row">
+        <span>Покупатель:</span>
+        <span>${data.customerInfo}</span>
+    </div>
+    ` : ''}
+    
+    ${data.merchantName ? `
+    <div class="row">
+        <span>Продавец:</span>
+        <span>${data.merchantName}</span>
+    </div>
+    ` : ''}
+    
+    ${data.commission ? `
+    <div class="row">
+        <span>Комиссия:</span>
+        <span>₽${data.commission}</span>
+    </div>
+    ` : ''}
+    
+    ${data.tag ? `
+    <div class="row">
+        <span>СБП ID:</span>
+        <span>${data.tag}</span>
+    </div>
+    ` : ''}
+    
+    <div class="row total">
+        <span>Итого:</span>
+        <span>₽${data.amount}</span>
+    </div>
+    
+    <script>
+        window.onload = function() {
+            window.print();
+        }
+    </script>
+</body>
+</html>`;
+  };
+  
+  // Initialize transaction data
   useEffect(() => {
     let mounted = true;
     
-    const initializeTransaction = () => {
+    const initializeTransaction = async () => {
       // If we have transaction data from params, use it
       if (transactionData && mounted) {
         // Check if it's a PaymentHistoryItem or Transaction
@@ -282,7 +466,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
         setIsLoading(false);
       } else if (mounted) {
         // Fetch transaction status from API
-        fetchTransactionStatus(true);
+        await fetchTransactionStatus(true);
       }
     };
     
@@ -291,9 +475,8 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     return () => {
       mounted = false;
     };
-  }, []); // Empty dependency array to prevent infinite loop
+  }, [transactionId, transactionData, transactions, convertPaymentHistoryItemToTransaction, addTransaction, fetchTransactionStatus]);
 
-  // Set the header title
   return (
     <>
       <Stack.Screen 

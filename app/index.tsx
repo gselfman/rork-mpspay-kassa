@@ -264,7 +264,7 @@ export default function AuthScreen() {
           }}
         />
         
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
           <StatusBar style={darkMode ? "light" : "dark"} />
           <View style={styles.welcomeContainer}>
             <View style={styles.logoContainer}>
@@ -307,7 +307,7 @@ export default function AuthScreen() {
         }}
       />
       
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
         <StatusBar style={darkMode ? "light" : "dark"} />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -350,7 +350,7 @@ export default function AuthScreen() {
                   onChangeText={setReadOnlyAccessKey}
                   error={errors.readOnlyAccessKey}
                   autoCapitalize="none"
-                  inputStyle={getInputStyle('readOnlyAccessKey')}
+                  style={getInputStyle('readOnlyAccessKey')}
                   darkMode={darkMode}
                 />
                 
@@ -363,7 +363,7 @@ export default function AuthScreen() {
                   onChangeText={setCurrencyCode}
                   error={errors.currencyCode}
                   keyboardType="numeric"
-                  inputStyle={getInputStyle('currencyCode')}
+                  style={getInputStyle('currencyCode')}
                   darkMode={darkMode}
                 />
                 
@@ -376,7 +376,7 @@ export default function AuthScreen() {
                   onChangeText={setCurrencyAccountNumber}
                   error={errors.currencyAccountNumber}
                   keyboardType="numeric"
-                  inputStyle={getInputStyle('currencyAccountNumber')}
+                  style={getInputStyle('currencyAccountNumber')}
                   darkMode={darkMode}
                 />
                 
@@ -389,7 +389,7 @@ export default function AuthScreen() {
                   onChangeText={setClientId}
                   error={errors.clientId}
                   keyboardType="numeric"
-                  inputStyle={getInputStyle('clientId')}
+                  style={getInputStyle('clientId')}
                   darkMode={darkMode}
                 />
                 
@@ -402,7 +402,7 @@ export default function AuthScreen() {
                   onChangeText={setCurrencyAccountGuid}
                   error={errors.currencyAccountGuid}
                   autoCapitalize="none"
-                  inputStyle={getInputStyle('currencyAccountGuid')}
+                  style={getInputStyle('currencyAccountGuid')}
                   darkMode={darkMode}
                 />
                 

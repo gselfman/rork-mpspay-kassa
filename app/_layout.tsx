@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, StatusBar, Platform } from 'react-native';
 import { useThemeStore } from '@/store/theme-store';
 import { useLanguageStore } from '@/store/language-store';
 import colors from '@/constants/colors';
@@ -19,13 +19,16 @@ export default function Layout() {
   const theme = darkMode ? colors.dark : colors.light;
   
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false, // Hide all headers by default
-        contentStyle: {
-          backgroundColor: theme.background,
-        },
-      }}
-    />
+    <>
+      {Platform.OS === 'ios' && <StatusBar barStyle={darkMode ? "light-content" : "dark-content"} />}
+      <Stack
+        screenOptions={{
+          headerShown: false, // Hide all headers by default
+          contentStyle: {
+            backgroundColor: theme.background,
+          },
+        }}
+      />
+    </>
   );
 }

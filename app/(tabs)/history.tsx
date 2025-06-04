@@ -199,16 +199,16 @@ export default function HistoryScreen() {
       
       switch (filterDateRange) {
         case 'today':
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // Start of today
+          
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
+          
           dateFiltered = allTransactions.filter(t => {
             if (!t.createdAt) return false;
             
             const transactionDate = new Date(t.createdAt);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Start of today
-            
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
-            
             return transactionDate >= today && transactionDate < tomorrow;
           });
           
@@ -217,10 +217,10 @@ export default function HistoryScreen() {
           
         case 'week':
           // 7 days ago from start of today
-          const today = new Date();
-          today.setHours(0, 0, 0, 0); // Start of today
-          const weekAgo = new Date(today);
-          weekAgo.setDate(today.getDate() - 7);
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0); // Start of today
+          const weekAgo = new Date(todayStart);
+          weekAgo.setDate(todayStart.getDate() - 7);
           
           dateFiltered = allTransactions.filter(t => {
             if (!t.createdAt) return false;
