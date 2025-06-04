@@ -155,7 +155,7 @@ export default function TransactionDetailsScreen() {
   };
   
   // Convert PaymentHistoryItem to Transaction
-  const convertPaymentHistoryItemToTransaction = (item: PaymentHistoryItem): Transaction => {
+  const convertPaymentHistoryItemToTransaction = useCallback((item: PaymentHistoryItem): Transaction => {
     return {
       id: item.id,
       amount: item.amount,
@@ -167,7 +167,7 @@ export default function TransactionDetailsScreen() {
       commission: item.totalCommission,
       finishedAt: item.finishedAt
     };
-  };
+  }, []);
   
   // Fetch transaction status
   const fetchTransactionStatus = useCallback(async (showLoading = true) => {
@@ -252,35 +252,46 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     );
   };
   
-  // Initialize transaction data
+  // Initialize transaction data - Fixed to prevent infinite loop
   useEffect(() => {
-    // If we have transaction data from params, use it
-    if (transactionData) {
-      // Check if it's a PaymentHistoryItem or Transaction
-      if ('paymentStatus' in transactionData) {
-        // Convert PaymentHistoryItem to Transaction
-        const convertedTransaction = convertPaymentHistoryItemToTransaction(transactionData);
-        setTransaction(convertedTransaction);
-        addTransaction(convertedTransaction);
-      } else {
-        // It's already a Transaction
-        setTransaction(transactionData);
-        addTransaction(transactionData);
+    let mounted = true;
+    
+    const initializeTransaction = () => {
+      // If we have transaction data from params, use it
+      if (transactionData && mounted) {
+        // Check if it's a PaymentHistoryItem or Transaction
+        if ('paymentStatus' in transactionData) {
+          // Convert PaymentHistoryItem to Transaction
+          const convertedTransaction = convertPaymentHistoryItemToTransaction(transactionData);
+          setTransaction(convertedTransaction);
+          addTransaction(convertedTransaction);
+        } else {
+          // It's already a Transaction
+          setTransaction(transactionData);
+          addTransaction(transactionData);
+        }
+        setIsLoading(false);
+        return;
       }
-      setIsLoading(false);
-    } else {
+      
       // Try to find transaction in store
       const storedTransaction = transactions.find(t => t.id === transactionId);
       
-      if (storedTransaction) {
+      if (storedTransaction && mounted) {
         setTransaction(storedTransaction);
         setIsLoading(false);
-      } else {
+      } else if (mounted) {
         // Fetch transaction status from API
         fetchTransactionStatus(true);
       }
-    }
-  }, [transactionId, transactionData, transactions, addTransaction, fetchTransactionStatus]);
+    };
+    
+    initializeTransaction();
+    
+    return () => {
+      mounted = false;
+    };
+  }, []); // Empty dependency array to prevent infinite loop
 
   // Set the header title
   return (
@@ -288,7 +299,8 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
       <Stack.Screen 
         options={{
           title: getTranslation('Transaction Details', 'Детали транзакции'),
-          headerBackTitle: getTranslation('Back', 'Назад')
+          headerBackTitle: getTranslation('Back', 'Назад'),
+          headerShown: false
         }}
       />
       

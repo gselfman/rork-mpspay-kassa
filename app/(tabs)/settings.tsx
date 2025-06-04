@@ -116,11 +116,11 @@ export default function SettingsScreen() {
           {icon}
         </View>
         <View style={styles.settingText}>
-          <Text style={[styles.settingTitle, { color: theme.text }]}>
+          <Text style={[styles.settingTitle, { color: theme.text }]} allowFontScaling={false}>
             {title}
           </Text>
           {subtitle ? (
-            <Text style={[styles.settingSubtitle, { color: theme.placeholder }]}>
+            <Text style={[styles.settingSubtitle, { color: theme.placeholder }]} allowFontScaling={false}>
               {subtitle}
             </Text>
           ) : null}
@@ -153,7 +153,7 @@ export default function SettingsScreen() {
             <Text style={[styles.title, { 
               color: theme.text,
               fontSize: scaleFontSize(Platform.OS === 'android' ? 20 : 22)
-            }]}>
+            }]} allowFontScaling={false}>
               {language === 'en' ? 'Settings' : 'Настройки'}
             </Text>
           </View>
@@ -165,10 +165,10 @@ export default function SettingsScreen() {
                 <User size={32} color={theme.primary} />
               </View>
               <View style={styles.profileText}>
-                <Text style={[styles.profileName, { color: theme.text }]}>
+                <Text style={[styles.profileName, { color: theme.text }]} allowFontScaling={false}>
                   {credentials?.merchantName || (language === 'en' ? 'Merchant' : 'Мерчант')}
                 </Text>
-                <Text style={[styles.profileEmail, { color: theme.placeholder }]}>
+                <Text style={[styles.profileEmail, { color: theme.placeholder }]} allowFontScaling={false}>
                   {language === 'en' ? 'Client ID' : 'ID клиента'}: {credentials?.clientId || 'N/A'}
                 </Text>
               </View>
@@ -184,7 +184,7 @@ export default function SettingsScreen() {
           
           {/* App Settings */}
           <Card style={styles.settingsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
               {language === 'en' ? 'App Settings' : 'Настройки приложения'}
             </Text>
             
@@ -215,7 +215,7 @@ export default function SettingsScreen() {
           
           {/* Products Management */}
           <Card style={styles.settingsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
               {language === 'en' ? 'Products' : 'Товары'}
             </Text>
             
@@ -229,7 +229,7 @@ export default function SettingsScreen() {
           
           {/* Security */}
           <Card style={styles.settingsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
               {language === 'en' ? 'Security' : 'Безопасность'}
             </Text>
             
@@ -246,7 +246,7 @@ export default function SettingsScreen() {
           
           {/* Support */}
           <Card style={styles.settingsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
               {language === 'en' ? 'Support' : 'Поддержка'}
             </Text>
             
@@ -274,14 +274,8 @@ export default function SettingsScreen() {
               () => Alert.alert(
                 language === 'en' ? 'About' : 'О приложении',
                 language === 'en' 
-                  ? 'MPS Pay Mobile App
-Version 1.0.10
-
-A secure payment processing application for merchants.'
-                  : 'Мобильное приложение MPS Pay
-Версия 1.0.10
-
-Безопасное приложение для обработки платежей для мерчантов.'
+                  ? "MPS Pay Mobile App\nVersion 1.0.10\n\nA secure payment processing application for merchants."
+                  : "Мобильное приложение MPS Pay\nВерсия 1.0.10\n\nБезопасное приложение для обработки платежей для мерчантов."
               )
             )}
           </Card>

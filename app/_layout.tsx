@@ -10,16 +10,10 @@ export default function Layout() {
   const { darkMode, setDarkMode } = useThemeStore();
   const { language, setLanguage } = useLanguageStore();
   
-  // Set theme based on device settings
+  // Set default theme to light and language to Russian
   useEffect(() => {
-    if (colorScheme) {
-      setDarkMode(colorScheme === 'dark');
-    }
-  }, [colorScheme]);
-  
-  // Set default language to Russian
-  useEffect(() => {
-    setLanguage('ru');
+    setDarkMode(false); // Default to light theme
+    setLanguage('ru'); // Default to Russian
   }, []);
   
   const theme = darkMode ? colors.dark : colors.light;
@@ -27,18 +21,10 @@ export default function Layout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: {
-          backgroundColor: theme.background,
-        },
-        headerTintColor: theme.text,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
+        headerShown: false, // Hide all headers by default
         contentStyle: {
           backgroundColor: theme.background,
         },
-        headerShown: true,
-        headerTitle: '',
       }}
     />
   );

@@ -11,16 +11,10 @@ export default function TabsLayout() {
   const { darkMode, setDarkMode } = useThemeStore();
   const { language, setLanguage } = useLanguageStore();
   
-  // Set theme based on device settings
+  // Set default theme to light and language to Russian
   useEffect(() => {
-    if (colorScheme) {
-      setDarkMode(colorScheme === 'dark');
-    }
-  }, [colorScheme]);
-  
-  // Set default language to Russian
-  useEffect(() => {
-    setLanguage('ru');
+    setDarkMode(false); // Default to light theme
+    setLanguage('ru'); // Default to Russian
   }, []);
   
   const theme = darkMode ? colors.dark : colors.light;
@@ -34,14 +28,7 @@ export default function TabsLayout() {
           backgroundColor: theme.background,
           borderTopColor: theme.border,
         },
-        headerStyle: {
-          backgroundColor: theme.background,
-        },
-        headerTintColor: theme.text,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        headerShown: false,
+        headerShown: false, // Hide all tab headers
       }}
     >
       <Tabs.Screen
@@ -49,7 +36,6 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'Home' : 'Главная',
           tabBarIcon: ({ color }) => <Home size={24} color={color} />,
-          headerTitle: '',
         }}
       />
       <Tabs.Screen
@@ -57,7 +43,6 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'Payment' : 'Оплата',
           tabBarIcon: ({ color }) => <CreditCard size={24} color={color} />,
-          headerTitle: '',
         }}
       />
       <Tabs.Screen
@@ -65,7 +50,6 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'History' : 'История',
           tabBarIcon: ({ color }) => <Clock size={24} color={color} />,
-          headerTitle: '',
         }}
       />
       <Tabs.Screen
@@ -73,7 +57,6 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'Settings' : 'Настройки',
           tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
-          headerTitle: '',
         }}
       />
     </Tabs>

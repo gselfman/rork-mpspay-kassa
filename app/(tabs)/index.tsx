@@ -102,6 +102,10 @@ export default function HomeScreen() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
+    // Get tomorrow's date (start of tomorrow)
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
     // Filter successful transactions (paymentStatus === 3)
     const successfulTransactions = transactions.filter(t => t.paymentStatus === 3);
     
@@ -113,11 +117,8 @@ export default function HomeScreen() {
       if (!t.createdAt) return false;
       const transactionDate = new Date(t.createdAt);
       
-      return (
-        transactionDate.getDate() === today.getDate() &&
-        transactionDate.getMonth() === today.getMonth() &&
-        transactionDate.getFullYear() === today.getFullYear()
-      );
+      // Check if transaction is between start of today and start of tomorrow
+      return transactionDate >= today && transactionDate < tomorrow;
     });
     
     // Count successful transactions for today
@@ -128,6 +129,15 @@ export default function HomeScreen() {
     
     // Income for today
     const incomeToday = successfulTransactionsToday.reduce((sum, t) => sum + t.amount, 0);
+    
+    console.log('Statistics calculated:', {
+      successfulOperationsMonth,
+      successfulOperationsToday,
+      incomeMonth,
+      incomeToday,
+      todayTransactions: successfulTransactionsToday.length,
+      todayRange: `${today.toISOString()} - ${tomorrow.toISOString()}`
+    });
     
     setStats({
       successfulOperationsMonth,

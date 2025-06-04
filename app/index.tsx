@@ -59,7 +59,7 @@ export default function AuthScreen() {
   const { width, height } = Dimensions.get('window');
   const isSmallDevice = width < 375 || height < 700;
 
-  // Set default language to Russian
+  // Set default language to Russian and theme to light
   useEffect(() => {
     setLanguage('ru');
     setDarkMode(false); // Default to light theme
@@ -275,11 +275,11 @@ export default function AuthScreen() {
               />
             </View>
             
-            <Text style={[styles.welcomeTitle, { color: theme.text }]}>
+            <Text style={[styles.welcomeTitle, { color: theme.text }]} allowFontScaling={false}>
               MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
             </Text>
             
-            <Text style={[styles.welcomeSubtitle, { color: theme.placeholder }]}>
+            <Text style={[styles.welcomeSubtitle, { color: theme.placeholder }]} allowFontScaling={false}>
               {language === 'en' 
                 ? 'Mobile terminal for payment processing' 
                 : 'Мобильная касса для приёма платежей'}
@@ -324,10 +324,10 @@ export default function AuthScreen() {
                   style={styles.logo} 
                   resizeMode="contain"
                 />
-                <Text style={[styles.title, { color: theme.text }]}>
+                <Text style={[styles.title, { color: theme.text }]} allowFontScaling={false}>
                   MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
                 </Text>
-                <Text style={[styles.subtitle, { color: theme.placeholder }]}>
+                <Text style={[styles.subtitle, { color: theme.placeholder }]} allowFontScaling={false}>
                   {language === 'en' 
                     ? 'To work with the terminal, you need to authorize your workplace. Please prepare the following data from your personal account at merch.mpspay.ru:' 
                     : 'Для работы в кассе вам нужно авторизовать рабочее место, для этого приготовьте следующие данные из личного кабинета merch.mpspay.ru:'}
@@ -335,7 +335,7 @@ export default function AuthScreen() {
               </View>
               
               {errors.form && (
-                <Text style={[styles.formError, { color: theme.notification }]}>
+                <Text style={[styles.formError, { color: theme.notification }]} allowFontScaling={false}>
                   {errors.form}
                 </Text>
               )}
@@ -421,10 +421,10 @@ export default function AuthScreen() {
                 {/* Display account balance if available */}
                 {accountBalance !== null && validationStep >= 2 && (
                   <View style={[styles.balanceInfo, { backgroundColor: theme.card }]}>
-                    <Text style={[styles.balanceLabel, { color: theme.text }]}>
+                    <Text style={[styles.balanceLabel, { color: theme.text }]} allowFontScaling={false}>
                       {language === 'en' ? 'Account Balance:' : 'Баланс счета:'}
                     </Text>
-                    <Text style={[styles.balanceValue, { color: theme.primary }]}>
+                    <Text style={[styles.balanceValue, { color: theme.primary }]} allowFontScaling={false}>
                       ₽{accountBalance.toLocaleString()}
                     </Text>
                   </View>
@@ -433,10 +433,10 @@ export default function AuthScreen() {
                 {/* Display customer balance if available */}
                 {customerBalance !== null && validationStep >= 3 && (
                   <View style={[styles.balanceInfo, { backgroundColor: theme.card }]}>
-                    <Text style={[styles.balanceLabel, { color: theme.text }]}>
+                    <Text style={[styles.balanceLabel, { color: theme.text }]} allowFontScaling={false}>
                       {language === 'en' ? 'Customer Balance:' : 'Баланс клиента:'}
                     </Text>
-                    <Text style={[styles.balanceValue, { color: theme.primary }]}>
+                    <Text style={[styles.balanceValue, { color: theme.primary }]} allowFontScaling={false}>
                       ₽{customerBalance.toLocaleString()}
                     </Text>
                   </View>
@@ -466,7 +466,7 @@ export default function AuthScreen() {
                 />
               </View>
               
-              <Text style={[styles.helpText, { color: theme.placeholder }]}>
+              <Text style={[styles.helpText, { color: theme.placeholder }]} allowFontScaling={false}>
                 {language === 'en' 
                   ? 'Need help? Contact your manager or visit merch.mpspay.ru' 
                   : 'Нужна помощь? Свяжитесь с вашим менеджером или посетите merch.mpspay.ru'}
