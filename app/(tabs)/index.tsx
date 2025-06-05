@@ -289,21 +289,25 @@ export default function HomeScreen() {
   // Refresh data when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchData(false);
+      if (credentials) {
+        fetchData(false);
+      }
       
       return () => {
         // Cleanup if needed
       };
-    }, [fetchData])
+    }, [credentials, fetchData])
   );
 
   useEffect(() => {
-    fetchData();
-    
-    // Set up interval to refresh data every 2 minutes
-    refreshIntervalRef.current = setInterval(() => {
-      fetchData(false);
-    }, 120000);
+    if (credentials) {
+      fetchData();
+      
+      // Set up interval to refresh data every 2 minutes
+      refreshIntervalRef.current = setInterval(() => {
+        fetchData(false);
+      }, 120000);
+    }
     
     return () => {
       // Clear interval when component unmounts
@@ -437,7 +441,6 @@ export default function HomeScreen() {
     <>
       <Stack.Screen 
         options={{
-          title: language === 'en' ? 'Home' : 'Главная',
           headerShown: false
         }}
       />

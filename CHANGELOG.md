@@ -1,62 +1,65 @@
 # Changelog
 
-## Version 1.0.7 (Current)
-- Redesigned history screen with improved payment history API integration
-- Added proper date range filtering (Today, Week, Month, Custom) for payment history
-- Implemented status filtering for successful (paymentStatus: 3) and pending (paymentStatus: 1) operations
-- Added logo display and "Отчёт" title in history screen header
-- Enhanced transaction details screen with PDF receipt generation for successful transactions
-- Improved transaction item component to handle both Transaction and PaymentHistoryItem types
-- Added proper localization support for Russian and English languages throughout the app
-- Enhanced responsive design for different screen sizes (Android and iPhone)
-- Added comprehensive error handling and API error display
-- Improved dark/light theme support with proper color schemes
-- Fixed type mismatches between Transaction and PaymentHistoryItem interfaces
-- Added email receipt functionality for completed transactions
-- Enhanced payment creation screen with better product management
-- Implemented USDT (TRC-20) withdrawal functionality with Telegram Bot API integration
-- Added TRON wallet address validation (starts with T, 34 characters)
-- Added Telegram contact validation (@username format, minimum 5 characters)
-- Added minimum withdrawal amount validation (1000 RUB)
-- Enhanced withdrawal request form with proper error handling
-- Added withdrawal request history with status tracking
-- Fixed all TypeScript syntax errors in utils/api.ts that prevented app compilation
-- Updated app version to 1.0.7 in Settings and CHANGELOG
+All notable changes to this project will be documented in this file.
 
-## Version 1.0.6
-- Fixed type error in payment screen by changing rawErrorResponse type from string|null to string|undefined
-- Fixed text node error in View components
-- Improved input field text colors in dark mode for better readability
-- Simplified payment details screen by removing duplicate MPS Pay ID field
-- Improved payment link sharing UI with a dedicated modal
-- Enhanced payment link display with better text wrapping
+## [1.1.1] - 2025-01-06
 
-## Version 1.0.5
-- Redesigned payment creation screen with improved UI
-- Added logo at the top of the payment screen
-- Enhanced product management with add/remove/quantity controls
-- Added email receipt functionality with SMTP configuration
-- Improved comment generation logic based on available information
-- Added receipt generation for completed payments
-- Implemented sorting transactions by ID in descending order on home screen
+### Fixed
+- **Critical Bug Fixes:**
+  - Fixed infinite loop error in HomeScreen and TransactionDetailsScreen that was causing app crashes
+  - Resolved maximum update depth exceeded error in useEffect hooks
+  - Fixed navigation issues when viewing transaction details from Reports section
 
-## Version 1.0.4
-- Added dark mode support
-- Improved transaction history UI
-- Fixed payment creation issues
-- Added product management
+- **UI/UX Improvements:**
+  - Removed unwanted header text "(tabs)" and "transaction[id]" from all screens
+  - Fixed header display issues across all tab screens
+  - Improved layout for iPhone 16 Pro Max with proper logo positioning
+  - Fixed Android navigation bar covering bottom menu icons
+  - Enhanced input field visibility on iPhone devices
 
-## Version 1.0.3
-- Added withdrawal functionality
-- Improved error handling
-- Enhanced transaction details
+- **Receipt Generation:**
+  - Fixed encoding issues in receipt printing (proper UTF-8 support)
+  - Added MPSPAY logo to printed receipts
+  - Improved receipt HTML structure and styling
+  - Fixed currency symbol display in receipts
 
-## Version 1.0.2
-- Added transaction history
-- Implemented payment details screen
-- Added basic product management
+- **Code Quality:**
+  - Fixed TypeScript errors related to 'inputStyle' prop in Input component
+  - Resolved syntax errors in settings screen
+  - Improved error handling and state management
+  - Enhanced component lifecycle management to prevent memory leaks
 
-## Version 1.0.1
-- Initial release with basic payment functionality
-- Added authentication
-- Implemented simple dashboard
+- **Performance:**
+  - Optimized useEffect dependencies to prevent unnecessary re-renders
+  - Improved data fetching logic with proper cleanup
+  - Enhanced transaction status checking functionality
+
+### Changed
+- Updated app version to 1.1.1 stable
+- Improved responsive design for various device sizes
+- Enhanced error messages and user feedback
+- Better handling of transaction data conversion between different formats
+
+### Removed
+- Removed notification-related code and buttons as requested
+- Cleaned up unused dependencies and imports
+- Removed redundant header configurations
+
+## [1.0.10] - 2025-01-05
+
+### Added
+- Initial release with basic payment processing functionality
+- Transaction history and reporting
+- Product management system
+- Multi-language support (English/Russian)
+- Dark/Light theme support
+- QR code payment generation
+- Receipt printing functionality
+
+### Features
+- Account balance monitoring
+- Payment statistics dashboard
+- Transaction status checking
+- Withdrawal requests via Telegram
+- Personal cabinet integration
+- Responsive design for mobile devices

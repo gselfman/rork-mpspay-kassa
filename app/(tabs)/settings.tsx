@@ -135,7 +135,6 @@ export default function SettingsScreen() {
     <>
       <Stack.Screen 
         options={{
-          title: language === 'en' ? 'Settings' : 'Настройки',
           headerShown: false
         }}
       />
@@ -259,12 +258,12 @@ export default function SettingsScreen() {
             {renderSettingItem(
               <Info size={20} color={theme.primary} />,
               language === 'en' ? 'About' : 'О приложении',
-              language === 'en' ? 'Version 1.0.10' : 'Версия 1.0.10',
+              language === 'en' ? 'Version 1.1.1' : 'Версия 1.1.1',
               () => Alert.alert(
                 language === 'en' ? 'About' : 'О приложении',
                 language === 'en' 
-                  ? "MPS Pay Mobile App\nVersion 1.0.10\n\nA secure payment processing application for merchants."
-                  : "Мобильное приложение MPS Pay\nВерсия 1.0.10\n\nБезопасное приложение для обработки платежей для мерчантов."
+                  ? "MPS Pay Mobile App\nVersion 1.1.1\n\nA secure payment processing application for merchants."
+                  : "Мобильное приложение MPS Pay\nВерсия 1.1.1\n\nБезопасное приложение для обработки платежей для мерчантов."
               )
             )}
           </Card>

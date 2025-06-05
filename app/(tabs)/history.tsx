@@ -118,7 +118,9 @@ export default function HistoryScreen() {
   // Fetch transactions when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchAllTransactions();
+      if (credentials) {
+        fetchAllTransactions();
+      }
     }, [credentials])
   );
   
@@ -535,7 +537,6 @@ export default function HistoryScreen() {
     <>
       <Stack.Screen 
         options={{
-          title: language === 'en' ? 'History' : 'История',
           headerShown: false
         }}
       />

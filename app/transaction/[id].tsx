@@ -246,7 +246,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     if (!transaction) return;
     
     try {
-      // Generate PDF receipt URL
+      // Generate receipt data
       const receiptData = {
         transactionId: transaction.id,
         amount: transaction.amount,
@@ -258,17 +258,16 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
         commission: transaction.commission || 0
       };
       
-      // Create PDF content as data URL
-      const pdfContent = generateReceiptPDF(receiptData);
+      // Create HTML content for receipt
+      const htmlContent = generateReceiptHTML(receiptData);
       
-      // Open PDF in browser
+      // Open HTML in browser for printing
       if (Platform.OS === 'web') {
-        const blob = new Blob([pdfContent], { type: 'application/pdf' });
+        const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
       } else {
-        // For mobile, we'll use a simple HTML page that can be printed
-        const htmlContent = generateReceiptHTML(receiptData);
+        // For mobile, create a data URL
         const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
         await Linking.openURL(dataUrl);
       }
@@ -284,152 +283,196 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     }
   };
   
-  // Generate PDF content (simplified)
-  const generateReceiptPDF = (data: any): string => {
-    // This is a simplified PDF generation - in a real app you'd use a proper PDF library
-    return `%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
-
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R]
-/Count 1
->>
-endobj
-
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 4 0 R
->>
-endobj
-
-4 0 obj
-<<
-/Length 200
->>
-stream
-BT
-/F1 12 Tf
-50 750 Td
-(MPSPAY Receipt) Tj
-0 -20 Td
-(Transaction ID: ${data.transactionId}) Tj
-0 -20 Td
-(Amount: ₽${data.amount}) Tj
-0 -20 Td
-(Status: ${data.status}) Tj
-0 -20 Td
-(Date: ${data.date}) Tj
-ET
-endstream
-endobj
-
-xref
-0 5
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000206 00000 n 
-trailer
-<<
-/Size 5
-/Root 1 0 R
->>
-startxref
-456
-%%EOF`;
-  };
-  
-  // Generate HTML receipt
+  // Generate HTML receipt with proper encoding and logo
   const generateReceiptHTML = (data: any): string => {
     return `
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="utf-8">
-    <title>Receipt - ${data.transactionId}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чек - ${data.transactionId}</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-        .logo { width: 60px; height: 60px; margin: 0 auto 10px; }
-        .row { display: flex; justify-content: space-between; margin: 10px 0; }
-        .total { font-weight: bold; font-size: 1.2em; border-top: 1px solid #000; padding-top: 10px; }
-        @media print { body { margin: 0; } }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            max-width: 400px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: white;
+            color: #333;
+        }
+        .header { 
+            text-align: center; 
+            border-bottom: 2px solid #000; 
+            padding-bottom: 15px; 
+            margin-bottom: 20px; 
+        }
+        .logo { 
+            width: 80px; 
+            height: 80px; 
+            margin: 0 auto 15px; 
+            border-radius: 12px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #007AFF;
+        }
+        .receipt-title {
+            font-size: 16px;
+            color: #666;
+        }
+        .row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin: 12px 0; 
+            padding: 8px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        .row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: 500;
+            color: #555;
+        }
+        .value {
+            font-weight: bold;
+            color: #000;
+        }
+        .total { 
+            font-weight: bold; 
+            font-size: 1.3em; 
+            border-top: 2px solid #000; 
+            padding-top: 15px; 
+            margin-top: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 12px;
+        }
+        @media print { 
+            body { 
+                margin: 0; 
+                padding: 10px;
+            } 
+            .no-print {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="logo">📱</div>
-        <h2>MPSPAY</h2>
-        <p>Чек об оплате</p>
+        <div class="logo">
+            <img src="https://i.imgur.com/QCp2zDE.png" alt="MPSPAY" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;" onerror="this.style.display='none'; this.parentNode.innerHTML='💳'">
+        </div>
+        <div class="company-name">MPSPAY</div>
+        <div class="receipt-title">Чек об оплате</div>
     </div>
     
     <div class="row">
-        <span>ID транзакции:</span>
-        <span>${data.transactionId}</span>
+        <span class="label">ID транзакции:</span>
+        <span class="value">${data.transactionId}</span>
     </div>
     
     <div class="row">
-        <span>Сумма:</span>
-        <span>₽${data.amount}</span>
+        <span class="label">Сумма:</span>
+        <span class="value">₽${data.amount.toLocaleString('ru-RU', {minimumFractionDigits: 2})}</span>
     </div>
     
     <div class="row">
-        <span>Статус:</span>
-        <span>${data.status}</span>
+        <span class="label">Статус:</span>
+        <span class="value">
+            <span class="status ${data.status.toLowerCase().includes('выполнено') || data.status.toLowerCase().includes('completed') ? 'completed' : 
+                                data.status.toLowerCase().includes('ошибка') || data.status.toLowerCase().includes('failed') ? 'failed' : 'pending'}">
+                ${data.status}
+            </span>
+        </span>
     </div>
     
     <div class="row">
-        <span>Дата:</span>
-        <span>${data.date}</span>
+        <span class="label">Дата:</span>
+        <span class="value">${data.date}</span>
     </div>
     
     ${data.customerInfo ? `
     <div class="row">
-        <span>Покупатель:</span>
-        <span>${data.customerInfo}</span>
+        <span class="label">Покупатель:</span>
+        <span class="value">${data.customerInfo}</span>
     </div>
     ` : ''}
     
     ${data.merchantName ? `
     <div class="row">
-        <span>Продавец:</span>
-        <span>${data.merchantName}</span>
+        <span class="label">Продавец:</span>
+        <span class="value">${data.merchantName}</span>
     </div>
     ` : ''}
     
-    ${data.commission ? `
+    ${data.commission && data.commission > 0 ? `
     <div class="row">
-        <span>Комиссия:</span>
-        <span>₽${data.commission}</span>
+        <span class="label">Комиссия:</span>
+        <span class="value">₽${data.commission.toLocaleString('ru-RU', {minimumFractionDigits: 2})}</span>
     </div>
     ` : ''}
     
     ${data.tag ? `
     <div class="row">
-        <span>СБП ID:</span>
-        <span>${data.tag}</span>
+        <span class="label">СБП ID:</span>
+        <span class="value">${data.tag}</span>
     </div>
     ` : ''}
     
-    <div class="row total">
-        <span>Итого:</span>
-        <span>₽${data.amount}</span>
+    <div class="total">
+        <div class="row">
+            <span class="label">Итого:</span>
+            <span class="value">₽${data.amount.toLocaleString('ru-RU', {minimumFractionDigits: 2})}</span>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Спасибо за использование MPSPAY!</p>
+        <p>Дата печати: ${new Date().toLocaleString('ru-RU')}</p>
     </div>
     
     <script>
         window.onload = function() {
-            window.print();
+            setTimeout(function() {
+                window.print();
+            }, 500);
         }
     </script>
 </body>
@@ -481,8 +524,6 @@ startxref
     <>
       <Stack.Screen 
         options={{
-          title: getTranslation('Transaction Details', 'Детали транзакции'),
-          headerBackTitle: getTranslation('Back', 'Назад'),
           headerShown: false
         }}
       />

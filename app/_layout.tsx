@@ -20,7 +20,11 @@ export default function Layout() {
   
   return (
     <>
-      {Platform.OS === 'ios' && <StatusBar barStyle={darkMode ? "light-content" : "dark-content"} />}
+      <StatusBar 
+        barStyle={darkMode ? "light-content" : "dark-content"} 
+        backgroundColor={theme.background}
+        hidden={false}
+      />
       <Stack
         screenOptions={{
           headerShown: false, // Hide all headers by default

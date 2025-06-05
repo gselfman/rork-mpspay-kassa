@@ -259,7 +259,6 @@ export default function AuthScreen() {
       <>
         <Stack.Screen 
           options={{
-            title: '',
             headerShown: false
           }}
         />
@@ -302,7 +301,6 @@ export default function AuthScreen() {
     <>
       <Stack.Screen 
         options={{
-          title: '',
           headerShown: false
         }}
       />

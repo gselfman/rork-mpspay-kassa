@@ -342,7 +342,6 @@ export default function PaymentScreen() {
     <>
       <Stack.Screen 
         options={{
-          title: language === 'en' ? 'Create Payment' : 'Создать платеж',
           headerShown: false
         }}
       />
@@ -375,7 +374,7 @@ export default function PaymentScreen() {
                 {getTranslation('Amount, RUB', 'Сумма, руб')}
               </Text>
               <View style={styles.amountInputContainer}>
-                <TextInput
+                <Input
                   value={amount}
                   onChangeText={(text) => {
                     // Only allow integer values
@@ -388,13 +387,10 @@ export default function PaymentScreen() {
                     styles.amountInput,
                     {
                       borderColor: error && error.includes(getTranslation('Amount', 'Сумма')) ? theme.notification : theme.border,
-                      backgroundColor: theme.inputBackground,
-                      color: theme.text
                     }
                   ]}
-                  editable={products.length === 0} // Disable if products are added
+                  darkMode={darkMode}
                   placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
-                  allowFontScaling={false}
                 />
               </View>
               {error && error.includes(getTranslation('Amount', 'Сумма')) && (
@@ -688,12 +684,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   amountInput: {
-    flex: 1,
     fontSize: scaleFontSize(24),
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
     minHeight: 48,
   },
   customerContainer: {

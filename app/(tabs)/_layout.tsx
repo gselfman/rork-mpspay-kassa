@@ -38,6 +38,7 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'Home' : 'Главная',
           tabBarIcon: ({ color }) => <Home size={24} color={color} />,
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -45,6 +46,7 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'Payment' : 'Оплата',
           tabBarIcon: ({ color }) => <CreditCard size={24} color={color} />,
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -52,6 +54,7 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'History' : 'История',
           tabBarIcon: ({ color }) => <Clock size={24} color={color} />,
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -59,6 +62,7 @@ export default function TabsLayout() {
         options={{
           title: language === 'en' ? 'Settings' : 'Настройки',
           tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
+          headerShown: false,
         }}
       />
     </Tabs>
