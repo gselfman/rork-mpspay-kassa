@@ -15,7 +15,7 @@ export default function TabsLayout() {
   useEffect(() => {
     setDarkMode(false); // Default to light theme
     setLanguage('ru'); // Default to Russian
-  }, []);
+  }, [setDarkMode, setLanguage]);
   
   const theme = darkMode ? colors.dark : colors.light;
   

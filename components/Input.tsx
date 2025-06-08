@@ -8,12 +8,14 @@ interface InputProps extends TextInputProps {
   darkMode?: boolean;
   icon?: React.ReactNode;
   style?: any;
+  inputStyle?: any; // Add inputStyle prop
 }
 
 export const Input: React.FC<InputProps> = ({ 
   label, 
   error, 
   style, 
+  inputStyle, // Add inputStyle prop
   darkMode = false,
   icon,
   ...props 
@@ -21,7 +23,7 @@ export const Input: React.FC<InputProps> = ({
   const theme = darkMode ? colors.dark : colors.light;
   
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       {label ? (
         <Text style={[styles.label, { color: theme.text }]} allowFontScaling={false}>
           {label}
@@ -38,7 +40,7 @@ export const Input: React.FC<InputProps> = ({
               color: theme.text
             },
             icon ? styles.inputWithIcon : null,
-            style
+            inputStyle // Apply inputStyle prop
           ]}
           placeholderTextColor={theme.placeholder}
           allowFontScaling={false}

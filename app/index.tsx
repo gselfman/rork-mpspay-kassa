@@ -63,7 +63,7 @@ export default function AuthScreen() {
   useEffect(() => {
     setLanguage('ru');
     setDarkMode(false); // Default to light theme
-  }, []);
+  }, [setLanguage, setDarkMode]);
 
   // Use Redirect component instead of programmatic navigation
   if (isAuthenticated) {

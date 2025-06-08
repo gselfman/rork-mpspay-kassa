@@ -1,65 +1,33 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-## [1.1.1] - 2025-01-06
+## [1.1.1] - 2025-01-08
 
 ### Fixed
-- **Critical Bug Fixes:**
-  - Fixed infinite loop error in HomeScreen and TransactionDetailsScreen that was causing app crashes
-  - Resolved maximum update depth exceeded error in useEffect hooks
-  - Fixed navigation issues when viewing transaction details from Reports section
+- Fixed TypeScript errors with Input component `inputStyle` prop
+- Fixed infinite loop errors in useEffect hooks across multiple components
+- Fixed syntax errors in settings screen with unterminated string literals
+- Fixed navigation issues in history screen when viewing transaction details
+- Fixed print receipt functionality with proper encoding and logo display
+- Fixed tab navigation headers being shown when they should be hidden
+- Fixed status bar display issues on mobile devices
+- Fixed Android tab bar positioning to prevent overlap with system navigation
 
-- **UI/UX Improvements:**
-  - Removed unwanted header text "(tabs)" and "transaction[id]" from all screens
-  - Fixed header display issues across all tab screens
-  - Improved layout for iPhone 16 Pro Max with proper logo positioning
-  - Fixed Android navigation bar covering bottom menu icons
-  - Enhanced input field visibility on iPhone devices
-
-- **Receipt Generation:**
-  - Fixed encoding issues in receipt printing (proper UTF-8 support)
-  - Added MPSPAY logo to printed receipts
-  - Improved receipt HTML structure and styling
-  - Fixed currency symbol display in receipts
-
-- **Code Quality:**
-  - Fixed TypeScript errors related to 'inputStyle' prop in Input component
-  - Resolved syntax errors in settings screen
-  - Improved error handling and state management
-  - Enhanced component lifecycle management to prevent memory leaks
-
-- **Performance:**
-  - Optimized useEffect dependencies to prevent unnecessary re-renders
-  - Improved data fetching logic with proper cleanup
-  - Enhanced transaction status checking functionality
+### Improved
+- Enhanced transaction details page with better error handling
+- Improved receipt printing with proper UTF-8 encoding and MPSPAY logo
+- Better responsive design for different device sizes (iPhone 16 Pro Max support)
+- Optimized useEffect dependencies to prevent unnecessary re-renders
+- Enhanced error handling and user feedback throughout the application
 
 ### Changed
-- Updated app version to 1.1.1 stable
-- Improved responsive design for various device sizes
-- Enhanced error messages and user feedback
-- Better handling of transaction data conversion between different formats
+- Updated version to 1.1.1 stable
+- Removed notification-related code and settings as requested
+- Improved transaction navigation consistency between home and history screens
+- Enhanced print receipt functionality with proper HTML generation
 
-### Removed
-- Removed notification-related code and buttons as requested
-- Cleaned up unused dependencies and imports
-- Removed redundant header configurations
-
-## [1.0.10] - 2025-01-05
-
-### Added
-- Initial release with basic payment processing functionality
-- Transaction history and reporting
-- Product management system
-- Multi-language support (English/Russian)
-- Dark/Light theme support
-- QR code payment generation
-- Receipt printing functionality
-
-### Features
-- Account balance monitoring
-- Payment statistics dashboard
-- Transaction status checking
-- Withdrawal requests via Telegram
-- Personal cabinet integration
-- Responsive design for mobile devices
+### Technical
+- Fixed all TypeScript compilation errors
+- Resolved React Native infinite loop issues
+- Improved component lifecycle management
+- Enhanced error boundary handling
+- Better memory management with proper cleanup in useEffect hooks
