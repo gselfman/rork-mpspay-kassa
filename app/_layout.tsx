@@ -24,6 +24,7 @@ export default function Layout() {
         barStyle={darkMode ? "light-content" : "dark-content"} 
         backgroundColor={theme.background}
         hidden={false}
+        translucent={false}
       />
       <Stack
         screenOptions={{

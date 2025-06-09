@@ -292,31 +292,33 @@ export default function HomeScreen() {
       if (credentials) {
         fetchData(false);
       }
-      
-      return () => {
-        // Cleanup if needed
-      };
     }, [credentials, fetchData])
   );
 
+  // Initial data fetch and interval setup
   useEffect(() => {
-    if (credentials) {
+    let mounted = true;
+    
+    if (credentials && mounted) {
       fetchData();
       
       // Set up interval to refresh data every 2 minutes
       refreshIntervalRef.current = setInterval(() => {
-        fetchData(false);
+        if (mounted) {
+          fetchData(false);
+        }
       }, 120000);
     }
     
     return () => {
+      mounted = false;
       // Clear interval when component unmounts
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
         refreshIntervalRef.current = null;
       }
     };
-  }, [credentials, fetchData]);
+  }, [credentials]);
 
   const handleCreatePayment = () => {
     router.push('/payment');

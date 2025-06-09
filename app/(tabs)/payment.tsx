@@ -360,12 +360,14 @@ export default function PaymentScreen() {
               style={styles.logo} 
               resizeMode="contain"
             />
-            <Text style={[styles.title, { 
-              color: theme.text,
-              fontSize: scaleFontSize(24)
-            }]} allowFontScaling={false}>
-              {getTranslation('Create Payment', 'Создать платеж')}
-            </Text>
+            <View style={styles.headerTextContainer}>
+              <Text style={[styles.title, { 
+                color: theme.text,
+                fontSize: scaleFontSize(24)
+              }]} allowFontScaling={false}>
+                {getTranslation('Create Payment', 'Создать платеж')}
+              </Text>
+            </View>
           </View>
           
           <Card style={styles.card}>
@@ -374,7 +376,7 @@ export default function PaymentScreen() {
                 {getTranslation('Amount, RUB', 'Сумма, руб')}
               </Text>
               <View style={styles.amountInputContainer}>
-                <Input
+                <TextInput
                   value={amount}
                   onChangeText={(text) => {
                     // Only allow integer values
@@ -386,11 +388,18 @@ export default function PaymentScreen() {
                   style={[
                     styles.amountInput,
                     {
+                      backgroundColor: theme.inputBackground || theme.background,
+                      color: theme.text,
                       borderColor: error && error.includes(getTranslation('Amount', 'Сумма')) ? theme.notification : theme.border,
+                      borderWidth: 1,
+                      borderRadius: 8,
+                      paddingHorizontal: 12,
+                      fontSize: scaleFontSize(24),
+                      minHeight: 48,
                     }
                   ]}
-                  darkMode={darkMode}
-                  placeholderTextColor={darkMode ? colors.dark.placeholder : colors.light.placeholder}
+                  placeholderTextColor={theme.placeholder}
+                  allowFontScaling={false}
                 />
               </View>
               {error && error.includes(getTranslation('Amount', 'Сумма')) && (
@@ -651,18 +660,21 @@ const styles = StyleSheet.create({
     paddingBottom: scaleSpacing(32),
   },
   header: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     marginBottom: scaleSpacing(24),
   },
   logo: {
     width: 60,
     height: 60,
-    marginRight: scaleSpacing(8),
+    marginBottom: scaleSpacing(12),
+  },
+  headerTextContainer: {
+    alignItems: 'center',
   },
   title: {
     fontWeight: 'bold',
-    flex: 1,
+    textAlign: 'center',
   },
   card: {
     marginBottom: scaleSpacing(16),
@@ -684,8 +696,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   amountInput: {
-    fontSize: scaleFontSize(24),
-    minHeight: 48,
+    flex: 1,
   },
   customerContainer: {
     marginBottom: scaleSpacing(16),

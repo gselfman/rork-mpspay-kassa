@@ -50,7 +50,7 @@ export default function HistoryScreen() {
   const [allTransactions, setAllTransactions] = useState<PaymentHistoryItem[]>([]);
   
   // Fetch all transactions for the last 30 days
-  const fetchAllTransactions = async (refresh = false) => {
+  const fetchAllTransactions = useCallback(async (refresh = false) => {
     if (!credentials) return;
     
     if (refresh) {
@@ -113,7 +113,7 @@ export default function HistoryScreen() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [credentials]);
   
   // Fetch transactions when the screen comes into focus
   useFocusEffect(
@@ -121,7 +121,7 @@ export default function HistoryScreen() {
       if (credentials) {
         fetchAllTransactions();
       }
-    }, [credentials])
+    }, [credentials, fetchAllTransactions])
   );
   
   const handleRefresh = () => {

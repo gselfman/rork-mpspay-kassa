@@ -29,6 +29,7 @@ export default function TabsLayout() {
           borderTopColor: theme.border,
           paddingBottom: Platform.OS === 'android' ? 8 : 0, // Add padding for Android
           height: Platform.OS === 'android' ? 70 : 60, // Increase height for Android
+          paddingTop: Platform.OS === 'android' ? 8 : 0, // Add top padding for Android
         },
         headerShown: false, // Hide all tab headers
       }}

@@ -5,7 +5,6 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity, 
-  ActivityIndicator, 
   Alert,
   Platform,
   Share,
@@ -518,7 +517,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     return () => {
       mounted = false;
     };
-  }, [transactionId, transactionData, transactions, convertPaymentHistoryItemToTransaction, addTransaction, fetchTransactionStatus]);
+  }, [transactionId, transactionData, convertPaymentHistoryItemToTransaction, addTransaction]);
 
   return (
     <>
@@ -551,7 +550,6 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
         
         {isLoading ? (
           <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-            <ActivityIndicator size="large" color={theme.primary} />
             <Text style={[styles.loadingText, { color: theme.text }]} allowFontScaling={false}>
               {getTranslation('Loading transaction details...', 'Загрузка деталей транзакции...')}
             </Text>
