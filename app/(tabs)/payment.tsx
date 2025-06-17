@@ -26,7 +26,7 @@ import { createTransaction } from '@/utils/api';
 import colors from '@/constants/colors';
 import IMAGES from '@/constants/images';
 import { CreditCard, Plus, Minus, ShoppingBag, Check } from 'lucide-react-native';
-import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
+import { scaleFontSize, scaleSpacing, isLargeDevice } from '@/utils/responsive';
 
 export default function PaymentScreen() {
   const router = useRouter();
@@ -354,7 +354,8 @@ export default function PaymentScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.header}>
+          {/* Header - Updated for large devices */}
+          <View style={[styles.header, isLargeDevice && styles.headerLarge]}>
             <Image 
               source={{ uri: IMAGES.LOGO }} 
               style={styles.logo} 
@@ -660,21 +661,26 @@ const styles = StyleSheet.create({
     paddingBottom: scaleSpacing(32),
   },
   header: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: scaleSpacing(24),
+  },
+  headerLarge: {
+    flexDirection: 'column',
+    alignItems: 'center',
   },
   logo: {
     width: 60,
     height: 60,
-    marginBottom: scaleSpacing(12),
+    marginBottom: scaleSpacing(isLargeDevice ? 12 : 0),
+    marginRight: scaleSpacing(isLargeDevice ? 0 : 12),
   },
   headerTextContainer: {
-    alignItems: 'center',
+    alignItems: isLargeDevice ? 'center' : 'flex-start',
   },
   title: {
     fontWeight: 'bold',
-    textAlign: 'center',
+    textAlign: isLargeDevice ? 'center' : 'left',
   },
   card: {
     marginBottom: scaleSpacing(16),

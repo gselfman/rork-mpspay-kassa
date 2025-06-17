@@ -1,147 +1,87 @@
-import { Dimensions, Platform, PixelRatio } from 'react-native';
+import { Dimensions, Platform } from 'react-native';
 
-// Get screen dimensions
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-// Base dimensions (design is based on these dimensions)
-const BASE_WIDTH = 375; // iPhone 8/X width
-const BASE_HEIGHT = 812; // iPhone X height
+// Device size categories
+export const isSmallDevice = width < 375;
+export const isLargeDevice = width >= 414; // iPhone 16 Pro Max and similar
+export const isTablet = width >= 768;
 
-// Check if device is small (iPhone SE, etc.)
-export const isSmallDevice = SCREEN_WIDTH < 375 || SCREEN_HEIGHT < 700;
+// Base dimensions for scaling
+const baseWidth = 375; // iPhone SE/8 width
+const baseHeight = 667; // iPhone SE/8 height
 
-// Check if device is large (iPhone Plus, Pro Max, etc.)
-export const isLargeDevice = SCREEN_WIDTH >= 414 || SCREEN_HEIGHT >= 896;
-
-// Check if device is tablet
-export const isTablet = SCREEN_WIDTH >= 768 || SCREEN_HEIGHT >= 1024;
-
-/**
- * Scale a size based on screen width
- */
-export const scaleWidth = (size: number): number => {
-  const scale = SCREEN_WIDTH / BASE_WIDTH;
-  const newSize = size * scale;
-  
-  if (Platform.OS === 'ios') {
-    return Math.round(PixelRatio.roundToNearestPixel(newSize));
-  }
-  
-  return Math.round(PixelRatio.roundToNearestPixel(newSize)) - 2;
-};
-
-/**
- * Scale a size based on screen height
- */
-export const scaleHeight = (size: number): number => {
-  const scale = SCREEN_HEIGHT / BASE_HEIGHT;
-  const newSize = size * scale;
-  
-  if (Platform.OS === 'ios') {
-    return Math.round(PixelRatio.roundToNearestPixel(newSize));
-  }
-  
-  return Math.round(PixelRatio.roundToNearestPixel(newSize)) - 2;
-};
-
-/**
- * Scale a size for font
- */
+// Scale font size based on device width
 export const scaleFontSize = (size: number): number => {
-  const scale = Math.min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT);
+  const scale = width / baseWidth;
   const newSize = size * scale;
   
-  if (isSmallDevice) {
-    return Math.round(PixelRatio.roundToNearestPixel(newSize * 0.9));
+  // Limit scaling to prevent too large or too small fonts
+  if (Platform.OS === 'ios') {
+    return Math.max(12, Math.min(newSize, size * 1.3));
+  } else {
+    return Math.max(12, Math.min(newSize, size * 1.2));
   }
-  
-  if (isLargeDevice) {
-    return Math.round(PixelRatio.roundToNearestPixel(newSize * 1.05));
-  }
-  
-  return Math.round(PixelRatio.roundToNearestPixel(newSize));
 };
 
-/**
- * Scale spacing (margin, padding, etc.)
- */
+// Scale spacing based on device width
 export const scaleSpacing = (size: number): number => {
-  const scale = Math.min(SCREEN_WIDTH / BASE_WIDTH, SCREEN_HEIGHT / BASE_HEIGHT);
+  const scale = width / baseWidth;
   const newSize = size * scale;
   
-  if (isSmallDevice) {
-    return Math.round(PixelRatio.roundToNearestPixel(newSize * 0.9));
-  }
-  
-  if (isLargeDevice) {
-    return Math.round(PixelRatio.roundToNearestPixel(newSize * 1.1));
-  }
-  
-  return Math.round(PixelRatio.roundToNearestPixel(newSize));
+  // Limit scaling for spacing
+  return Math.max(4, Math.min(newSize, size * 1.4));
 };
 
-/**
- * Get container padding based on device size
- */
+// Get container padding based on device size
 export const getContainerPadding = (): number => {
   if (isTablet) {
-    return 32;
+    return scaleSpacing(24);
+  } else if (isLargeDevice) {
+    return scaleSpacing(20);
+  } else if (isSmallDevice) {
+    return scaleSpacing(12);
+  } else {
+    return scaleSpacing(16);
   }
-  
-  if (isLargeDevice) {
-    return 24;
-  }
-  
-  if (isSmallDevice) {
-    return 16;
-  }
-  
-  return 20;
 };
 
-/**
- * Get tab bar configuration based on device size
- */
-export const getTabBarConfig = () => {
-  if (isTablet) {
+// Get header height based on device
+export const getHeaderHeight = (): number => {
+  if (Platform.OS === 'ios') {
+    if (height >= 812) { // iPhone X and newer
+      return 88;
+    } else {
+      return 64;
+    }
+  } else {
+    return 56;
+  }
+};
+
+// Check if device has notch/dynamic island
+export const hasNotch = (): boolean => {
+  if (Platform.OS === 'ios') {
+    return height >= 812;
+  }
+  return false;
+};
+
+// Get safe area insets for manual calculation
+export const getSafeAreaInsets = () => {
+  if (Platform.OS === 'ios' && hasNotch()) {
     return {
-      height: 60,
-      paddingBottom: 8,
-      iconSize: 24,
-      fontSize: 12
+      top: 44,
+      bottom: 34,
+      left: 0,
+      right: 0,
     };
   }
   
-  if (isLargeDevice) {
-    return {
-      height: 56,
-      paddingBottom: 6,
-      iconSize: 22,
-      fontSize: 11
-    };
-  }
-  
-  if (isSmallDevice) {
-    return {
-      height: 50,
-      paddingBottom: 4,
-      iconSize: 18,
-      fontSize: 10
-    };
-  }
-  
-  // Default for medium devices
   return {
-    height: 54,
-    paddingBottom: 5,
-    iconSize: 20,
-    fontSize: 10
+    top: Platform.OS === 'android' ? 24 : 20,
+    bottom: 0,
+    left: 0,
+    right: 0,
   };
-};
-
-/**
- * Ensure touchable elements are at least 44x44 points (iOS HIG)
- */
-export const touchableSize = (size: number): number => {
-  return Math.max(size, Platform.OS === 'ios' ? 44 : 48);
 };

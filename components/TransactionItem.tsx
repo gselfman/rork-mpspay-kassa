@@ -118,31 +118,31 @@ export function TransactionItem({ transaction, onPress, darkMode = false }: Tran
       <View style={styles.header}>
         <View style={styles.statusContainer}>
           {getStatusIcon()}
-          <Text style={[styles.statusText, { color: getStatusColor() }]}>
+          <Text style={[styles.statusText, { color: getStatusColor() }]} allowFontScaling={false}>
             {getStatusText()}
           </Text>
         </View>
-        <Text style={[styles.amount, { color: theme.text }]}>
+        <Text style={[styles.amount, { color: theme.text }]} allowFontScaling={false}>
           {amount} ₽
         </Text>
       </View>
       
       <View style={styles.content}>
-        <Text style={[styles.description, { color: theme.text }]} numberOfLines={2}>
+        <Text style={[styles.description, { color: theme.text }]} numberOfLines={2} allowFontScaling={false}>
           {description || (language === 'en' ? 'No description' : 'Без описания')}
         </Text>
         
         {merchantName && (
-          <Text style={[styles.merchant, { color: theme.placeholder }]} numberOfLines={1}>
+          <Text style={[styles.merchant, { color: theme.placeholder }]} numberOfLines={1} allowFontScaling={false}>
             {merchantName}
           </Text>
         )}
         
-        <Text style={[styles.date, { color: theme.placeholder }]}>
+        <Text style={[styles.date, { color: theme.placeholder }]} allowFontScaling={false}>
           {formatDate(date)}
         </Text>
         
-        <Text style={[styles.id, { color: theme.placeholder }]}>
+        <Text style={[styles.id, { color: theme.placeholder }]} allowFontScaling={false}>
           ID: {transaction.id}
         </Text>
       </View>

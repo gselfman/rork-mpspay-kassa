@@ -64,7 +64,7 @@ import {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const credentials = useAuthStore((state) => state.credentials);
+  const { credentials } = useAuthStore();
   const { language } = useLanguageStore();
   const { darkMode } = useThemeStore();
   const theme = darkMode ? colors.dark : colors.light;
@@ -284,7 +284,7 @@ export default function HomeScreen() {
       setIsRefreshing(false);
       setIsInitialLoading(false);
     }
-  }, [credentials, fetchBalance, fetchPaymentHistory, language]);
+  }, [fetchBalance, fetchPaymentHistory, language]);
 
   // Refresh data when the screen comes into focus
   useFocusEffect(
@@ -304,7 +304,7 @@ export default function HomeScreen() {
       
       // Set up interval to refresh data every 2 minutes
       refreshIntervalRef.current = setInterval(() => {
-        if (mounted) {
+        if (mounted && credentials) {
           fetchData(false);
         }
       }, 120000);
@@ -318,7 +318,7 @@ export default function HomeScreen() {
         refreshIntervalRef.current = null;
       }
     };
-  }, [credentials]);
+  }, [credentials, fetchData]);
 
   const handleCreatePayment = () => {
     router.push('/payment');

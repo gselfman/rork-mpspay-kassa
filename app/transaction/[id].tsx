@@ -36,7 +36,7 @@ import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
 export default function TransactionDetailsScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
-  const credentials = useAuthStore((state) => state.credentials);
+  const { credentials } = useAuthStore();
   const { language } = useLanguageStore();
   const { darkMode } = useThemeStore();
   const theme = darkMode ? colors.dark : colors.light;
@@ -517,7 +517,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     return () => {
       mounted = false;
     };
-  }, [transactionId, transactionData, convertPaymentHistoryItemToTransaction, addTransaction]);
+  }, [transactionId, transactionData, convertPaymentHistoryItemToTransaction, addTransaction, transactions, fetchTransactionStatus]);
 
   return (
     <>

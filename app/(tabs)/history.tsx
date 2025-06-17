@@ -31,7 +31,7 @@ import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const credentials = useAuthStore((state) => state.credentials);
+  const { credentials } = useAuthStore();
   const { language } = useLanguageStore();
   const { darkMode } = useThemeStore();
   const theme = darkMode ? colors.dark : colors.light;
@@ -130,6 +130,7 @@ export default function HistoryScreen() {
   
   const handleTransactionPress = (transaction: PaymentHistoryItem) => {
     // Navigate to transaction details with the payment history item data
+    // Use the same logic as the home screen
     router.push({
       pathname: `/transaction/${transaction.id}`,
       params: { 
