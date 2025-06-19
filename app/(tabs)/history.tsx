@@ -356,7 +356,7 @@ export default function HistoryScreen() {
       onPress={() => handleTransactionPress(item)}
       activeOpacity={0.7}
     >
-      <View style={styles.header}>
+      <View style={styles.transactionHeader}>
         <View style={styles.statusContainer}>
           {item.paymentStatus === 3 ? (
             <CheckCircle size={20} color={theme.success} />
@@ -911,7 +911,7 @@ const styles = StyleSheet.create({
     marginBottom: scaleSpacing(12),
     borderWidth: 1,
   },
-  header: {
+  transactionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
