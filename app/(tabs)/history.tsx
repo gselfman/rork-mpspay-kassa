@@ -15,7 +15,6 @@ import {
   TextInput,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
-import { TransactionItem } from '@/components/TransactionItem';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/Button';
 import { ErrorPopup } from '@/components/ErrorPopup';
@@ -25,7 +24,7 @@ import { useThemeStore } from '@/store/theme-store';
 import { getPaymentHistory, sendTransactionDetailsTelegram, sendTransactionDetailsEmail } from '@/utils/api';
 import { PaymentHistoryItem } from '@/types/api';
 import colors from '@/constants/colors';
-import { Calendar, RefreshCw, AlertCircle, CalendarIcon, CheckCircle, Send, Mail, MessageCircle } from 'lucide-react-native';
+import { Calendar, RefreshCw, AlertCircle, CalendarIcon, CheckCircle, Send, Mail, MessageCircle, Clock, XCircle } from 'lucide-react-native';
 import { useFocusEffect } from 'expo-router';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
 
@@ -352,11 +351,67 @@ export default function HistoryScreen() {
   const filteredTransactions = getFilteredTransactions();
   
   const renderItem = ({ item }: { item: PaymentHistoryItem }) => (
-    <TransactionItem 
-      transaction={item} 
+    <TouchableOpacity 
+      style={[styles.transactionItem, { backgroundColor: theme.card, borderColor: theme.border }]}
       onPress={() => handleTransactionPress(item)}
-      darkMode={darkMode}
-    />
+      activeOpacity={0.7}
+    >
+      <View style={styles.header}>
+        <View style={styles.statusContainer}>
+          {item.paymentStatus === 3 ? (
+            <CheckCircle size={20} color={theme.success} />
+          ) : item.paymentStatus === 2 ? (
+            <XCircle size={20} color={theme.notification} />
+          ) : (
+            <Clock size={20} color={theme.warning} />
+          )}
+          <Text style={[styles.statusText, { 
+            color: item.paymentStatus === 3 
+              ? theme.success 
+              : item.paymentStatus === 2 
+                ? theme.notification 
+                : theme.warning 
+          }]} allowFontScaling={false}>
+            {item.paymentStatus === 3 
+              ? (language === 'en' ? 'Successful' : 'Успешный') 
+              : item.paymentStatus === 2 
+                ? (language === 'en' ? 'Not paid' : 'Не оплачен') 
+                : (language === 'en' ? 'Pending' : 'В ожидании')}
+          </Text>
+        </View>
+        <Text style={[styles.amount, { color: theme.text }]} allowFontScaling={false}>
+          ₽{item.amount}
+        </Text>
+      </View>
+      
+      <View style={styles.content}>
+        {item.comment && (
+          <Text style={[styles.comment, { color: theme.text }]} numberOfLines={2} allowFontScaling={false}>
+            {item.comment}
+          </Text>
+        )}
+        
+        <Text style={[styles.paymentId, { color: theme.placeholder }]} allowFontScaling={false}>
+          {language === 'en' ? 'Payment ID:' : 'ID платежа:'} {item.id}
+        </Text>
+        
+        {item.tag && item.paymentStatus === 3 && (
+          <Text style={[styles.sbpId, { color: theme.placeholder }]} allowFontScaling={false}>
+            {language === 'en' ? 'SBP ID:' : 'СБП ID:'} {item.tag}
+          </Text>
+        )}
+        
+        <Text style={[styles.date, { color: theme.placeholder }]} allowFontScaling={false}>
+          {item.createdAt ? new Date(item.createdAt).toLocaleDateString(language === 'en' ? 'en-US' : 'ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }) : ''}
+        </Text>
+      </View>
+    </TouchableOpacity>
   );
   
   const renderHeader = () => (
@@ -848,6 +903,52 @@ const styles = StyleSheet.create({
   },
   clearFilterText: {
     fontWeight: '500',
+  },
+  // Transaction item styles
+  transactionItem: {
+    borderRadius: 12,
+    padding: scaleSpacing(16),
+    marginBottom: scaleSpacing(12),
+    borderWidth: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: scaleSpacing(12),
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusText: {
+    marginLeft: scaleSpacing(8),
+    fontSize: scaleFontSize(14),
+    fontWeight: '500',
+  },
+  amount: {
+    fontSize: scaleFontSize(18),
+    fontWeight: 'bold',
+  },
+  content: {
+    gap: scaleSpacing(4),
+  },
+  comment: {
+    fontSize: scaleFontSize(16),
+    fontWeight: '500',
+    lineHeight: scaleFontSize(20),
+    marginBottom: scaleSpacing(4),
+  },
+  paymentId: {
+    fontSize: scaleFontSize(12),
+    fontFamily: 'monospace',
+  },
+  sbpId: {
+    fontSize: scaleFontSize(12),
+    fontFamily: 'monospace',
+  },
+  date: {
+    fontSize: scaleFontSize(12),
   },
   // Modal styles
   modalOverlay: {

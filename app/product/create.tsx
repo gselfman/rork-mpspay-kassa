@@ -118,7 +118,7 @@ export default function CreateProductScreen() {
             
             <View style={[styles.formContainer, { backgroundColor: theme.card }]}>
               <Input
-                label={language === 'en' ? 'Product Name' : 'Название товары и услуги'}
+                label={language === 'en' ? 'Product Name' : 'Название товара и услуги'}
                 placeholder={language === 'en' ? 'Enter product name (max 64 characters)' : 'Введите название товара (макс. 64 символа)'}
                 value={name}
                 onChangeText={setName}
