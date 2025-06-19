@@ -99,6 +99,20 @@ export default function CreateProductScreen() {
     // Only allow digits
     const numericText = text.replace(/[^0-9]/g, '');
     setPrice(numericText);
+    
+    // Clear price error when user starts typing
+    if (errors.price && numericText) {
+      setErrors(prev => ({ ...prev, price: '' }));
+    }
+  };
+  
+  const handleNameChange = (text: string) => {
+    setName(text);
+    
+    // Clear name error when user starts typing
+    if (errors.name && text.trim()) {
+      setErrors(prev => ({ ...prev, name: '' }));
+    }
   };
   
   return (
@@ -106,13 +120,16 @@ export default function CreateProductScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView 
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={[styles.title, { color: theme.text }]}>
+            <Text style={[styles.title, { color: theme.text }]} allowFontScaling={false}>
               {language === 'en' ? 'Create New Product' : 'Создать новый товар'}
             </Text>
             
@@ -121,10 +138,15 @@ export default function CreateProductScreen() {
                 label={language === 'en' ? 'Product Name' : 'Название товара и услуги'}
                 placeholder={language === 'en' ? 'Enter product name (max 64 characters)' : 'Введите название товара (макс. 64 символа)'}
                 value={name}
-                onChangeText={setName}
+                onChangeText={handleNameChange}
                 error={errors.name}
                 darkMode={darkMode}
                 maxLength={64}
+                autoFocus={true}
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  // Focus next input (price) when user presses "next"
+                }}
               />
               
               <Input
@@ -135,6 +157,8 @@ export default function CreateProductScreen() {
                 keyboardType="numeric"
                 error={errors.price}
                 darkMode={darkMode}
+                returnKeyType="done"
+                onSubmitEditing={handleSubmit}
               />
               
               <View style={styles.buttonContainer}>
@@ -150,6 +174,7 @@ export default function CreateProductScreen() {
                   variant="outline"
                   onPress={() => router.back()}
                   style={styles.cancelButton}
+                  disabled={isLoading}
                 />
               </View>
             </View>
@@ -173,22 +198,34 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 32,
+    flexGrow: 1,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 24,
+    textAlign: 'center',
   },
   formContainer: {
     borderRadius: 12,
-    padding: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   buttonContainer: {
-    marginTop: 16,
+    marginTop: 24,
+    gap: 12,
   },
   submitButton: {
-    marginBottom: 12,
+    marginBottom: 0,
   },
   cancelButton: {
+    marginBottom: 0,
   },
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, TextInput, Text, StyleSheet, TextInputProps, Platform } from 'react-native';
 import colors from '@/constants/colors';
 
@@ -8,19 +8,34 @@ interface InputProps extends TextInputProps {
   darkMode?: boolean;
   icon?: React.ReactNode;
   style?: any;
-  inputStyle?: any; // Add inputStyle prop
+  inputStyle?: any;
+  autoFocus?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({ 
   label, 
   error, 
   style, 
-  inputStyle, // Add inputStyle prop
+  inputStyle,
   darkMode = false,
   icon,
+  autoFocus = false,
   ...props 
 }) => {
   const theme = darkMode ? colors.dark : colors.light;
+  const inputRef = useRef<TextInput>(null);
+  
+  // Handle auto focus
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      // Small delay to ensure the component is fully mounted
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [autoFocus]);
   
   return (
     <View style={[styles.container, style]}>
@@ -32,6 +47,7 @@ export const Input: React.FC<InputProps> = ({
       <View style={styles.inputContainer}>
         {icon && <View style={styles.iconContainer}>{icon}</View>}
         <TextInput
+          ref={inputRef}
           style={[
             styles.input,
             { 
@@ -40,10 +56,19 @@ export const Input: React.FC<InputProps> = ({
               color: theme.text
             },
             icon ? styles.inputWithIcon : null,
-            inputStyle // Apply inputStyle prop
+            inputStyle
           ]}
           placeholderTextColor={theme.placeholder}
           allowFontScaling={false}
+          // Ensure proper text input handling
+          textContentType="none"
+          autoComplete="off"
+          autoCorrect={false}
+          spellCheck={false}
+          // Prevent input from losing focus on Android
+          blurOnSubmit={false}
+          // Ensure proper keyboard handling
+          returnKeyType="done"
           {...props}
         />
       </View>
@@ -63,6 +88,7 @@ const styles = StyleSheet.create({
   label: {
     marginBottom: 6,
     fontSize: 14,
+    fontWeight: '500',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -79,9 +105,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
     fontSize: 16,
-    minHeight: 48, // Ensure minimum height for better touch targets
+    minHeight: 48,
+    // Ensure proper text input behavior
+    textAlignVertical: 'center',
   },
   inputWithIcon: {
     paddingLeft: 40,
