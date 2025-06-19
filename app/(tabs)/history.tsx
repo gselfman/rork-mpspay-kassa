@@ -22,10 +22,10 @@ import { ErrorPopup } from '@/components/ErrorPopup';
 import { useAuthStore } from '@/store/auth-store';
 import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
-import { getPaymentHistory } from '@/utils/api';
+import { getPaymentHistory, sendTransactionDetailsTelegram, sendTransactionDetailsEmail } from '@/utils/api';
 import { PaymentHistoryItem } from '@/types/api';
 import colors from '@/constants/colors';
-import { Calendar, RefreshCw, AlertCircle, CalendarIcon, CheckCircle } from 'lucide-react-native';
+import { Calendar, RefreshCw, AlertCircle, CalendarIcon, CheckCircle, Send, Mail, MessageCircle } from 'lucide-react-native';
 import { useFocusEffect } from 'expo-router';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
 
@@ -48,6 +48,9 @@ export default function HistoryScreen() {
   const [showSuccessful, setShowSuccessful] = useState(false);
   const [showPending, setShowPending] = useState(false);
   const [allTransactions, setAllTransactions] = useState<PaymentHistoryItem[]>([]);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<PaymentHistoryItem | null>(null);
+  const [isSending, setIsSending] = useState(false);
   
   // Fetch all transactions for the last 30 days
   const fetchAllTransactions = useCallback(async (refresh = false) => {
@@ -129,14 +132,8 @@ export default function HistoryScreen() {
   };
   
   const handleTransactionPress = (transaction: PaymentHistoryItem) => {
-    // Navigate to transaction details with the payment history item data
-    // Use the same logic as the home screen
-    router.push({
-      pathname: `/transaction/${transaction.id}`,
-      params: { 
-        data: JSON.stringify(transaction)
-      }
-    });
+    setSelectedTransaction(transaction);
+    setShowShareModal(true);
   };
   
   const handleDateFilterPress = () => {
@@ -278,6 +275,78 @@ export default function HistoryScreen() {
     
     console.log(`Filtered to ${statusFiltered.length} transactions after status filter`);
     return statusFiltered;
+  };
+  
+  const handleSendTelegram = async () => {
+    if (!selectedTransaction || !credentials) return;
+    
+    setIsSending(true);
+    try {
+      const success = await sendTransactionDetailsTelegram(selectedTransaction, credentials, language);
+      if (success) {
+        Alert.alert(
+          language === 'en' ? 'Success' : 'Успех',
+          language === 'en' ? 'Transaction details sent to Telegram' : 'Детали операции отправлены в Телеграм'
+        );
+      } else {
+        Alert.alert(
+          language === 'en' ? 'Error' : 'Ошибка',
+          language === 'en' ? 'Failed to send to Telegram' : 'Не удалось отправить в Телеграм'
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' ? 'Failed to send to Telegram' : 'Не удалось отправить в Телеграм'
+      );
+    } finally {
+      setIsSending(false);
+      setShowShareModal(false);
+    }
+  };
+  
+  const handleSendEmail = async () => {
+    if (!selectedTransaction || !credentials) return;
+    
+    // Prompt for email address
+    Alert.prompt(
+      language === 'en' ? 'Send via Email' : 'Отправить по Email',
+      language === 'en' ? 'Enter email address:' : 'Введите email адрес:',
+      async (email) => {
+        if (!email || !email.includes('@')) {
+          Alert.alert(
+            language === 'en' ? 'Error' : 'Ошибка',
+            language === 'en' ? 'Please enter a valid email address' : 'Пожалуйста, введите корректный email адрес'
+          );
+          return;
+        }
+        
+        setIsSending(true);
+        try {
+          const success = await sendTransactionDetailsEmail(selectedTransaction, email, credentials, language);
+          if (success) {
+            Alert.alert(
+              language === 'en' ? 'Success' : 'Успех',
+              language === 'en' ? 'Transaction details sent to email' : 'Детали операции отправлены на email'
+            );
+          } else {
+            Alert.alert(
+              language === 'en' ? 'Error' : 'Ошибка',
+              language === 'en' ? 'Failed to send email' : 'Не удалось отправить email'
+            );
+          }
+        } catch (error) {
+          Alert.alert(
+            language === 'en' ? 'Error' : 'Ошибка',
+            language === 'en' ? 'Failed to send email' : 'Не удалось отправить email'
+          );
+        } finally {
+          setIsSending(false);
+          setShowShareModal(false);
+        }
+      },
+      'plain-text'
+    );
   };
   
   const filteredTransactions = getFilteredTransactions();
@@ -568,6 +637,54 @@ export default function HistoryScreen() {
           }
         />
         
+        {/* Share Modal */}
+        <Modal
+          visible={showShareModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowShareModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.shareModalContent, { backgroundColor: theme.background }]}>
+              <Text style={[styles.shareModalTitle, { color: theme.text }]} allowFontScaling={false}>
+                {language === 'en' ? 'Send Transaction Details' : 'Отправить детали операции'}
+              </Text>
+              
+              <View style={styles.shareOptions}>
+                <TouchableOpacity 
+                  style={[styles.shareOption, { backgroundColor: theme.card }]}
+                  onPress={handleSendTelegram}
+                  disabled={isSending}
+                >
+                  <MessageCircle size={24} color={theme.primary} />
+                  <Text style={[styles.shareOptionText, { color: theme.text }]} allowFontScaling={false}>
+                    {language === 'en' ? 'Send to Telegram' : 'Отправить в Телеграм'}
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.shareOption, { backgroundColor: theme.card }]}
+                  onPress={handleSendEmail}
+                  disabled={isSending}
+                >
+                  <Mail size={24} color={theme.primary} />
+                  <Text style={[styles.shareOptionText, { color: theme.text }]} allowFontScaling={false}>
+                    {language === 'en' ? 'Send via Email' : 'Отправить по Email'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              
+              <Button
+                title={language === 'en' ? 'Cancel' : 'Отмена'}
+                variant="outline"
+                onPress={() => setShowShareModal(false)}
+                style={styles.cancelButton}
+                disabled={isSending}
+              />
+            </View>
+          </View>
+        </Modal>
+        
         {/* Date Filter Modal */}
         <Modal
           visible={showDateFilterModal}
@@ -853,5 +970,36 @@ const styles = StyleSheet.create({
   dateButtonText: {
     fontSize: scaleFontSize(12),
     fontWeight: '500',
+  },
+  // Share modal styles
+  shareModalContent: {
+    width: '90%',
+    maxWidth: 400,
+    borderRadius: 12,
+    padding: 20,
+  },
+  shareModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  shareOptions: {
+    marginBottom: 20,
+  },
+  shareOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  shareOptionText: {
+    marginLeft: 12,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  cancelButton: {
+    marginTop: 8,
   },
 });

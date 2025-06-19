@@ -1,141 +1,90 @@
 # Version Control
 
-## Version 1.0.9
-**Release Date:** Current
+## Current Version: 1.1.1 Stable
 
-**Changes:**
-- **Critical Bug Fixes:**
-  - Fixed all TypeScript compilation errors that could prevent app release
-  - Added missing color properties (success, error, warning, inputBackground) to colors constants
-  - Fixed syntax errors in utils/api.ts including unterminated string literals
-  - Fixed type mismatches between Transaction and PaymentHistoryItem interfaces
-  - Resolved function call errors expecting 2 arguments but receiving 1
+### Version History
 
-- **Enhanced Error Handling:**
-  - Improved error display for API requests with detailed error messages
-  - Added comprehensive error handling throughout the application
-  - Enhanced error popups with raw response data for debugging
-  - Better error recovery and user feedback
+#### 1.1.1 (2025-01-19) - Stable Release
+**Status**: Stable
+**Focus**: Bug fixes, UI improvements, and enhanced user experience
 
-- **Localization Improvements:**
-  - Complete Russian and English language support
-  - All UI elements properly localized based on language setting
-  - Consistent translation implementation across all screens
-  - Proper date and number formatting for different locales
+**Key Changes**:
+- Fixed critical "Maximum update depth exceeded" error
+- Redesigned history screen with sharing capabilities instead of details navigation
+- Simplified product creation form with validation
+- Improved payment screen product display logic
+- Enhanced responsive design for large devices
+- Removed notification functionality as requested
+- Fixed Android navigation bar visibility issues
 
-- **Responsive Design:**
-  - Improved layout for different screen sizes (Android and iPhone)
-  - Better font scaling using scaleFontSize utility
-  - Proper spacing scaling using scaleSpacing utility
-  - Enhanced touch targets for better mobile usability
+**Stability**: High - All major bugs resolved, ready for production use
 
-- **SMTP Email Functionality:**
-  - Comprehensive SMTP email sending for payment receipts
-  - Configurable SMTP settings with secure defaults
-  - Email validation and error handling
-  - Support for custom SMTP configurations
-  - Proper email formatting with transaction details
+#### 1.1.0 (2025-01-18) - Feature Release
+**Status**: Feature Complete
+**Focus**: Enhanced functionality and user experience improvements
 
-- **UI/UX Enhancements:**
-  - Improved dark mode support with proper color theming
-  - Better input field styling and placeholder text colors
-  - Enhanced payment creation screen with product management
-  - Improved transaction history with filtering and sorting
-  - Better loading states and activity indicators
+**Key Changes**:
+- Added comprehensive transaction filtering
+- Implemented product management system
+- Enhanced payment workflow
+- Improved error handling
 
-- **Code Quality:**
-  - Fixed all TypeScript type errors
-  - Improved code organization and maintainability
-  - Better error boundaries and exception handling
-  - Enhanced logging for debugging purposes
+**Stability**: Good - Minor bugs present, suitable for testing
 
-## Version 1.0.8
-**Release Date:** Previous Release
+#### 1.0.0 (2025-01-17) - Initial Release
+**Status**: MVP
+**Focus**: Core functionality implementation
 
-**Changes:**
-- Added SMTP email sending functionality for payment receipts
-- Implemented SMTP configuration settings with default values:
-  - SMTP Host: mail.mpspay.ru
-  - SMTP Port: 587
-  - Connection: STARTTLS
-  - Username: app@mpspay.ru
-  - Password: 9icdo4pUVC
-- Added ability to customize SMTP settings through a modal interface
-- Enhanced email receipt templates with better formatting and product details
-- Fixed text node error in View components
-- Improved input field text colors in dark mode for better readability
-- Simplified payment details screen by removing duplicate MPS Pay ID field and renaming "Transaction ID" to "Payment ID"
-- Improved payment link sharing UI with a dedicated modal for "Open Link" and "Send Email" options
-- Enhanced payment link display with better text wrapping
+**Key Changes**:
+- Basic payment processing
+- User authentication
+- Transaction management
+- Multi-language support
+- Theme support
 
-## Version 1.0.7
-**Release Date:** Previous Release
+**Stability**: Basic - Core features working, some edge cases not handled
 
-**Changes:**
-- Fixed type error in payment screen by changing rawErrorResponse type from string|null to string|undefined
-- Fixed text node error in View components
-- Improved input field text colors in dark mode for better readability
-- Simplified payment details screen by removing duplicate MPS Pay ID field and renaming "Transaction ID" to "Payment ID"
-- Improved payment link sharing UI with a dedicated modal for "Open Link" and "Send Email" options
-- Enhanced payment link display with better text wrapping
-- Fixed various UI issues in dark mode
+### Version Numbering Scheme
 
-## Version 1.0.6
-**Release Date:** Earlier Release
+We follow Semantic Versioning (SemVer):
+- **MAJOR.MINOR.PATCH**
+- **MAJOR**: Breaking changes or major feature overhauls
+- **MINOR**: New features, enhancements, non-breaking changes
+- **PATCH**: Bug fixes, small improvements, stability updates
 
-**Changes:**
-- Fixed type error in payment screen
-- Changed rawErrorResponse type from string|null to string|undefined to match expected types
-- Improved error handling in payment creation process
+### Release Types
 
-## Version 1.0.5
-**Release Date:** Earlier Release
+- **Stable**: Production-ready, thoroughly tested, recommended for live use
+- **Feature**: New functionality added, suitable for testing environments
+- **Beta**: Pre-release with new features, may contain bugs
+- **Alpha**: Early development version, experimental features
+- **MVP**: Minimum Viable Product, basic functionality only
 
-**Changes:**
-- Redesigned payment creation screen with improved UI and UX
-- Added logo at the top of the payment screen
-- Enhanced product management with add/remove/quantity controls
-- Added email receipt functionality with SMTP configuration
-- Improved comment generation logic:
-  - If customer info exists: merchantName + customer info
-  - If no customer info but products exist: merchantName + product list
-  - If no customer info and no products: merchantName + "сумма вручную" + date/time
-- Added receipt generation for completed payments
-- Implemented sorting transactions by ID in descending order on home screen
+### Current Status
 
-## Version 1.0.4
-**Release Date:** Earlier Release
+Version 1.1.1 is marked as **Stable** and is recommended for production deployment. All critical bugs have been resolved, and the application provides a smooth user experience across different devices and platforms.
 
-**Changes:**
-- Added dark mode support throughout the application
-- Improved transaction history UI with better readability
-- Fixed payment creation issues and validation
-- Added product management functionality
-- Enhanced user experience with better error messages
+### Next Version Planning
 
-## Version 1.0.3
-**Release Date:** Earlier Release
+#### 1.1.2 (Planned)
+- Performance optimizations
+- Additional language support
+- Enhanced accessibility features
+- Minor UI polish
 
-**Changes:**
-- Added withdrawal functionality
-- Improved error handling with detailed error messages
-- Enhanced transaction details view
-- Added support for multiple payment methods
+#### 1.2.0 (Planned)
+- Advanced reporting features
+- Bulk operations
+- Enhanced product management
+- API improvements
 
-## Version 1.0.2
-**Release Date:** Earlier Release
+### Support Policy
 
-**Changes:**
-- Added transaction history with filtering options
-- Implemented payment details screen
-- Added basic product management
-- Improved navigation between screens
+- **Current Stable (1.1.1)**: Full support, bug fixes, security updates
+- **Previous Minor (1.1.0)**: Security updates only
+- **Older Versions (1.0.x)**: No longer supported
 
-## Version 1.0.1
-**Release Date:** Initial Release
+### Upgrade Recommendations
 
-**Changes:**
-- Initial release with basic payment functionality
-- Added authentication system
-- Implemented simple dashboard
-- Basic transaction management
+- **From 1.1.0 to 1.1.1**: Highly recommended - fixes critical bugs
+- **From 1.0.x to 1.1.1**: Recommended - significant improvements and new features

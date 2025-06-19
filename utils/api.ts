@@ -799,10 +799,10 @@ export const sendWithdrawalRequestTelegram = async (
     };
     
     // Create message in MarkdownV2 format
-    const message = `💳 *Сумма:* \`${formatNumber(amount)} RUB\`
-💼 *Кошелёк TRON:* \`${walletAddress}\`
-💰 *Баланс:* \`${formatNumber(availableBalance)} RUB\`
-🧾 *User ID:* \`${credentials.clientId}\`
+    const message = `💳 *Сумма:* `${formatNumber(amount)} RUB`
+💼 *Кошелёк TRON:* `${walletAddress}`
+💰 *Баланс:* `${formatNumber(availableBalance)} RUB`
+🧾 *User ID:* `${credentials.clientId}`
 📞 *Контакт:* ${telegramContact}`;
     
     const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -830,6 +830,174 @@ export const sendWithdrawalRequestTelegram = async (
     return true;
   } catch (error) {
     console.error('Error sending withdrawal request via Telegram:', error);
+    return false;
+  }
+};
+
+/**
+ * Send transaction details via Telegram
+ */
+export const sendTransactionDetailsTelegram = async (
+  transaction: PaymentHistoryItem,
+  credentials: Credentials,
+  language: string = 'en'
+): Promise<boolean> => {
+  try {
+    console.log('Sending transaction details via Telegram:', transaction);
+    
+    // Format date
+    const formatDate = (dateString: string | undefined) => {
+      if (!dateString) return '';
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString(language === 'en' ? 'en-US' : 'ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch (error) {
+        return dateString || '';
+      }
+    };
+    
+    // Get status text
+    const getStatusText = (status: number) => {
+      switch (status) {
+        case 3:
+          return language === 'en' ? 'Successful' : 'Успешный';
+        case 2:
+          return language === 'en' ? 'Not paid' : 'Не оплачен';
+        case 1:
+        default:
+          return language === 'en' ? 'Pending' : 'В ожидании';
+      }
+    };
+    
+    // Create message
+    let message = `📊 *${language === 'en' ? 'Transaction Details' : 'Детали операции'}*
+
+💰 *${language === 'en' ? 'Amount' : 'Сумма'}:* ${transaction.amount} RUB
+📊 *${language === 'en' ? 'Status' : 'Статус'}:* ${getStatusText(transaction.paymentStatus)}
+🆔 *${language === 'en' ? 'Payment ID' : 'ID платежа'}:* ${transaction.id}`;
+
+    if (transaction.tag && transaction.paymentStatus === 3) {
+      message += `\n🏦 *${language === 'en' ? 'SBP ID' : 'СБП ID'}:* ${transaction.tag}`;
+    }
+
+    if (transaction.comment) {
+      message += `\n💬 *${language === 'en' ? 'Comment' : 'Комментарий'}:* ${transaction.comment}`;
+    }
+
+    message += `\n📅 *${language === 'en' ? 'Date' : 'Дата'}:* ${formatDate(transaction.createdAt)}`;
+
+    if (transaction.accountToName) {
+      message += `\n🏪 *${language === 'en' ? 'Merchant' : 'Мерчант'}:* ${transaction.accountToName}`;
+    }
+
+    message += `\n👤 *${language === 'en' ? 'User ID' : 'ID пользователя'}:* ${credentials.clientId}`;
+    
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: 'Markdown',
+        disable_web_page_preview: true,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Telegram API error:', errorText);
+      throw new Error(`Telegram API Error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('Transaction details sent to Telegram successfully:', data);
+    
+    return true;
+  } catch (error) {
+    console.error('Error sending transaction details via Telegram:', error);
+    return false;
+  }
+};
+
+/**
+ * Send transaction details via Email
+ */
+export const sendTransactionDetailsEmail = async (
+  transaction: PaymentHistoryItem,
+  email: string,
+  credentials: Credentials,
+  language: string = 'en'
+): Promise<boolean> => {
+  try {
+    console.log('Sending transaction details via Email:', { transaction, email });
+    
+    // Format date
+    const formatDate = (dateString: string | undefined) => {
+      if (!dateString) return '';
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString(language === 'en' ? 'en-US' : 'ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch (error) {
+        return dateString || '';
+      }
+    };
+    
+    // Get status text
+    const getStatusText = (status: number) => {
+      switch (status) {
+        case 3:
+          return language === 'en' ? 'Successful' : 'Успешный';
+        case 2:
+          return language === 'en' ? 'Not paid' : 'Не оплачен';
+        case 1:
+        default:
+          return language === 'en' ? 'Pending' : 'В ожидании';
+      }
+    };
+    
+    // Create email subject and body
+    const subject = language === 'en' ? 'Transaction Details' : 'Детали операции';
+    
+    let body = `${language === 'en' ? 'Transaction Details' : 'Детали операции'}
+
+${language === 'en' ? 'Amount' : 'Сумма'}: ${transaction.amount} RUB
+${language === 'en' ? 'Status' : 'Статус'}: ${getStatusText(transaction.paymentStatus)}
+${language === 'en' ? 'Payment ID' : 'ID платежа'}: ${transaction.id}`;
+
+    if (transaction.tag && transaction.paymentStatus === 3) {
+      body += `\n${language === 'en' ? 'SBP ID' : 'СБП ID'}: ${transaction.tag}`;
+    }
+
+    if (transaction.comment) {
+      body += `\n${language === 'en' ? 'Comment' : 'Комментарий'}: ${transaction.comment}`;
+    }
+
+    body += `\n${language === 'en' ? 'Date' : 'Дата'}: ${formatDate(transaction.createdAt)}`;
+
+    if (transaction.accountToName) {
+      body += `\n${language === 'en' ? 'Merchant' : 'Мерчант'}: ${transaction.accountToName}`;
+    }
+
+    body += `\n${language === 'en' ? 'User ID' : 'ID пользователя'}: ${credentials.clientId}`;
+    
+    // Send email via SMTP backend
+    return await sendEmailViaSmtp(email, subject, body);
+  } catch (error) {
+    console.error('Error sending transaction details via Email:', error);
     return false;
   }
 };

@@ -20,20 +20,59 @@ export function TransactionItem({ transaction, onPress, darkMode = false }: Tran
   const isPaymentHistoryItem = 'paymentStatus' in transaction;
   
   // Get status based on transaction type
-  const getStatus = (): 'pending' | 'completed' | 'failed' => {
+  const getStatus = (): { code: number, text: string, color: string, icon: React.ReactNode } => {
     if (isPaymentHistoryItem) {
       const item = transaction as PaymentHistoryItem;
       switch (item.paymentStatus) {
         case 3:
-          return 'completed';
+          return {
+            code: 3,
+            text: language === 'en' ? 'Successful' : 'Успешный',
+            color: theme.success,
+            icon: <CheckCircle size={20} color={theme.success} />
+          };
         case 2:
-          return 'failed';
+          return {
+            code: 2,
+            text: language === 'en' ? 'Not paid' : 'Не оплачен',
+            color: theme.notification,
+            icon: <XCircle size={20} color={theme.notification} />
+          };
         case 1:
         default:
-          return 'pending';
+          return {
+            code: 1,
+            text: language === 'en' ? 'Pending' : 'В ожидании',
+            color: theme.warning,
+            icon: <Clock size={20} color={theme.warning} />
+          };
       }
     } else {
-      return (transaction as Transaction).status;
+      const item = transaction as Transaction;
+      switch (item.status) {
+        case 'completed':
+          return {
+            code: 3,
+            text: language === 'en' ? 'Successful' : 'Успешный',
+            color: theme.success,
+            icon: <CheckCircle size={20} color={theme.success} />
+          };
+        case 'failed':
+          return {
+            code: 2,
+            text: language === 'en' ? 'Not paid' : 'Не оплачен',
+            color: theme.notification,
+            icon: <XCircle size={20} color={theme.notification} />
+          };
+        case 'pending':
+        default:
+          return {
+            code: 1,
+            text: language === 'en' ? 'Pending' : 'В ожидании',
+            color: theme.warning,
+            icon: <Clock size={20} color={theme.warning} />
+          };
+      }
     }
   };
   
@@ -42,8 +81,8 @@ export function TransactionItem({ transaction, onPress, darkMode = false }: Tran
   // Get amount
   const amount = transaction.amount;
   
-  // Get description/comment
-  const description = isPaymentHistoryItem 
+  // Get comment
+  const comment = isPaymentHistoryItem 
     ? (transaction as PaymentHistoryItem).comment || ''
     : (transaction as Transaction).customerInfo || '';
   
@@ -52,46 +91,10 @@ export function TransactionItem({ transaction, onPress, darkMode = false }: Tran
     ? (transaction as PaymentHistoryItem).createdAt || ''
     : (transaction as Transaction).createdAt || '';
   
-  // Get merchant name
-  const merchantName = isPaymentHistoryItem 
-    ? (transaction as PaymentHistoryItem).accountToName || ''
-    : (transaction as Transaction).merchantName || '';
-  
-  const getStatusIcon = () => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle size={20} color={theme.success} />;
-      case 'failed':
-        return <XCircle size={20} color={theme.notification} />;
-      case 'pending':
-      default:
-        return <Clock size={20} color={theme.warning} />;
-    }
-  };
-  
-  const getStatusText = () => {
-    switch (status) {
-      case 'completed':
-        return language === 'en' ? 'Completed' : 'Выполнено';
-      case 'failed':
-        return language === 'en' ? 'Failed' : 'Ошибка';
-      case 'pending':
-      default:
-        return language === 'en' ? 'Pending' : 'В обработке';
-    }
-  };
-  
-  const getStatusColor = () => {
-    switch (status) {
-      case 'completed':
-        return theme.success;
-      case 'failed':
-        return theme.notification;
-      case 'pending':
-      default:
-        return theme.warning;
-    }
-  };
+  // Get СБП ID (only for successful payments)
+  const sbpId = isPaymentHistoryItem && status.code === 3 
+    ? (transaction as PaymentHistoryItem).tag || ''
+    : '';
   
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '';
@@ -117,33 +120,35 @@ export function TransactionItem({ transaction, onPress, darkMode = false }: Tran
     >
       <View style={styles.header}>
         <View style={styles.statusContainer}>
-          {getStatusIcon()}
-          <Text style={[styles.statusText, { color: getStatusColor() }]} allowFontScaling={false}>
-            {getStatusText()}
+          {status.icon}
+          <Text style={[styles.statusText, { color: status.color }]} allowFontScaling={false}>
+            {status.text}
           </Text>
         </View>
         <Text style={[styles.amount, { color: theme.text }]} allowFontScaling={false}>
-          {amount} ₽
+          ₽{amount}
         </Text>
       </View>
       
       <View style={styles.content}>
-        <Text style={[styles.description, { color: theme.text }]} numberOfLines={2} allowFontScaling={false}>
-          {description || (language === 'en' ? 'No description' : 'Без описания')}
+        {comment && (
+          <Text style={[styles.comment, { color: theme.text }]} numberOfLines={2} allowFontScaling={false}>
+            {comment}
+          </Text>
+        )}
+        
+        <Text style={[styles.paymentId, { color: theme.placeholder }]} allowFontScaling={false}>
+          {language === 'en' ? 'Payment ID:' : 'ID платежа:'} {transaction.id}
         </Text>
         
-        {merchantName && (
-          <Text style={[styles.merchant, { color: theme.placeholder }]} numberOfLines={1} allowFontScaling={false}>
-            {merchantName}
+        {sbpId && (
+          <Text style={[styles.sbpId, { color: theme.placeholder }]} allowFontScaling={false}>
+            {language === 'en' ? 'SBP ID:' : 'СБП ID:'} {sbpId}
           </Text>
         )}
         
         <Text style={[styles.date, { color: theme.placeholder }]} allowFontScaling={false}>
           {formatDate(date)}
-        </Text>
-        
-        <Text style={[styles.id, { color: theme.placeholder }]} allowFontScaling={false}>
-          ID: {transaction.id}
         </Text>
       </View>
     </TouchableOpacity>
@@ -179,19 +184,21 @@ const styles = StyleSheet.create({
   content: {
     gap: scaleSpacing(4),
   },
-  description: {
+  comment: {
     fontSize: scaleFontSize(16),
     fontWeight: '500',
     lineHeight: scaleFontSize(20),
+    marginBottom: scaleSpacing(4),
   },
-  merchant: {
-    fontSize: scaleFontSize(14),
+  paymentId: {
+    fontSize: scaleFontSize(12),
+    fontFamily: 'monospace',
+  },
+  sbpId: {
+    fontSize: scaleFontSize(12),
+    fontFamily: 'monospace',
   },
   date: {
     fontSize: scaleFontSize(12),
-  },
-  id: {
-    fontSize: scaleFontSize(12),
-    fontFamily: 'monospace',
   },
 });

@@ -338,6 +338,9 @@ export default function PaymentScreen() {
     return products.reduce((sum, p) => sum + (p.price * p.quantity), 0);
   };
   
+  // Check if we should show the empty products message
+  const shouldShowEmptyMessage = storeProducts.length === 0 && products.length === 0;
+  
   return (
     <>
       <Stack.Screen 
@@ -431,15 +434,17 @@ export default function PaymentScreen() {
                 {getTranslation('Products', 'Товары')}
               </Text>
               <View style={styles.productActions}>
-                <TouchableOpacity 
-                  style={[styles.selectProductButton, { backgroundColor: theme.secondary }]}
-                  onPress={() => setShowProductSelector(true)}
-                >
-                  <ShoppingBag size={16} color="white" />
-                  <Text style={styles.selectProductButtonText} allowFontScaling={false}>
-                    {getTranslation('Select', 'Выбрать')}
-                  </Text>
-                </TouchableOpacity>
+                {storeProducts.length > 0 && (
+                  <TouchableOpacity 
+                    style={[styles.selectProductButton, { backgroundColor: theme.secondary }]}
+                    onPress={() => setShowProductSelector(true)}
+                  >
+                    <ShoppingBag size={16} color="white" />
+                    <Text style={styles.selectProductButtonText} allowFontScaling={false}>
+                      {getTranslation('Select', 'Выбрать')}
+                    </Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity 
                   style={[styles.addProductButton, { backgroundColor: theme.primary }]}
                   onPress={() => setShowProductForm(true)}
@@ -449,8 +454,36 @@ export default function PaymentScreen() {
               </View>
             </View>
             
+            {/* Show available products if any exist */}
+            {storeProducts.length > 0 && !showProductForm && !showProductSelector && (
+              <View style={styles.availableProductsList}>
+                <Text style={[styles.availableProductsTitle, { color: theme.text }]} allowFontScaling={false}>
+                  {getTranslation('Available Products', 'Доступные товары')}
+                </Text>
+                <ScrollView style={styles.availableProductsScroll} horizontal showsHorizontalScrollIndicator={false}>
+                  {storeProducts.map((product) => (
+                    <TouchableOpacity
+                      key={product.id}
+                      style={[styles.availableProductItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+                      onPress={() => handleSelectProduct(product)}
+                    >
+                      <Text style={[styles.availableProductName, { color: theme.text }]} allowFontScaling={false}>
+                        {product.name}
+                      </Text>
+                      <Text style={[styles.availableProductPrice, { color: theme.text }]} allowFontScaling={false}>
+                        ₽{product.price.toFixed(2)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+            
             {products.length > 0 ? (
               <View style={styles.productsList}>
+                <Text style={[styles.selectedProductsTitle, { color: theme.text }]} allowFontScaling={false}>
+                  {getTranslation('Selected Products', 'Выбранные товары')}
+                </Text>
                 {products.map((product) => (
                   <View key={product.id} style={[styles.productItem, { backgroundColor: theme.card }]}>
                     <View style={styles.productInfo}>
@@ -499,7 +532,7 @@ export default function PaymentScreen() {
                   </Text>
                 </View>
               </View>
-            ) : (
+            ) : shouldShowEmptyMessage ? (
               <View style={styles.emptyProductsContainer}>
                 <ShoppingBag size={48} color={theme.placeholder} style={styles.emptyProductsIcon} />
                 <Text style={[styles.emptyProductsText, { color: theme.text }]} allowFontScaling={false}>
@@ -509,7 +542,7 @@ export default function PaymentScreen() {
                   )}
                 </Text>
               </View>
-            )}
+            ) : null}
             
             {showProductForm && (
               <View style={[styles.productForm, { backgroundColor: theme.card }]}>
@@ -601,26 +634,6 @@ export default function PaymentScreen() {
                 
                 <Button
                   title={getTranslation('Cancel', 'Отмена')}
-                  variant="outline"
-                  onPress={() => setShowProductSelector(false)}
-                  style={styles.cancelSelectorButton}
-                />
-              </View>
-            )}
-            
-            {showProductSelector && storeProducts.length === 0 && (
-              <View style={[styles.productSelector, { backgroundColor: theme.card }]}>
-                <Text style={[styles.productSelectorTitle, { color: theme.text }]} allowFontScaling={false}>
-                  {getTranslation('No Products Available', 'Нет доступных товаров')}
-                </Text>
-                <Text style={[styles.emptyProductsText, { color: theme.text }]} allowFontScaling={false}>
-                  {getTranslation(
-                    'You have not added any products yet. Add a new product first.',
-                    'Вы еще не добавили ни одного товара. Сначала добавьте новый товар.'
-                  )}
-                </Text>
-                <Button
-                  title={getTranslation('Close', 'Закрыть')}
                   variant="outline"
                   onPress={() => setShowProductSelector(false)}
                   style={styles.cancelSelectorButton}
@@ -760,6 +773,40 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  // Available products styles
+  availableProductsList: {
+    marginBottom: scaleSpacing(16),
+  },
+  availableProductsTitle: {
+    fontSize: scaleFontSize(16),
+    fontWeight: '600',
+    marginBottom: scaleSpacing(12),
+  },
+  availableProductsScroll: {
+    maxHeight: 120,
+  },
+  availableProductItem: {
+    padding: scaleSpacing(12),
+    borderRadius: 8,
+    marginRight: scaleSpacing(8),
+    borderWidth: 1,
+    minWidth: 120,
+  },
+  availableProductName: {
+    fontSize: scaleFontSize(14),
+    fontWeight: '500',
+    marginBottom: scaleSpacing(4),
+  },
+  availableProductPrice: {
+    fontSize: scaleFontSize(14),
+    fontWeight: 'bold',
+  },
+  // Selected products styles
+  selectedProductsTitle: {
+    fontSize: scaleFontSize(16),
+    fontWeight: '600',
+    marginBottom: scaleSpacing(12),
   },
   productsList: {
     marginBottom: scaleSpacing(8),
