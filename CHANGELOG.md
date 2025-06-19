@@ -5,46 +5,58 @@ All notable changes to this project will be documented in this file.
 ## [1.1.1] - 2025-01-19 - Stable
 
 ### Fixed
-- Fixed "Maximum update depth exceeded" error in HomeScreen component
-- Fixed React Native Web compatibility issues with text nodes in View components
-- Fixed transaction details navigation from history screen
-- Fixed amount input field visibility on iPhone 16 Pro Max
-- Fixed header layout for large devices (iPhone 16 Pro Max) - logo now displays above title
-- Fixed Android bottom navigation being hidden under system UI
+- **Critical Bug Fix**: Fixed "Maximum update depth exceeded" error in HomeScreen component that was causing infinite loops
+- **React Native Web Compatibility**: Fixed text node errors and other React Native Web compatibility issues
+- **Transaction Details Navigation**: Fixed navigation issues from History screen to transaction details
+- **Amount Input Visibility**: Fixed amount input field visibility issues on large devices (iPhone 16 Pro Max)
+- **Header Layout**: Fixed header layout for large devices - logo now displays above title for better visual hierarchy
+- **Android Navigation**: Fixed bottom navigation being hidden under system UI on Android devices
+- **TypeScript Errors**: Fixed syntax errors in utils/api.ts that were preventing compilation
 
 ### Changed
-- **History Screen**: Redesigned transaction display and interaction
-  - Transaction cards now show: status (1-pending, 2-not paid, 3-successful), comment, payment ID, SBP ID for successful payments, date/time, and amount
-  - Removed navigation to transaction details page
+- **History Screen Redesign**: Complete redesign of transaction display and interaction
+  - Transaction cards now show comprehensive information: status (1-pending, 2-not paid, 3-successful), comment, payment ID, SBP ID for successful payments, date/time, and amount
+  - Removed navigation to transaction details page from history screen
   - Added modal for sharing transaction details via Telegram or Email instead of showing details page
+  - Improved transaction filtering with visual status indicators
   
-- **Product Creation**: Simplified product creation form
-  - Product name field limited to 64 characters (text input)
-  - Price field accepts only whole numbers from 1 to 1,000,000
-  - After creating product, user is redirected to Products page instead of staying on creation page
+- **Product Creation Simplification**: Streamlined product creation form
+  - Product name field limited to 64 characters (text input only)
+  - Price field accepts only whole numbers from 1 to 1,000,000 (integer validation)
+  - After creating product, user is automatically redirected to Products page
+  - Simplified validation with clear error messages
   
-- **Payment Creation**: Improved product display logic
+- **Payment Creation Enhancement**: Improved product display logic
   - If any products exist in store, available products are shown immediately instead of empty state message
-  - Added horizontal scroll for available products
+  - Added horizontal scroll for available products for better UX
   - Better organization of product selection and cart management
+  - Improved visual hierarchy and spacing
 
 ### Added
-- New API functions for sending transaction details via Telegram and Email
-- Enhanced transaction sharing capabilities
-- Better responsive design for large devices
-- Improved error handling and user feedback
+- **Transaction Sharing**: New API functions for sending transaction details via Telegram and Email
+- **Enhanced Error Handling**: Better error boundaries and user feedback throughout the app
+- **Responsive Design**: Improved responsive design for large devices with better scaling
+- **Print Receipt**: Enhanced receipt printing with proper logo display and encoding fixes
+- **Better State Management**: Improved React state management to prevent infinite loops
 
 ### Removed
-- Transaction details page navigation from history screen (replaced with sharing modal)
-- Empty products message when products are available
-- Notification-related code and requests (removed notifications button from settings)
+- **Transaction Details Navigation**: Removed navigation from history screen to transaction details (replaced with sharing modal)
+- **Empty Products Message**: Removed confusing empty state when products are available
+- **Notification Features**: Removed notification-related code and requests as requested
+- **Redundant Code**: Cleaned up unused components and simplified codebase
 
 ### Technical Improvements
-- Fixed React state management issues causing infinite loops
-- Improved component lifecycle management
-- Better error boundary handling
-- Enhanced mobile-first responsive design
-- Fixed text node rendering issues in React Native Web
+- **React State Management**: Fixed infinite loop issues in useEffect and state updates
+- **Component Lifecycle**: Better component lifecycle management and cleanup
+- **Error Boundaries**: Enhanced error boundary handling throughout the app
+- **Mobile-First Design**: Improved mobile-first responsive design approach
+- **React Native Web**: Fixed text node rendering issues and improved web compatibility
+- **TypeScript**: Fixed compilation errors and improved type safety
+
+### Performance
+- **Reduced Re-renders**: Optimized component re-rendering to prevent performance issues
+- **Better Memory Management**: Improved memory management with proper cleanup
+- **Faster Navigation**: Streamlined navigation flow for better user experience
 
 ## [1.1.0] - 2025-01-18
 

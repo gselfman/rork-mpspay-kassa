@@ -454,7 +454,7 @@ export default function PaymentScreen() {
               </View>
             </View>
             
-            {/* Show available products if any exist */}
+            {/* Show available products if any exist and no forms are shown */}
             {storeProducts.length > 0 && !showProductForm && !showProductSelector && (
               <View style={styles.availableProductsList}>
                 <Text style={[styles.availableProductsTitle, { color: theme.text }]} allowFontScaling={false}>

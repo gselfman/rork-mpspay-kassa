@@ -799,10 +799,10 @@ export const sendWithdrawalRequestTelegram = async (
     };
     
     // Create message in MarkdownV2 format
-    const message = `💳 *Сумма:* `${formatNumber(amount)} RUB`
-💼 *Кошелёк TRON:* `${walletAddress}`
-💰 *Баланс:* `${formatNumber(availableBalance)} RUB`
-🧾 *User ID:* `${credentials.clientId}`
+    const message = `💳 *Сумма:* \`${formatNumber(amount)} RUB\`
+💼 *Кошелёк TRON:* \`${walletAddress}\`
+💰 *Баланс:* \`${formatNumber(availableBalance)} RUB\`
+🧾 *User ID:* \`${credentials.clientId}\`
 📞 *Контакт:* ${telegramContact}`;
     
     const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -883,20 +883,25 @@ export const sendTransactionDetailsTelegram = async (
 🆔 *${language === 'en' ? 'Payment ID' : 'ID платежа'}:* ${transaction.id}`;
 
     if (transaction.tag && transaction.paymentStatus === 3) {
-      message += `\n🏦 *${language === 'en' ? 'SBP ID' : 'СБП ID'}:* ${transaction.tag}`;
+      message += `
+🏦 *${language === 'en' ? 'SBP ID' : 'СБП ID'}:* ${transaction.tag}`;
     }
 
     if (transaction.comment) {
-      message += `\n💬 *${language === 'en' ? 'Comment' : 'Комментарий'}:* ${transaction.comment}`;
+      message += `
+💬 *${language === 'en' ? 'Comment' : 'Комментарий'}:* ${transaction.comment}`;
     }
 
-    message += `\n📅 *${language === 'en' ? 'Date' : 'Дата'}:* ${formatDate(transaction.createdAt)}`;
+    message += `
+📅 *${language === 'en' ? 'Date' : 'Дата'}:* ${formatDate(transaction.createdAt)}`;
 
     if (transaction.accountToName) {
-      message += `\n🏪 *${language === 'en' ? 'Merchant' : 'Мерчант'}:* ${transaction.accountToName}`;
+      message += `
+🏪 *${language === 'en' ? 'Merchant' : 'Мерчант'}:* ${transaction.accountToName}`;
     }
 
-    message += `\n👤 *${language === 'en' ? 'User ID' : 'ID пользователя'}:* ${credentials.clientId}`;
+    message += `
+👤 *${language === 'en' ? 'User ID' : 'ID пользователя'}:* ${credentials.clientId}`;
     
     const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -979,20 +984,25 @@ ${language === 'en' ? 'Status' : 'Статус'}: ${getStatusText(transaction.pa
 ${language === 'en' ? 'Payment ID' : 'ID платежа'}: ${transaction.id}`;
 
     if (transaction.tag && transaction.paymentStatus === 3) {
-      body += `\n${language === 'en' ? 'SBP ID' : 'СБП ID'}: ${transaction.tag}`;
+      body += `
+${language === 'en' ? 'SBP ID' : 'СБП ID'}: ${transaction.tag}`;
     }
 
     if (transaction.comment) {
-      body += `\n${language === 'en' ? 'Comment' : 'Комментарий'}: ${transaction.comment}`;
+      body += `
+${language === 'en' ? 'Comment' : 'Комментарий'}: ${transaction.comment}`;
     }
 
-    body += `\n${language === 'en' ? 'Date' : 'Дата'}: ${formatDate(transaction.createdAt)}`;
+    body += `
+${language === 'en' ? 'Date' : 'Дата'}: ${formatDate(transaction.createdAt)}`;
 
     if (transaction.accountToName) {
-      body += `\n${language === 'en' ? 'Merchant' : 'Мерчант'}: ${transaction.accountToName}`;
+      body += `
+${language === 'en' ? 'Merchant' : 'Мерчант'}: ${transaction.accountToName}`;
     }
 
-    body += `\n${language === 'en' ? 'User ID' : 'ID пользователя'}: ${credentials.clientId}`;
+    body += `
+${language === 'en' ? 'User ID' : 'ID пользователя'}: ${credentials.clientId}`;
     
     // Send email via SMTP backend
     return await sendEmailViaSmtp(email, subject, body);
