@@ -1288,4 +1288,34 @@ const styles = StyleSheet.create({
   },
   personalCabinetIconContainer: {
     width: 48,
-    height:
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: scaleSpacing(12),
+  },
+  personalCabinetTextContainer: {
+    flex: 1,
+  },
+  personalCabinetTitle: {
+    fontSize: scaleFontSize(16),
+    fontWeight: '600',
+    marginBottom: scaleSpacing(4),
+  },
+  personalCabinetDescription: {
+    fontSize: scaleFontSize(12),
+  },
+  // Merchant info styles
+  merchantInfoContainer: {
+    alignItems: 'center',
+    marginBottom: scaleSpacing(16),
+  },
+  merchantName: {
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  merchantId: {
+    fontWeight: '400',
+  },
+});

@@ -170,7 +170,15 @@ export default function CreateProductScreen() {
                 darkMode={darkMode}
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
+                // Fix focus issue - don't blur on submit for price field
                 blurOnSubmit={false}
+                // Ensure proper text input handling
+                textContentType="none"
+                autoComplete="off"
+                autoCorrect={false}
+                spellCheck={false}
+                // Add selection color for better visibility
+                selectionColor={theme.primary}
               />
               
               <View style={styles.buttonContainer}>

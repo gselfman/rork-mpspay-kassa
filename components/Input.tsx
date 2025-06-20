@@ -84,6 +84,10 @@ export const Input = forwardRef<InputRef, InputProps>(({
           blurOnSubmit={props.blurOnSubmit !== undefined ? props.blurOnSubmit : false}
           // Ensure proper keyboard handling
           returnKeyType={props.returnKeyType || "done"}
+          // Add selection color for better visibility
+          selectionColor={theme.primary}
+          // Ensure proper focus behavior
+          caretHidden={false}
           {...props}
         />
       </View>
