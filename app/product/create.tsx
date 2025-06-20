@@ -170,7 +170,7 @@ export default function CreateProductScreen() {
                 darkMode={darkMode}
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
-                blurOnSubmit={false}
+                blurOnSubmit={true}
               />
               
               <View style={styles.buttonContainer}>

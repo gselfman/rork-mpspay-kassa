@@ -432,7 +432,7 @@ export default function HistoryScreen() {
         );
       } else {
         // For mobile, use sharing
-        const { Share } = require('react-native');
+        const { Share } = await import('react-native');
         await Share.share({
           message: csvContent,
           title: filename
