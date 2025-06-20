@@ -81,7 +81,7 @@ export const Input = forwardRef<InputRef, InputProps>(({
           autoCorrect={false}
           spellCheck={false}
           // Prevent input from losing focus on Android unless explicitly set
-          blurOnSubmit={props.blurOnSubmit !== undefined ? props.blurOnSubmit : true}
+          blurOnSubmit={props.blurOnSubmit !== undefined ? props.blurOnSubmit : false}
           // Ensure proper keyboard handling
           returnKeyType={props.returnKeyType || "done"}
           {...props}

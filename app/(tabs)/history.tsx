@@ -13,6 +13,7 @@ import {
   ScrollView,
   Image,
   TextInput,
+  Share
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { EmptyState } from '@/components/EmptyState';
@@ -432,7 +433,6 @@ export default function HistoryScreen() {
         );
       } else {
         // For mobile, use sharing
-        const { Share } = await import('react-native');
         await Share.share({
           message: csvContent,
           title: filename
