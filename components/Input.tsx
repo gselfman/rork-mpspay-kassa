@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { View, TextInput, Text, StyleSheet, TextInputProps, Platform } from 'react-native';
 import colors from '@/constants/colors';
 
@@ -12,7 +12,12 @@ interface InputProps extends TextInputProps {
   autoFocus?: boolean;
 }
 
-export const Input: React.FC<InputProps> = ({ 
+export interface InputRef {
+  focus: () => void;
+  blur: () => void;
+}
+
+export const Input = forwardRef<InputRef, InputProps>(({ 
   label, 
   error, 
   style, 
@@ -21,9 +26,19 @@ export const Input: React.FC<InputProps> = ({
   icon,
   autoFocus = false,
   ...props 
-}) => {
+}, ref) => {
   const theme = darkMode ? colors.dark : colors.light;
   const inputRef = useRef<TextInput>(null);
+  
+  // Expose focus and blur methods to parent components
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    },
+    blur: () => {
+      inputRef.current?.blur();
+    }
+  }));
   
   // Handle auto focus
   useEffect(() => {
@@ -65,10 +80,10 @@ export const Input: React.FC<InputProps> = ({
           autoComplete="off"
           autoCorrect={false}
           spellCheck={false}
-          // Prevent input from losing focus on Android
-          blurOnSubmit={false}
+          // Prevent input from losing focus on Android unless explicitly set
+          blurOnSubmit={props.blurOnSubmit !== undefined ? props.blurOnSubmit : true}
           // Ensure proper keyboard handling
-          returnKeyType="done"
+          returnKeyType={props.returnKeyType || "done"}
           {...props}
         />
       </View>
@@ -79,7 +94,9 @@ export const Input: React.FC<InputProps> = ({
       ) : null}
     </View>
   );
-};
+});
+
+Input.displayName = 'Input';
 
 const styles = StyleSheet.create({
   container: {

@@ -24,7 +24,7 @@ import { useThemeStore } from '@/store/theme-store';
 import { getPaymentHistory, sendTransactionDetailsTelegram, sendTransactionDetailsEmail } from '@/utils/api';
 import { PaymentHistoryItem } from '@/types/api';
 import colors from '@/constants/colors';
-import { Calendar, RefreshCw, AlertCircle, CalendarIcon, CheckCircle, Send, Mail, MessageCircle, Clock, XCircle } from 'lucide-react-native';
+import { Calendar, RefreshCw, AlertCircle, CalendarIcon, CheckCircle, Send, Mail, MessageCircle, Clock, XCircle, Download } from 'lucide-react-native';
 import { useFocusEffect } from 'expo-router';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
 
@@ -50,6 +50,7 @@ export default function HistoryScreen() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<PaymentHistoryItem | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Fetch all transactions for the last 30 days
   const fetchAllTransactions = useCallback(async (refresh = false) => {
@@ -131,6 +132,17 @@ export default function HistoryScreen() {
   };
   
   const handleTransactionPress = (transaction: PaymentHistoryItem) => {
+    // Navigate to transaction details page
+    router.push({
+      pathname: '/transaction/[id]',
+      params: { 
+        id: transaction.id,
+        data: JSON.stringify(transaction)
+      }
+    });
+  };
+  
+  const handleShareTransaction = (transaction: PaymentHistoryItem) => {
     setSelectedTransaction(transaction);
     setShowShareModal(true);
   };
@@ -348,6 +360,95 @@ export default function HistoryScreen() {
     );
   };
   
+  const exportToCSV = async () => {
+    setIsExporting(true);
+    
+    try {
+      const filteredTransactions = getFilteredTransactions();
+      
+      if (filteredTransactions.length === 0) {
+        Alert.alert(
+          language === 'en' ? 'No Data' : 'Нет данных',
+          language === 'en' ? 'No transactions to export' : 'Нет транзакций для экспорта'
+        );
+        return;
+      }
+      
+      // Create CSV content
+      const headers = [
+        language === 'en' ? 'ID' : 'ID',
+        language === 'en' ? 'Amount' : 'Сумма',
+        language === 'en' ? 'Status' : 'Статус',
+        language === 'en' ? 'Date' : 'Дата',
+        language === 'en' ? 'Comment' : 'Комментарий',
+        language === 'en' ? 'SBP ID' : 'СБП ID',
+        language === 'en' ? 'Commission' : 'Комиссия'
+      ];
+      
+      const csvRows = [headers.join(',')];
+      
+      filteredTransactions.forEach(transaction => {
+        const statusText = transaction.paymentStatus === 3 
+          ? (language === 'en' ? 'Successful' : 'Успешный')
+          : transaction.paymentStatus === 2 
+            ? (language === 'en' ? 'Failed' : 'Неуспешный')
+            : (language === 'en' ? 'Pending' : 'В ожидании');
+        
+        const row = [
+          transaction.id,
+          transaction.amount,
+          `"${statusText}"`,
+          transaction.createdAt ? `"${new Date(transaction.createdAt).toLocaleString()}"` : '',
+          transaction.comment ? `"${transaction.comment.replace(/"/g, '""')}"` : '',
+          transaction.tag || '',
+          transaction.totalCommission || 0
+        ];
+        
+        csvRows.push(row.join(','));
+      });
+      
+      const csvContent = csvRows.join('\n');
+      
+      // Create filename with current date
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const filename = `transactions_${dateStr}.csv`;
+      
+      if (Platform.OS === 'web') {
+        // For web, create a download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        Alert.alert(
+          language === 'en' ? 'Success' : 'Успех',
+          language === 'en' ? 'Transactions exported successfully' : 'Транзакции успешно экспортированы'
+        );
+      } else {
+        // For mobile, use sharing
+        const { Share } = require('react-native');
+        await Share.share({
+          message: csvContent,
+          title: filename
+        });
+      }
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      Alert.alert(
+        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' ? 'Failed to export transactions' : 'Не удалось экспортировать транзакции'
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+  
   const filteredTransactions = getFilteredTransactions();
   
   const renderItem = ({ item }: { item: PaymentHistoryItem }) => (
@@ -379,9 +480,20 @@ export default function HistoryScreen() {
                 : (language === 'en' ? 'Pending' : 'В ожидании')}
           </Text>
         </View>
-        <Text style={[styles.amount, { color: theme.text }]} allowFontScaling={false}>
-          ₽{item.amount}
-        </Text>
+        <View style={styles.transactionActions}>
+          <Text style={[styles.amount, { color: theme.text }]} allowFontScaling={false}>
+            ₽{item.amount}
+          </Text>
+          <TouchableOpacity 
+            style={styles.shareButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleShareTransaction(item);
+            }}
+          >
+            <Send size={16} color={theme.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
       
       <View style={styles.content}>
@@ -429,6 +541,14 @@ export default function HistoryScreen() {
       </Text>
       
       <View style={styles.actions}>
+        <TouchableOpacity 
+          style={[styles.actionButton, { backgroundColor: theme.card }]}
+          onPress={exportToCSV}
+          disabled={isExporting}
+        >
+          <Download size={20} color={theme.primary} />
+        </TouchableOpacity>
+        
         <TouchableOpacity 
           style={[styles.actionButton, { backgroundColor: theme.card }]}
           onPress={handleDateFilterPress}
@@ -920,15 +1040,24 @@ const styles = StyleSheet.create({
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   statusText: {
     marginLeft: scaleSpacing(8),
     fontSize: scaleFontSize(14),
     fontWeight: '500',
   },
+  transactionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   amount: {
     fontSize: scaleFontSize(18),
     fontWeight: 'bold',
+    marginRight: scaleSpacing(8),
+  },
+  shareButton: {
+    padding: scaleSpacing(4),
   },
   content: {
     gap: scaleSpacing(4),

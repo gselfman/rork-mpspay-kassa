@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -31,6 +31,10 @@ export default function CreateProductScreen() {
   const [price, setPrice] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Refs for input fields
+  const nameInputRef = useRef<any>(null);
+  const priceInputRef = useRef<any>(null);
   
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -115,6 +119,12 @@ export default function CreateProductScreen() {
     }
   };
   
+  const focusNextInput = () => {
+    if (priceInputRef.current) {
+      priceInputRef.current.focus();
+    }
+  };
+  
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['bottom']}>
       <KeyboardAvoidingView
@@ -135,6 +145,7 @@ export default function CreateProductScreen() {
             
             <View style={[styles.formContainer, { backgroundColor: theme.card }]}>
               <Input
+                ref={nameInputRef}
                 label={language === 'en' ? 'Product Name' : 'Название товара и услуги'}
                 placeholder={language === 'en' ? 'Enter product name (max 64 characters)' : 'Введите название товара (макс. 64 символа)'}
                 value={name}
@@ -144,12 +155,12 @@ export default function CreateProductScreen() {
                 maxLength={64}
                 autoFocus={true}
                 returnKeyType="next"
-                onSubmitEditing={() => {
-                  // Focus next input (price) when user presses "next"
-                }}
+                onSubmitEditing={focusNextInput}
+                blurOnSubmit={false}
               />
               
               <Input
+                ref={priceInputRef}
                 label={language === 'en' ? 'Price (RUB)' : 'Цена (руб.)'}
                 placeholder={language === 'en' ? 'Enter price (1 - 1,000,000)' : 'Введите цену (1 - 1 000 000)'}
                 value={price}
@@ -159,6 +170,7 @@ export default function CreateProductScreen() {
                 darkMode={darkMode}
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
+                blurOnSubmit={false}
               />
               
               <View style={styles.buttonContainer}>

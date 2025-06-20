@@ -240,8 +240,8 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     }
   };
   
-  // Print receipt
-  const printReceipt = async () => {
+  // Generate PDF receipt
+  const generatePDFReceipt = async () => {
     if (!transaction) return;
     
     try {
@@ -257,33 +257,42 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
         commission: transaction.commission || 0
       };
       
-      // Create HTML content for receipt
-      const htmlContent = generateReceiptHTML(receiptData);
+      // Create PDF-optimized HTML content
+      const htmlContent = generatePDFReceiptHTML(receiptData);
       
-      // Open HTML in browser for printing
       if (Platform.OS === 'web') {
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        // For web, create a new window with print-optimized content
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          
+          // Wait for content to load, then trigger print dialog
+          printWindow.onload = () => {
+            setTimeout(() => {
+              printWindow.print();
+            }, 500);
+          };
+        }
       } else {
-        // For mobile, create a data URL
+        // For mobile, create a data URL and open it
         const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
         await Linking.openURL(dataUrl);
       }
     } catch (error) {
-      console.error('Error printing receipt:', error);
+      console.error('Error generating PDF receipt:', error);
       Alert.alert(
         getTranslation('Error', 'Ошибка'),
         getTranslation(
-          'Failed to print receipt',
-          'Не удалось распечатать чек'
+          'Failed to generate PDF receipt',
+          'Не удалось создать PDF чек'
         )
       );
     }
   };
   
-  // Generate HTML receipt with proper encoding and logo
-  const generateReceiptHTML = (data: any): string => {
+  // Generate PDF-optimized HTML receipt
+  const generatePDFReceiptHTML = (data: any): string => {
     return `
 <!DOCTYPE html>
 <html lang="ru">
@@ -292,103 +301,171 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Чек - ${data.transactionId}</title>
     <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        
         body { 
             font-family: 'Arial', sans-serif; 
-            max-width: 400px; 
+            max-width: 600px; 
             margin: 0 auto; 
             padding: 20px; 
             background: white;
             color: #333;
+            line-height: 1.4;
         }
+        
         .header { 
             text-align: center; 
-            border-bottom: 2px solid #000; 
-            padding-bottom: 15px; 
-            margin-bottom: 20px; 
+            border-bottom: 3px solid #007AFF; 
+            padding-bottom: 20px; 
+            margin-bottom: 30px; 
         }
+        
         .logo { 
-            width: 80px; 
-            height: 80px; 
-            margin: 0 auto 15px; 
-            border-radius: 12px;
-            background: #f0f0f0;
+            width: 100px; 
+            height: 100px; 
+            margin: 0 auto 20px; 
+            border-radius: 16px;
+            background: linear-gradient(135deg, #007AFF, #5856D6);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-        }
-        .company-name {
-            font-size: 24px;
+            font-size: 32px;
+            color: white;
             font-weight: bold;
-            margin-bottom: 5px;
+        }
+        
+        .company-name {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
             color: #007AFF;
         }
+        
         .receipt-title {
-            font-size: 16px;
+            font-size: 20px;
             color: #666;
+            font-weight: 500;
         }
+        
+        .content {
+            margin: 30px 0;
+        }
+        
         .row { 
             display: flex; 
             justify-content: space-between; 
-            margin: 12px 0; 
-            padding: 8px 0;
-            border-bottom: 1px dotted #ccc;
+            margin: 16px 0; 
+            padding: 12px 0;
+            border-bottom: 1px dotted #ddd;
+            align-items: center;
         }
+        
         .row:last-child {
             border-bottom: none;
         }
+        
         .label {
-            font-weight: 500;
+            font-weight: 600;
             color: #555;
+            font-size: 16px;
         }
+        
         .value {
             font-weight: bold;
             color: #000;
+            font-size: 16px;
+            text-align: right;
         }
+        
         .total { 
             font-weight: bold; 
-            font-size: 1.3em; 
-            border-top: 2px solid #000; 
-            padding-top: 15px; 
-            margin-top: 20px;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
+            font-size: 1.5em; 
+            border-top: 3px solid #007AFF; 
+            padding-top: 20px; 
+            margin-top: 30px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+        
         .status {
-            padding: 6px 12px;
-            border-radius: 20px;
+            padding: 8px 16px;
+            border-radius: 25px;
             font-size: 14px;
             font-weight: bold;
             display: inline-block;
         }
+        
         .status.completed {
             background: #d4edda;
             color: #155724;
+            border: 2px solid #c3e6cb;
         }
+        
         .status.failed {
             background: #f8d7da;
             color: #721c24;
+            border: 2px solid #f5c6cb;
         }
+        
         .status.pending {
             background: #fff3cd;
             color: #856404;
+            border: 2px solid #ffeaa7;
         }
+        
         .footer {
             text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
             color: #666;
-            font-size: 12px;
+            font-size: 14px;
         }
+        
+        .qr-placeholder {
+            width: 100px;
+            height: 100px;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #999;
+        }
+        
         @media print { 
             body { 
                 margin: 0; 
-                padding: 10px;
-            } 
+                padding: 15px;
+                font-size: 14px;
+            }
+            
             .no-print {
                 display: none;
+            }
+            
+            .header {
+                break-inside: avoid;
+            }
+            
+            .total {
+                break-inside: avoid;
+            }
+        }
+        
+        @media screen {
+            body {
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                border-radius: 8px;
+                margin: 20px auto;
             }
         }
     </style>
@@ -396,82 +473,91 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
 <body>
     <div class="header">
         <div class="logo">
-            <img src="https://i.imgur.com/QCp2zDE.png" alt="MPSPAY" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;" onerror="this.style.display='none'; this.parentNode.innerHTML='💳'">
+            MPSPAY
         </div>
         <div class="company-name">MPSPAY</div>
         <div class="receipt-title">Чек об оплате</div>
     </div>
     
-    <div class="row">
-        <span class="label">ID транзакции:</span>
-        <span class="value">${data.transactionId}</span>
-    </div>
-    
-    <div class="row">
-        <span class="label">Сумма:</span>
-        <span class="value">₽${data.amount.toLocaleString('ru-RU', {minimumFractionDigits: 2})}</span>
-    </div>
-    
-    <div class="row">
-        <span class="label">Статус:</span>
-        <span class="value">
-            <span class="status ${data.status.toLowerCase().includes('выполнено') || data.status.toLowerCase().includes('completed') ? 'completed' : 
-                                data.status.toLowerCase().includes('ошибка') || data.status.toLowerCase().includes('failed') ? 'failed' : 'pending'}">
-                ${data.status}
-            </span>
-        </span>
-    </div>
-    
-    <div class="row">
-        <span class="label">Дата:</span>
-        <span class="value">${data.date}</span>
-    </div>
-    
-    ${data.customerInfo ? `
-    <div class="row">
-        <span class="label">Покупатель:</span>
-        <span class="value">${data.customerInfo}</span>
-    </div>
-    ` : ''}
-    
-    ${data.merchantName ? `
-    <div class="row">
-        <span class="label">Продавец:</span>
-        <span class="value">${data.merchantName}</span>
-    </div>
-    ` : ''}
-    
-    ${data.commission && data.commission > 0 ? `
-    <div class="row">
-        <span class="label">Комиссия:</span>
-        <span class="value">₽${data.commission.toLocaleString('ru-RU', {minimumFractionDigits: 2})}</span>
-    </div>
-    ` : ''}
-    
-    ${data.tag ? `
-    <div class="row">
-        <span class="label">СБП ID:</span>
-        <span class="value">${data.tag}</span>
-    </div>
-    ` : ''}
-    
-    <div class="total">
+    <div class="content">
         <div class="row">
-            <span class="label">Итого:</span>
+            <span class="label">ID транзакции:</span>
+            <span class="value">${data.transactionId}</span>
+        </div>
+        
+        <div class="row">
+            <span class="label">Сумма:</span>
             <span class="value">₽${data.amount.toLocaleString('ru-RU', {minimumFractionDigits: 2})}</span>
+        </div>
+        
+        <div class="row">
+            <span class="label">Статус:</span>
+            <span class="value">
+                <span class="status ${data.status.toLowerCase().includes('выполнено') || data.status.toLowerCase().includes('completed') ? 'completed' : 
+                                    data.status.toLowerCase().includes('ошибка') || data.status.toLowerCase().includes('failed') ? 'failed' : 'pending'}">
+                    ${data.status}
+                </span>
+            </span>
+        </div>
+        
+        <div class="row">
+            <span class="label">Дата и время:</span>
+            <span class="value">${data.date}</span>
+        </div>
+        
+        ${data.customerInfo ? `
+        <div class="row">
+            <span class="label">Покупатель:</span>
+            <span class="value">${data.customerInfo}</span>
+        </div>
+        ` : ''}
+        
+        ${data.merchantName ? `
+        <div class="row">
+            <span class="label">Продавец:</span>
+            <span class="value">${data.merchantName}</span>
+        </div>
+        ` : ''}
+        
+        ${data.commission && data.commission > 0 ? `
+        <div class="row">
+            <span class="label">Комиссия:</span>
+            <span class="value">₽${data.commission.toLocaleString('ru-RU', {minimumFractionDigits: 2})}</span>
+        </div>
+        ` : ''}
+        
+        ${data.tag ? `
+        <div class="row">
+            <span class="label">СБП ID:</span>
+            <span class="value">${data.tag}</span>
+        </div>
+        ` : ''}
+        
+        <div class="total">
+            <div class="row">
+                <span class="label">Итого к оплате:</span>
+                <span class="value">₽${data.amount.toLocaleString('ru-RU', {minimumFractionDigits: 2})}</span>
+            </div>
         </div>
     </div>
     
     <div class="footer">
-        <p>Спасибо за использование MPSPAY!</p>
+        <div class="qr-placeholder">
+            QR-код для проверки
+        </div>
+        <p><strong>Спасибо за использование MPSPAY!</strong></p>
         <p>Дата печати: ${new Date().toLocaleString('ru-RU')}</p>
+        <p>Этот документ является электронным чеком</p>
     </div>
     
     <script>
+        // Auto-print for PDF generation
         window.onload = function() {
             setTimeout(function() {
-                window.print();
-            }, 500);
+                if (window.location.search.includes('print=true')) {
+                    window.print();
+                }
+            }, 1000);
         }
     </script>
 </body>
@@ -742,8 +828,8 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
               />
               
               <Button
-                title={getTranslation('Print Receipt', 'Печать чека')}
-                onPress={printReceipt}
+                title={getTranslation('Print PDF Receipt', 'Печать PDF чека')}
+                onPress={generatePDFReceipt}
                 icon={<Printer size={20} color="white" />}
                 style={styles.actionButton}
               />
