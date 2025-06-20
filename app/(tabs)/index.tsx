@@ -12,18 +12,12 @@ import {
   ActivityIndicator,
   RefreshControl,
   KeyboardAvoidingView,
-  Modal,
   Linking
 } from 'react-native';
 import { useRouter, useFocusEffect, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
-import { TransactionItem } from '@/components/TransactionItem';
-import { 
-  SkeletonCard, 
-  SkeletonListItem 
-} from '@/components/SkeletonLoader';
 import { ErrorPopup } from '@/components/ErrorPopup';
 import { useAuthStore } from '@/store/auth-store';
 import { useLanguageStore } from '@/store/language-store';
@@ -51,7 +45,6 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  X,
   ExternalLink
 } from 'lucide-react-native';
 import {
@@ -292,7 +285,7 @@ export default function HomeScreen() {
       if (credentials) {
         fetchData(false);
       }
-    }, [credentials, fetchData])
+    }, [credentials])
   );
 
   // Initial data fetch and interval setup
@@ -318,30 +311,30 @@ export default function HomeScreen() {
         refreshIntervalRef.current = null;
       }
     };
-  }, [credentials, fetchData]);
+  }, [credentials]);
 
-  const handleCreatePayment = () => {
+  const handleCreatePayment = useCallback(() => {
     router.push('/payment');
-  };
+  }, [router]);
 
-  const handleWithdraw = () => {
+  const handleWithdraw = useCallback(() => {
     router.push('/withdraw');
-  };
+  }, [router]);
 
-  const handleViewHistory = () => {
+  const handleViewHistory = useCallback(() => {
     router.push('/history');
-  };
+  }, [router]);
 
-  const handleRefreshBalance = () => {
+  const handleRefreshBalance = useCallback(() => {
     fetchBalance(true);
-  };
+  }, [fetchBalance]);
 
-  const handleRefreshStats = () => {
+  const handleRefreshStats = useCallback(() => {
     setIsRefreshingStats(true);
     fetchPaymentHistory(true);
-  };
+  }, [fetchPaymentHistory]);
 
-  const handleCheckTransaction = async () => {
+  const handleCheckTransaction = useCallback(async () => {
     if (!transactionIdToCheck.trim()) {
       setTransactionCheckError(language === 'en' 
         ? 'Please enter a transaction ID' 
@@ -382,62 +375,18 @@ export default function HomeScreen() {
     } finally {
       setIsCheckingTransaction(false);
     }
-  };
+  }, [transactionIdToCheck, credentials, language, addTransaction]);
 
-  const handleViewTransactionDetails = (id: string) => {
+  const handleViewTransactionDetails = useCallback((id: string) => {
     router.push(`/transaction/${id}`);
-  };
+  }, [router]);
 
-  const handleOpenPersonalCabinet = () => {
+  const handleOpenPersonalCabinet = useCallback(() => {
     Linking.openURL('https://merch.mpspay.ru');
-  };
+  }, []);
 
   // Determine container padding based on device size
   const containerPadding = getContainerPadding();
-
-  // Render skeleton loaders during initial loading
-  if (isInitialLoading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-        <ScrollView 
-          contentContainerStyle={[styles.contentContainer, { padding: containerPadding }]}
-        >
-          <View style={styles.header}>
-            <View style={styles.skeletonLogo} />
-            <View style={styles.headerTextContainer}>
-              <View style={[styles.skeletonLoader, { width: '70%', height: 24, marginBottom: 8 }]} />
-              <View style={[styles.skeletonLoader, { width: '90%', height: 14 }]} />
-            </View>
-          </View>
-          
-          <SkeletonCard style={{ marginBottom: 24 }} />
-          
-          <View style={[styles.skeletonLoader, { width: '50%', height: 20, marginBottom: 16 }]} />
-          
-          <View style={styles.statsContainer}>
-            <View style={styles.statsRow}>
-              <SkeletonCard style={styles.statCard} />
-              <SkeletonCard style={styles.statCard} />
-            </View>
-            <View style={styles.statsRow}>
-              <SkeletonCard style={styles.statCard} />
-              <SkeletonCard style={styles.statCard} />
-            </View>
-          </View>
-          
-          <View style={[styles.skeletonLoader, { width: '50%', height: 20, marginBottom: 16 }]} />
-          
-          <View style={styles.transactionsList}>
-            <SkeletonListItem style={{ marginBottom: 12 }} />
-            <SkeletonListItem style={{ marginBottom: 12 }} />
-            <SkeletonListItem style={{ marginBottom: 12 }} />
-          </View>
-          
-          <SkeletonCard style={{ marginTop: 24, marginBottom: 24 }} />
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <>
@@ -1022,17 +971,6 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 12,
     marginRight: 12,
-  },
-  skeletonLogo: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    marginRight: 12,
-    backgroundColor: '#E5E7EB',
-  },
-  skeletonLoader: {
-    backgroundColor: '#E5E7EB',
-    borderRadius: 4,
   },
   headerTextContainer: {
     flex: 1,

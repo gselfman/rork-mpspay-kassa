@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -125,14 +125,14 @@ export default function HistoryScreen() {
       if (credentials) {
         fetchAllTransactions();
       }
-    }, [credentials, fetchAllTransactions])
+    }, [credentials])
   );
   
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     fetchAllTransactions(true);
-  };
+  }, [fetchAllTransactions]);
   
-  const handleTransactionPress = (transaction: PaymentHistoryItem) => {
+  const handleTransactionPress = useCallback((transaction: PaymentHistoryItem) => {
     // Navigate to transaction details page using id_2.tsx
     router.push({
       pathname: '/transaction/id_2',
@@ -141,18 +141,20 @@ export default function HistoryScreen() {
         data: JSON.stringify(transaction)
       }
     });
-  };
+  }, [router]);
   
-  const handleShareTransaction = (transaction: PaymentHistoryItem) => {
+  const handleShareTransaction = useCallback((transaction: PaymentHistoryItem) => {
     setSelectedTransaction(transaction);
     setShowShareModal(true);
-  };
+  }, []);
   
-  const handleDateFilterPress = () => {
+  const handleDateFilterPress = useCallback(() => {
     setShowDateFilterModal(true);
-  };
+  }, []);
   
-  const applyDateFilter = (filter: 'today' | 'week' | 'month' | 'custom' | null) => {
+  const applyDateFilter = useCallback((filter: 'today' | 'week' | 'month' | 'custom' | null) => {
+    if (filter === filterDateRange) return; // Prevent unnecessary updates
+    
     if (filter === 'custom') {
       // Validate custom date range
       if (!customStartDate || !customEndDate) {
@@ -193,9 +195,9 @@ export default function HistoryScreen() {
     setFilterDateRange(filter);
     setShowDateFilterModal(false);
     setDateFilterError(null);
-  };
+  }, [filterDateRange, customStartDate, customEndDate, language]);
   
-  const getFilteredTransactions = (): PaymentHistoryItem[] => {
+  const getFilteredTransactions = useCallback((): PaymentHistoryItem[] => {
     if (!allTransactions || allTransactions.length === 0) {
       console.log('No transactions to filter');
       return [];
@@ -287,9 +289,14 @@ export default function HistoryScreen() {
     
     console.log(`Filtered to ${statusFiltered.length} transactions after status filter`);
     return statusFiltered;
-  };
+  }, [allTransactions, filterDateRange, showSuccessful, showPending, customStartDate, customEndDate]);
   
-  const handleSendTelegram = async () => {
+  // Memoize filtered transactions to prevent unnecessary recalculations
+  const filteredTransactions = useMemo(() => {
+    return getFilteredTransactions();
+  }, [getFilteredTransactions]);
+  
+  const handleSendTelegram = useCallback(async () => {
     if (!selectedTransaction || !credentials) return;
     
     setIsSending(true);
@@ -315,9 +322,9 @@ export default function HistoryScreen() {
       setIsSending(false);
       setShowShareModal(false);
     }
-  };
+  }, [selectedTransaction, credentials, language]);
   
-  const handleSendEmail = async () => {
+  const handleSendEmail = useCallback(async () => {
     if (!selectedTransaction || !credentials) return;
     
     // Prompt for email address
@@ -359,14 +366,12 @@ export default function HistoryScreen() {
       },
       'plain-text'
     );
-  };
+  }, [selectedTransaction, credentials, language]);
   
-  const exportToCSV = async () => {
+  const exportToCSV = useCallback(async () => {
     setIsExporting(true);
     
     try {
-      const filteredTransactions = getFilteredTransactions();
-      
       if (filteredTransactions.length === 0) {
         Alert.alert(
           language === 'en' ? 'No Data' : 'Нет данных',
@@ -447,11 +452,9 @@ export default function HistoryScreen() {
     } finally {
       setIsExporting(false);
     }
-  };
+  }, [filteredTransactions, language]);
   
-  const filteredTransactions = getFilteredTransactions();
-  
-  const renderItem = ({ item }: { item: PaymentHistoryItem }) => (
+  const renderItem = useCallback(({ item }: { item: PaymentHistoryItem }) => (
     <TouchableOpacity 
       style={[styles.transactionItem, { backgroundColor: theme.card, borderColor: theme.border }]}
       onPress={() => handleTransactionPress(item)}
@@ -524,9 +527,9 @@ export default function HistoryScreen() {
         </Text>
       </View>
     </TouchableOpacity>
-  );
+  ), [theme, language, handleTransactionPress, handleShareTransaction]);
   
-  const renderHeader = () => (
+  const renderHeader = useCallback(() => (
     <View style={styles.header}>
       <Image 
         source={{ uri: 'https://i.imgur.com/QCp2zDE.png' }} 
@@ -569,9 +572,9 @@ export default function HistoryScreen() {
         </TouchableOpacity>
       </View>
     </View>
-  );
+  ), [theme, language, exportToCSV, isExporting, handleDateFilterPress, handleRefresh, isRefreshing]);
   
-  const renderEmpty = () => {
+  const renderEmpty = useCallback(() => {
     if (isLoading) {
       return (
         <View style={styles.loadingContainer}>
@@ -611,9 +614,9 @@ export default function HistoryScreen() {
         darkMode={darkMode}
       />
     );
-  };
+  }, [isLoading, theme, language, error, showErrorPopup, handleRefresh, darkMode, router]);
   
-  const renderFilterBanner = () => {
+  const renderFilterBanner = useCallback(() => {
     let filterText = '';
     
     if (showSuccessful || showPending) {
@@ -676,9 +679,9 @@ export default function HistoryScreen() {
         </TouchableOpacity>
       </View>
     );
-  };
+  }, [showSuccessful, showPending, language, filterDateRange, customStartDate, customEndDate, theme]);
   
-  const renderCheckStatusButton = () => (
+  const renderCheckStatusButton = useCallback(() => (
     <TouchableOpacity 
       style={[styles.checkStatusButton, { backgroundColor: theme.card }]}
       onPress={() => router.push('/transaction/check')}
@@ -688,9 +691,9 @@ export default function HistoryScreen() {
         {language === 'en' ? 'Check Transaction Status' : 'Проверить статус транзакции'}
       </Text>
     </TouchableOpacity>
-  );
+  ), [theme, language, router]);
   
-  const renderStatusFilters = () => (
+  const renderStatusFilters = useCallback(() => (
     <View style={styles.statusFilters}>
       <TouchableOpacity
         style={[
@@ -724,9 +727,9 @@ export default function HistoryScreen() {
         </Text>
       </TouchableOpacity>
     </View>
-  );
+  ), [showSuccessful, showPending, theme, language]);
 
-  const renderDateButtons = () => (
+  const renderDateButtons = useCallback(() => (
     <View style={styles.dateButtons}>
       <TouchableOpacity
         style={[
@@ -776,7 +779,7 @@ export default function HistoryScreen() {
         </Text>
       </TouchableOpacity>
     </View>
-  );
+  ), [filterDateRange, theme, language, applyDateFilter]);
 
   return (
     <>

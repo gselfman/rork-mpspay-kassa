@@ -292,7 +292,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
     }
   };
   
-  // Generate PDF-optimized HTML receipt
+  // Generate PDF-optimized HTML receipt with dog logo
   const generatePDFReceiptHTML = (data: any): string => {
     return `
 <!DOCTYPE html>

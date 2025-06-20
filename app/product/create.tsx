@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -8,7 +8,8 @@ import {
   Platform, 
   TouchableWithoutFeedback, 
   Keyboard,
-  Alert
+  Alert,
+  TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -34,7 +35,7 @@ export default function CreateProductScreen() {
   
   // Refs for input fields
   const nameInputRef = useRef<any>(null);
-  const priceInputRef = useRef<any>(null);
+  const priceInputRef = useRef<TextInput>(null);
   
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -99,25 +100,31 @@ export default function CreateProductScreen() {
     }
   };
   
-  const handlePriceChange = (text: string) => {
-    // Only allow digits
+  // Optimized price change handler with useCallback
+  const handlePriceChange = useCallback((text: string) => {
+    // Only filter if there are non-numeric characters
     const numericText = text.replace(/[^0-9]/g, '');
-    setPrice(numericText);
     
-    // Clear price error when user starts typing
-    if (errors.price && numericText) {
+    // Only update if value actually changed
+    if (numericText !== price) {
+      setPrice(numericText);
+    }
+    
+    // Clear price error when user starts typing (only if needed)
+    if (errors.price && numericText && !errors.price.includes('required')) {
       setErrors(prev => ({ ...prev, price: '' }));
     }
-  };
+  }, [price, errors.price]);
   
-  const handleNameChange = (text: string) => {
+  // Optimized name change handler with useCallback
+  const handleNameChange = useCallback((text: string) => {
     setName(text);
     
-    // Clear name error when user starts typing
+    // Clear name error when user starts typing (only if needed)
     if (errors.name && text.trim()) {
       setErrors(prev => ({ ...prev, name: '' }));
     }
-  };
+  }, [errors.name]);
   
   const focusNextInput = () => {
     if (priceInputRef.current) {
@@ -159,27 +166,43 @@ export default function CreateProductScreen() {
                 blurOnSubmit={false}
               />
               
-              <Input
-                ref={priceInputRef}
-                label={language === 'en' ? 'Price (RUB)' : 'Цена (руб.)'}
-                placeholder={language === 'en' ? 'Enter price (1 - 1,000,000)' : 'Введите цену (1 - 1 000 000)'}
-                value={price}
-                onChangeText={handlePriceChange}
-                keyboardType="numeric"
-                error={errors.price}
-                darkMode={darkMode}
-                returnKeyType="done"
-                onSubmitEditing={handleSubmit}
-                // Fix focus issue - don't blur on submit for price field
-                blurOnSubmit={false}
-                // Ensure proper text input handling
-                textContentType="none"
-                autoComplete="off"
-                autoCorrect={false}
-                spellCheck={false}
-                // Add selection color for better visibility
-                selectionColor={theme.primary}
-              />
+              {/* Use native TextInput for price to avoid focus issues */}
+              <View style={styles.priceInputContainer}>
+                <Text style={[styles.priceLabel, { color: theme.text }]} allowFontScaling={false}>
+                  {language === 'en' ? 'Price (RUB)' : 'Цена (руб.)'}
+                </Text>
+                <TextInput
+                  ref={priceInputRef}
+                  style={[
+                    styles.priceInput, 
+                    { 
+                      backgroundColor: theme.inputBackground,
+                      color: theme.text,
+                      borderColor: errors.price ? theme.notification : theme.border
+                    }
+                  ]}
+                  placeholder={language === 'en' ? 'Enter price (1 - 1,000,000)' : 'Введите цену (1 - 1 000 000)'}
+                  placeholderTextColor={theme.placeholder}
+                  value={price}
+                  onChangeText={handlePriceChange}
+                  keyboardType="numeric"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
+                  blurOnSubmit={false}
+                  textContentType="none"
+                  autoComplete="off"
+                  autoCorrect={false}
+                  spellCheck={false}
+                  selectionColor={theme.primary}
+                  caretHidden={false}
+                  allowFontScaling={false}
+                />
+                {errors.price ? (
+                  <Text style={[styles.priceError, { color: theme.notification }]} allowFontScaling={false}>
+                    {errors.price}
+                  </Text>
+                ) : null}
+              </View>
               
               <View style={styles.buttonContainer}>
                 <Button
@@ -237,6 +260,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  // Price input specific styles
+  priceInputContainer: {
+    marginBottom: 12,
+  },
+  priceLabel: {
+    marginBottom: 6,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  priceInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+    fontSize: 16,
+    minHeight: 48,
+    textAlignVertical: 'center',
+  },
+  priceError: {
+    marginTop: 4,
+    fontSize: 12,
   },
   buttonContainer: {
     marginTop: 24,
