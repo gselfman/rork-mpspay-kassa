@@ -1,6 +1,7 @@
 import { initTRPC } from '@trpc/server';
 import { TRPCContext } from './create-context';
 import { z } from 'zod';
+import { exchangeRateProcedure } from './routes/exchange-rate/route';
 
 // Initialize tRPC
 const t = initTRPC.context<TRPCContext>().create();
@@ -14,6 +15,9 @@ export const appRouter = t.router({
         greeting: 'Hello from tRPC backend!'
       };
     }),
+  
+  // Exchange rate procedure
+  exchangeRate: exchangeRateProcedure,
   
   // Add more procedures here
 });

@@ -29,6 +29,7 @@ import {
   checkTransactionStatus,
   mapPaymentStatusToAppStatus
 } from '@/utils/api';
+import { formatMoscowTime } from '@/utils/timezone';
 import { PaymentHistoryItem, PaymentStats, Transaction } from '@/types/api';
 import colors from '@/constants/colors';
 import IMAGES from '@/constants/images';
@@ -716,7 +717,7 @@ export default function HomeScreen() {
                               {language === 'en' ? 'Date:' : 'Дата:'}
                             </Text>
                             <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                              {new Date(transaction.finishedAt).toLocaleString()}
+                              {formatMoscowTime(transaction.finishedAt, language)}
                             </Text>
                           </View>
                         ) : null}

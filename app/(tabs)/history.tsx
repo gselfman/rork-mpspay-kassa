@@ -23,6 +23,7 @@ import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
 import { getPaymentHistory, sendTransactionDetailsTelegram, sendTransactionDetailsEmail } from '@/utils/api';
 import { PaymentHistoryItem } from '@/types/api';
+import { formatMoscowTime, formatMoscowTimeForCSV } from '@/utils/timezone';
 import colors from '@/constants/colors';
 import { Calendar, RefreshCw, AlertCircle, CalendarIcon, CheckCircle, Send, Mail, MessageCircle, Clock, XCircle, Download } from 'lucide-react-native';
 import { useFocusEffect } from 'expo-router';
@@ -373,7 +374,7 @@ export default function HistoryScreen() {
         language === 'en' ? 'ID' : 'ID',
         language === 'en' ? 'Amount' : 'Сумма',
         language === 'en' ? 'Status' : 'Статус',
-        language === 'en' ? 'Date' : 'Дата',
+        language === 'en' ? 'Date (Moscow Time)' : 'Дата (Московское время)',
         language === 'en' ? 'Comment' : 'Комментарий',
         language === 'en' ? 'SBP ID' : 'СБП ID',
         language === 'en' ? 'Commission' : 'Комиссия'
@@ -392,7 +393,7 @@ export default function HistoryScreen() {
           transaction.id,
           transaction.amount,
           `"${statusText}"`,
-          transaction.createdAt ? `"${new Date(transaction.createdAt).toLocaleString()}"` : '',
+          transaction.createdAt ? `"${formatMoscowTimeForCSV(transaction.createdAt)}"` : '',
           transaction.comment ? `"${transaction.comment.replace(/"/g, '""')}"` : '',
           transaction.tag || '',
           transaction.totalCommission || 0
@@ -506,13 +507,7 @@ export default function HistoryScreen() {
         ) : null}
         
         <Text style={[styles.date, { color: theme.placeholder }]} allowFontScaling={false}>
-          {item.createdAt ? new Date(item.createdAt).toLocaleDateString(language === 'en' ? 'en-US' : 'ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          }) : ''}
+          {formatMoscowTime(item.createdAt, language)}
         </Text>
       </View>
     </TouchableOpacity>

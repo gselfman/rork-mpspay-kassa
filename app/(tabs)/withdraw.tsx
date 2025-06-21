@@ -18,9 +18,10 @@ import { useAuthStore } from '@/store/auth-store';
 import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
 import { getAccountBalance, sendWithdrawalRequestTelegram } from '@/utils/api';
+import { trpcClient } from '@/lib/trpc';
 import colors from '@/constants/colors';
 import IMAGES from '@/constants/images';
-import { TrendingUp, Wallet, MessageCircle, AlertCircle } from 'lucide-react-native';
+import { TrendingUp, Wallet, MessageCircle, AlertCircle, RefreshCw } from 'lucide-react-native';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
 
 export default function WithdrawScreen() {
@@ -44,6 +45,11 @@ export default function WithdrawScreen() {
   const [requestSent, setRequestSent] = useState(false);
   const [cooldownTimer, setCooldownTimer] = useState(0);
   
+  // Exchange rate state
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const [isLoadingRate, setIsLoadingRate] = useState(true);
+  const [rateError, setRateError] = useState<string | null>(null);
+  
   // Translations
   const getTranslation = (en: string, ru: string): string => {
     return language === 'en' ? en : ru;
@@ -51,6 +57,7 @@ export default function WithdrawScreen() {
   
   useEffect(() => {
     fetchBalance();
+    fetchExchangeRate();
   }, []);
   
   // Cooldown timer effect
@@ -86,6 +93,32 @@ export default function WithdrawScreen() {
       );
     } finally {
       setIsLoadingBalance(false);
+    }
+  };
+  
+  const fetchExchangeRate = async () => {
+    setIsLoadingRate(true);
+    setRateError(null);
+    
+    try {
+      const result = await trpcClient.exchangeRate.query();
+      
+      if (result.success && result.rate) {
+        setExchangeRate(result.rate);
+      } else {
+        setRateError(result.error || getTranslation(
+          'Failed to load exchange rate',
+          'Не удалось загрузить курс'
+        ));
+      }
+    } catch (error) {
+      console.error('Error fetching exchange rate:', error);
+      setRateError(getTranslation(
+        'Failed to load exchange rate',
+        'Не удалось загрузить курс'
+      ));
+    } finally {
+      setIsLoadingRate(false);
     }
   };
   
@@ -223,6 +256,14 @@ export default function WithdrawScreen() {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
   
+  const calculateUSDTAmount = (): string => {
+    if (!amount || !exchangeRate) return '';
+    const numAmount = parseInt(amount);
+    if (isNaN(numAmount)) return '';
+    const usdtAmount = numAmount / exchangeRate;
+    return usdtAmount.toFixed(2);
+  };
+  
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -262,6 +303,51 @@ export default function WithdrawScreen() {
               ₽{balance !== null ? formatNumber(balance) : '—'}
             </Text>
           )}
+        </Card>
+        
+        {/* Exchange Rate Card */}
+        <Card style={styles.exchangeRateCard}>
+          <View style={styles.exchangeRateHeader}>
+            <TrendingUp size={20} color={theme.secondary} />
+            <Text style={[styles.exchangeRateTitle, { color: theme.text }]}>
+              {getTranslation('Current Exchange Rate', 'Текущий курс')}
+            </Text>
+            <Button
+              title=""
+              onPress={fetchExchangeRate}
+              style={styles.refreshRateButton}
+              icon={<RefreshCw size={16} color={theme.primary} />}
+              variant="outline"
+              size="small"
+            />
+          </View>
+          
+          {isLoadingRate ? (
+            <View style={styles.rateLoadingContainer}>
+              <ActivityIndicator size="small" color={theme.primary} />
+              <Text style={[styles.rateLoadingText, { color: theme.placeholder }]}>
+                {getTranslation('Loading rate...', 'Загрузка курса...')}
+              </Text>
+            </View>
+          ) : rateError ? (
+            <Text style={[styles.rateError, { color: theme.notification }]}>
+              {rateError}
+            </Text>
+          ) : exchangeRate ? (
+            <View style={styles.rateContainer}>
+              <Text style={[styles.rateText, { color: theme.text }]}>
+                1 USDT ≈ {exchangeRate.toFixed(2)} ₽
+              </Text>
+              {amount && (
+                <Text style={[styles.conversionText, { color: theme.placeholder }]}>
+                  {getTranslation(
+                    `≈ ${calculateUSDTAmount()} USDT`,
+                    `≈ ${calculateUSDTAmount()} USDT`
+                  )}
+                </Text>
+              )}
+            </View>
+          ) : null}
         </Card>
         
         {/* Success Message */}
@@ -448,6 +534,50 @@ const styles = StyleSheet.create({
   balanceAmount: {
     fontSize: scaleFontSize(28),
     fontWeight: 'bold',
+  },
+  // Exchange rate card styles
+  exchangeRateCard: {
+    marginBottom: scaleSpacing(16),
+    padding: scaleSpacing(16),
+  },
+  exchangeRateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: scaleSpacing(12),
+  },
+  exchangeRateTitle: {
+    fontSize: scaleFontSize(14),
+    fontWeight: '500',
+    marginLeft: scaleSpacing(8),
+    flex: 1,
+  },
+  refreshRateButton: {
+    width: 32,
+    height: 32,
+    padding: 0,
+    minWidth: 32,
+  },
+  rateLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rateLoadingText: {
+    marginLeft: scaleSpacing(8),
+    fontSize: scaleFontSize(14),
+  },
+  rateError: {
+    fontSize: scaleFontSize(14),
+  },
+  rateContainer: {
+    alignItems: 'flex-start',
+  },
+  rateText: {
+    fontSize: scaleFontSize(16),
+    fontWeight: '600',
+    marginBottom: scaleSpacing(4),
+  },
+  conversionText: {
+    fontSize: scaleFontSize(14),
   },
   // Success card styles
   successCard: {

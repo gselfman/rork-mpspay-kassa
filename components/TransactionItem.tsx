@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Transaction, PaymentHistoryItem } from '@/types/api';
 import { useLanguageStore } from '@/store/language-store';
+import { formatMoscowTime } from '@/utils/timezone';
 import colors from '@/constants/colors';
 import { CheckCircle, Clock, XCircle } from 'lucide-react-native';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
@@ -96,22 +97,6 @@ export function TransactionItem({ transaction, onPress, darkMode = false }: Tran
     ? (transaction as PaymentHistoryItem).tag || ''
     : '';
   
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return '';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString(language === 'en' ? 'en-US' : 'ru-RU', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      return dateString || '';
-    }
-  };
-  
   return (
     <TouchableOpacity 
       style={[styles.container, { backgroundColor: theme.card, borderColor: theme.border }]}
@@ -148,7 +133,7 @@ export function TransactionItem({ transaction, onPress, darkMode = false }: Tran
         )}
         
         <Text style={[styles.date, { color: theme.placeholder }]} allowFontScaling={false}>
-          {formatDate(date)}
+          {formatMoscowTime(date, language)}
         </Text>
       </View>
     </TouchableOpacity>
