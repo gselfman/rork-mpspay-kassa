@@ -285,7 +285,8 @@ export default function HomeScreen() {
       if (credentials) {
         fetchData(false);
       }
-    }, [credentials, fetchData])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [credentials])
   );
 
   // Initial data fetch and interval setup

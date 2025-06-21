@@ -12,8 +12,7 @@ import {
   Modal,
   ScrollView,
   Image,
-  TextInput,
-  Share
+  TextInput
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { EmptyState } from '@/components/EmptyState';
@@ -68,18 +67,14 @@ export default function HistoryScreen() {
     try {
       console.log('Fetching all transactions for the last 30 days...');
       
-      // Calculate date range (last 30 days)
       const now = new Date();
-      
-      // Date for tomorrow (to include all of today's transactions)
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = tomorrow.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
       
-      // Date 30 days ago
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
       
       console.log(`Fetching payment history from ${thirtyDaysAgoStr} to ${tomorrowStr}`);
       
@@ -87,9 +82,7 @@ export default function HistoryScreen() {
       console.log('Fetched transactions:', apiTransactions);
       
       if (apiTransactions.isSuccess && apiTransactions.items && apiTransactions.items.length > 0) {
-        // Sort transactions by ID (largest first)
         const sortedTransactions = [...apiTransactions.items].sort((a, b) => {
-          // Parse IDs as integers and sort in descending order
           return parseInt(b.id) - parseInt(a.id);
         });
         
@@ -102,9 +95,7 @@ export default function HistoryScreen() {
     } catch (err) {
       console.error('Failed to fetch transactions:', err);
       
-      // Create detailed error message
       let errorMsg = '';
-      
       if (err instanceof Error) {
         errorMsg = `Failed to load transaction history: ${err.message}`;
       } else {
@@ -125,14 +116,16 @@ export default function HistoryScreen() {
       if (credentials) {
         fetchAllTransactions();
       }
-    }, [credentials, fetchAllTransactions])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [credentials])
   );
   
   const handleRefresh = useCallback(() => {
     if (credentials) {
       fetchAllTransactions(true);
     }
-  }, [credentials, fetchAllTransactions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [credentials]);
   
   const handleTransactionPress = useCallback((transaction: PaymentHistoryItem) => {
     // Navigate to transaction details page using id_2.tsx
@@ -167,7 +160,6 @@ export default function HistoryScreen() {
       }
       
       try {
-        // Fix: Add null checks before creating Date objects
         if (customStartDate && customEndDate) {
           const startDate = new Date(customStartDate);
           const endDate = new Date(customEndDate);
@@ -217,10 +209,10 @@ export default function HistoryScreen() {
       switch (filterDateRange) {
         case 'today':
           const today = new Date();
-          today.setHours(0, 0, 0, 0); // Start of today
+          today.setHours(0, 0, 0, 0);
           
           const tomorrow = new Date(today);
-          tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
+          tomorrow.setDate(tomorrow.getDate() + 1);
           
           dateFiltered = allTransactions.filter(t => {
             if (!t.createdAt) return false;
@@ -233,9 +225,8 @@ export default function HistoryScreen() {
           break;
           
         case 'week':
-          // 7 days ago from start of today
           const todayStart = new Date();
-          todayStart.setHours(0, 0, 0, 0); // Start of today
+          todayStart.setHours(0, 0, 0, 0);
           const weekAgo = new Date(todayStart);
           weekAgo.setDate(todayStart.getDate() - 7);
           
@@ -252,9 +243,8 @@ export default function HistoryScreen() {
         case 'custom':
           if (customStartDate && customEndDate) {
             const startDate = new Date(customStartDate);
-            startDate.setHours(0, 0, 0, 0); // Start of start date
+            startDate.setHours(0, 0, 0, 0);
             
-            // Set end date to end of the day (23:59:59.999)
             const endDate = new Date(customEndDate);
             endDate.setHours(23, 59, 59, 999);
             
@@ -436,6 +426,7 @@ export default function HistoryScreen() {
         );
       } else {
         // For mobile, use sharing
+        const { Share } = await import('react-native');
         await Share.share({
           message: csvContent,
           title: filename

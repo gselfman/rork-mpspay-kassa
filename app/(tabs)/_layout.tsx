@@ -1,5 +1,4 @@
 import { Tabs } from 'expo-router';
-import { useEffect } from 'react';
 import { useColorScheme, Platform } from 'react-native';
 import { useThemeStore } from '@/store/theme-store';
 import colors from '@/constants/colors';
@@ -8,14 +7,8 @@ import { useLanguageStore } from '@/store/language-store';
 
 export default function TabsLayout() {
   const colorScheme = useColorScheme();
-  const { darkMode, setDarkMode } = useThemeStore();
-  const { language, setLanguage } = useLanguageStore();
-  
-  // Set default theme to light and language to Russian
-  useEffect(() => {
-    setDarkMode(false); // Default to light theme
-    setLanguage('ru'); // Default to Russian
-  }, [setDarkMode, setLanguage]);
+  const { darkMode } = useThemeStore();
+  const { language } = useLanguageStore();
   
   const theme = darkMode ? colors.dark : colors.light;
   
