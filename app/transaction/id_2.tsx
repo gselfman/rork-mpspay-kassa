@@ -21,7 +21,8 @@ import { useAuthStore } from '@/store/auth-store';
 import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
 import { checkTransactionStatus, sendTransactionDetailsTelegram, sendTransactionDetailsEmail } from '@/utils/api';
-import { PaymentHistoryItem } from '@/types/api';
+import { PaymentHistoryItem, Transaction } from '@/types/api';
+import { formatMoscowTime } from '@/utils/timezone';
 import colors from '@/constants/colors';
 import { 
   ArrowLeft, 
@@ -45,6 +46,9 @@ import * as Clipboard from 'expo-clipboard';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
 
 const { width: screenWidth } = Dimensions.get('window');
+
+// Logo URL for the receipt
+const LOGO_URL = 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=100&h=100&fit=crop&crop=center';
 
 export default function TransactionDetailsScreen() {
   const router = useRouter();
@@ -558,7 +562,7 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
                   </Text>
                 </View>
                 <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                  {new Date(transaction.createdAt).toLocaleString(language === 'en' ? 'en-US' : 'ru-RU', {
+                  {formatMoscowTime(transaction.createdAt, language, {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -580,7 +584,7 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
                   </Text>
                 </View>
                 <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                  {new Date(transaction.finishedAt).toLocaleString(language === 'en' ? 'en-US' : 'ru-RU', {
+                  {formatMoscowTime(transaction.finishedAt, language, {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -639,7 +643,7 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
         <Card style={styles.receiptCard}>
           <View style={styles.receiptHeader}>
             <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=100&h=100&fit=crop&crop=center' }} 
+              source={{ uri: LOGO_URL }} 
               style={styles.receiptLogo}
               resizeMode="contain"
             />
@@ -695,7 +699,7 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
                   {language === 'en' ? 'Date:' : 'Дата:'}
                 </Text>
                 <Text style={[styles.receiptValue, { color: theme.text }]} allowFontScaling={false}>
-                  {new Date(transaction.createdAt).toLocaleString(language === 'en' ? 'en-US' : 'ru-RU')}
+                  {formatMoscowTime(transaction.createdAt, language)}
                 </Text>
               </View>
             )}

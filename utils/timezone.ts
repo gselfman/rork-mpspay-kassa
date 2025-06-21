@@ -28,21 +28,23 @@ export const formatMoscowTime = (
   language: string = 'en',
   options?: Intl.DateTimeFormatOptions
 ): string => {
-  const moscowDate = toMoscowTime(dateString);
-  if (!moscowDate) return '';
-  
-  const defaultOptions: Intl.DateTimeFormatOptions = {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Europe/Moscow',
-    ...options
-  };
+  if (!dateString) return '';
   
   try {
-    return moscowDate.toLocaleString(language === 'en' ? 'en-US' : 'ru-RU', defaultOptions);
+    // Parse the date and convert to Moscow time
+    const utcDate = new Date(dateString);
+    
+    const defaultOptions: Intl.DateTimeFormatOptions = {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Europe/Moscow',
+      ...options
+    };
+    
+    return utcDate.toLocaleString(language === 'en' ? 'en-US' : 'ru-RU', defaultOptions);
   } catch (error) {
     console.error('Error formatting Moscow time:', error);
     return dateString || '';
@@ -53,12 +55,13 @@ export const formatMoscowTime = (
  * Format date for CSV export in Moscow time
  */
 export const formatMoscowTimeForCSV = (dateString: string | undefined): string => {
-  const moscowDate = toMoscowTime(dateString);
-  if (!moscowDate) return '';
+  if (!dateString) return '';
   
   try {
+    const utcDate = new Date(dateString);
+    
     // Format as YYYY-MM-DD HH:MM:SS (Moscow time)
-    return moscowDate.toLocaleString('sv-SE', {
+    return utcDate.toLocaleString('sv-SE', {
       timeZone: 'Europe/Moscow'
     }).replace('T', ' ');
   } catch (error) {

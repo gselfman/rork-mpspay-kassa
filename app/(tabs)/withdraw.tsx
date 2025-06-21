@@ -20,9 +20,11 @@ import { useThemeStore } from '@/store/theme-store';
 import { getAccountBalance, sendWithdrawalRequestTelegram } from '@/utils/api';
 import { trpcClient } from '@/lib/trpc';
 import colors from '@/constants/colors';
-import IMAGES from '@/constants/images';
 import { TrendingUp, Wallet, MessageCircle, AlertCircle, RefreshCw } from 'lucide-react-native';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
+
+// Logo URL
+const LOGO_URL = 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=100&h=100&fit=crop&crop=center';
 
 export default function WithdrawScreen() {
   const router = useRouter();
@@ -275,7 +277,7 @@ export default function WithdrawScreen() {
       >
         <View style={styles.header}>
           <Image 
-            source={{ uri: IMAGES.LOGO }} 
+            source={{ uri: LOGO_URL }} 
             style={styles.logo} 
             resizeMode="contain"
           />

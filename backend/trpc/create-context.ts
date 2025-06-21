@@ -1,13 +1,11 @@
-import { Context } from 'hono';
+import { initTRPC } from '@trpc/server';
 
 export interface TRPCContext {
-  req: Request;
-  honoContext: Context;
+  // Add context properties here if needed
 }
 
-export const createContext = (honoContext: Context): TRPCContext => {
-  return {
-    req: honoContext.req,
-    honoContext
-  };
-};
+const t = initTRPC.context<TRPCContext>().create();
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+export const protectedProcedure = t.procedure; // Add middleware here if needed

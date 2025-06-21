@@ -29,6 +29,9 @@ import { Calendar, RefreshCw, AlertCircle, CalendarIcon, CheckCircle, Send, Mail
 import { useFocusEffect } from 'expo-router';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
 
+// Logo URL
+const LOGO_URL = 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=100&h=100&fit=crop&crop=center';
+
 export default function HistoryScreen() {
   const router = useRouter();
   const { credentials } = useAuthStore();
@@ -516,7 +519,7 @@ export default function HistoryScreen() {
   const renderHeader = useCallback(() => (
     <View style={styles.header}>
       <Image 
-        source={{ uri: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=100&h=100&fit=crop&crop=center' }} 
+        source={{ uri: LOGO_URL }} 
         style={styles.logo}
         resizeMode="contain"
       />

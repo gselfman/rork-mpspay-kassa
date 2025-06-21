@@ -204,7 +204,7 @@ export default function CreateProductScreen() {
                 { 
                   backgroundColor: theme.inputBackground,
                   color: theme.text,
-                  borderColor: errors.name ? theme.error : theme.border
+                  borderColor: errors.name ? theme.notification : theme.border
                 }
               ]}
               placeholder={language === 'en' ? 'Enter product name' : 'Введите название товара'}
@@ -217,7 +217,7 @@ export default function CreateProductScreen() {
               allowFontScaling={false}
             />
             {errors.name && (
-              <Text style={[styles.errorText, { color: theme.error }]} allowFontScaling={false}>
+              <Text style={[styles.errorText, { color: theme.notification }]} allowFontScaling={false}>
                 {errors.name}
               </Text>
             )}
@@ -237,7 +237,7 @@ export default function CreateProductScreen() {
                   { 
                     backgroundColor: theme.inputBackground,
                     color: theme.text,
-                    borderColor: errors.price ? theme.error : theme.border
+                    borderColor: errors.price ? theme.notification : theme.border
                   }
                 ]}
                 placeholder={language === 'en' ? 'Enter price (1 - 1,000,000)' : 'Введите цену (1 - 1 000 000)'}
@@ -252,7 +252,7 @@ export default function CreateProductScreen() {
               />
             </View>
             {errors.price && (
-              <Text style={[styles.errorText, { color: theme.error }]} allowFontScaling={false}>
+              <Text style={[styles.errorText, { color: theme.notification }]} allowFontScaling={false}>
                 {errors.price}
               </Text>
             )}
@@ -270,7 +270,7 @@ export default function CreateProductScreen() {
                 { 
                   backgroundColor: theme.inputBackground,
                   color: theme.text,
-                  borderColor: errors.description ? theme.error : theme.border
+                  borderColor: errors.description ? theme.notification : theme.border
                 }
               ]}
               placeholder={language === 'en' ? 'Enter product description (max 500 characters)' : 'Введите описание товара (макс. 500 символов)'}
@@ -289,7 +289,7 @@ export default function CreateProductScreen() {
               {description.length}/500
             </Text>
             {errors.description && (
-              <Text style={[styles.errorText, { color: theme.error }]} allowFontScaling={false}>
+              <Text style={[styles.errorText, { color: theme.notification }]} allowFontScaling={false}>
                 {errors.description}
               </Text>
             )}
@@ -309,7 +309,7 @@ export default function CreateProductScreen() {
                   { 
                     backgroundColor: theme.inputBackground,
                     color: theme.text,
-                    borderColor: errors.sku ? theme.error : theme.border
+                    borderColor: errors.sku ? theme.notification : theme.border
                   }
                 ]}
                 placeholder={language === 'en' ? 'Enter SKU or article number' : 'Введите артикул или номер товара'}
@@ -322,7 +322,7 @@ export default function CreateProductScreen() {
               />
             </View>
             {errors.sku && (
-              <Text style={[styles.errorText, { color: theme.error }]} allowFontScaling={false}>
+              <Text style={[styles.errorText, { color: theme.notification }]} allowFontScaling={false}>
                 {errors.sku}
               </Text>
             )}
