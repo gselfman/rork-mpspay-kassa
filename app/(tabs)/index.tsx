@@ -285,7 +285,7 @@ export default function HomeScreen() {
       if (credentials) {
         fetchData(false);
       }
-    }, [credentials])
+    }, [credentials, fetchData])
   );
 
   // Initial data fetch and interval setup
@@ -311,7 +311,7 @@ export default function HomeScreen() {
         refreshIntervalRef.current = null;
       }
     };
-  }, [credentials]);
+  }, [credentials, fetchData]);
 
   const handleCreatePayment = useCallback(() => {
     router.push('/payment');
@@ -515,13 +515,13 @@ export default function HomeScreen() {
                 ₽{balance !== null ? balance.toLocaleString(undefined, {maximumFractionDigits: 2}) : '—'}
               </Text>
               
-              {accountName && (
+              {accountName ? (
                 <Text style={[styles.accountName, { color: theme.placeholder }]} allowFontScaling={false}>
                   {accountName}
                 </Text>
-              )}
+              ) : null}
               
-              {lastRefreshed && (
+              {lastRefreshed ? (
                 <View style={styles.lastRefreshedContainer}>
                   <Clock size={12} color={theme.placeholder} />
                   <Text style={[styles.lastRefreshedText, { 
@@ -532,7 +532,7 @@ export default function HomeScreen() {
                     {lastRefreshed.toLocaleTimeString()}
                   </Text>
                 </View>
-              )}
+              ) : null}
             </Card>
             
             {/* Stats Cards */}
@@ -709,7 +709,7 @@ export default function HomeScreen() {
                           </Text>
                         </View>
                         
-                        {transaction.finishedAt && (
+                        {transaction.finishedAt ? (
                           <View style={styles.transactionDetail}>
                             <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                               {language === 'en' ? 'Date:' : 'Дата:'}
@@ -718,9 +718,9 @@ export default function HomeScreen() {
                               {new Date(transaction.finishedAt).toLocaleString()}
                             </Text>
                           </View>
-                        )}
+                        ) : null}
                         
-                        {transaction.comment && (
+                        {transaction.comment ? (
                           <View style={styles.transactionDetail}>
                             <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                               {language === 'en' ? 'Comment:' : 'Комментарий:'}
@@ -734,9 +734,9 @@ export default function HomeScreen() {
                               {transaction.comment}
                             </Text>
                           </View>
-                        )}
+                        ) : null}
                         
-                        {transaction.paymentStatus === 3 && transaction.tag && (
+                        {transaction.paymentStatus === 3 && transaction.tag ? (
                           <View style={styles.transactionDetail}>
                             <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                               {language === 'en' ? 'SBP ID:' : 'СБП ID:'}
@@ -750,7 +750,7 @@ export default function HomeScreen() {
                               {transaction.tag}
                             </Text>
                           </View>
-                        )}
+                        ) : null}
                       </View>
                       
                       <View style={styles.viewDetailsContainer}>
@@ -812,7 +812,7 @@ export default function HomeScreen() {
                 </Text>
               ) : null}
               
-              {checkedTransaction && (
+              {checkedTransaction ? (
                 <View style={styles.checkedTransactionContainer}>
                   <View style={styles.checkedTransactionHeader}>
                     {checkedTransaction.status === 'completed' ? (
@@ -850,7 +850,7 @@ export default function HomeScreen() {
                       </Text>
                     </View>
                     
-                    {checkedTransaction.commission !== undefined && (
+                    {checkedTransaction.commission !== undefined ? (
                       <View style={styles.checkedTransactionDetail}>
                         <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                           {language === 'en' ? 'Commission:' : 'Комиссия:'}
@@ -859,9 +859,9 @@ export default function HomeScreen() {
                           ₽{checkedTransaction.commission.toLocaleString(undefined, {maximumFractionDigits: 2})}
                         </Text>
                       </View>
-                    )}
+                    ) : null}
                     
-                    {checkedTransaction.customerInfo && (
+                    {checkedTransaction.customerInfo ? (
                       <View style={styles.checkedTransactionDetail}>
                         <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                           {language === 'en' ? 'Comment:' : 'Комментарий:'}
@@ -870,9 +870,9 @@ export default function HomeScreen() {
                           {checkedTransaction.customerInfo}
                         </Text>
                       </View>
-                    )}
+                    ) : null}
                     
-                    {checkedTransaction.tag && (
+                    {checkedTransaction.tag ? (
                       <View style={styles.checkedTransactionDetail}>
                         <Text style={[styles.checkedTransactionLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                           {language === 'en' ? 'SBP ID:' : 'СБП ID:'}
@@ -886,7 +886,7 @@ export default function HomeScreen() {
                           {checkedTransaction.tag}
                         </Text>
                       </View>
-                    )}
+                    ) : null}
                   </View>
                   
                   <Button
@@ -895,7 +895,7 @@ export default function HomeScreen() {
                     style={styles.viewDetailsButton}
                   />
                 </View>
-              )}
+              ) : null}
             </Card>
             
             {/* Personal Cabinet Button */}
@@ -921,7 +921,7 @@ export default function HomeScreen() {
               </View>
             </TouchableOpacity>
             
-            {credentials && (
+            {credentials ? (
               <View style={styles.merchantInfoContainer}>
                 <Text style={[styles.merchantName, { 
                   color: theme.text,
@@ -936,7 +936,7 @@ export default function HomeScreen() {
                   ID: {credentials.clientId}
                 </Text>
               </View>
-            )}
+            ) : null}
           </ScrollView>
           
           {/* Error Popup */}

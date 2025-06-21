@@ -60,7 +60,7 @@ export const Input = forwardRef<InputRef, InputProps>(({
         </Text>
       ) : null}
       <View style={styles.inputContainer}>
-        {icon && <View style={styles.iconContainer}>{icon}</View>}
+        {icon ? <View style={styles.iconContainer}>{icon}</View> : null}
         <TextInput
           ref={inputRef}
           style={[

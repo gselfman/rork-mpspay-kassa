@@ -682,7 +682,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
                 </Text>
               </View>
               
-              {transaction.finishedAt && (
+              {transaction.finishedAt ? (
                 <View style={styles.detailRow}>
                   <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                     {getTranslation('Completed', 'Завершено')}
@@ -691,9 +691,9 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
                     {formatDate(transaction.finishedAt)}
                   </Text>
                 </View>
-              )}
+              ) : null}
               
-              {transaction.customerInfo && (
+              {transaction.customerInfo ? (
                 <View style={styles.detailRow}>
                   <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                     {getTranslation('Customer', 'Покупатель')}
@@ -702,9 +702,9 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
                     {transaction.customerInfo}
                   </Text>
                 </View>
-              )}
+              ) : null}
               
-              {transaction.merchantName && (
+              {transaction.merchantName ? (
                 <View style={styles.detailRow}>
                   <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                     {getTranslation('Merchant', 'Продавец')}
@@ -713,9 +713,9 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
                     {transaction.merchantName}
                   </Text>
                 </View>
-              )}
+              ) : null}
               
-              {transaction.commission !== undefined && (
+              {transaction.commission !== undefined ? (
                 <View style={styles.detailRow}>
                   <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                     {getTranslation('Commission', 'Комиссия')}
@@ -724,9 +724,9 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
                     ₽{transaction.commission.toLocaleString()}
                   </Text>
                 </View>
-              )}
+              ) : null}
               
-              {transaction.tag && (
+              {transaction.tag ? (
                 <View style={styles.detailRow}>
                   <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                     {getTranslation('SBP ID', 'СБП ID')}
@@ -735,9 +735,9 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
                     {transaction.tag}
                   </Text>
                 </View>
-              )}
+              ) : null}
               
-              {transaction.paymentUrl && (
+              {transaction.paymentUrl ? (
                 <View style={styles.detailRow}>
                   <Text style={[styles.detailLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                     {getTranslation('Payment URL', 'URL платежа')}
@@ -756,11 +756,11 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
                     </Text>
                   </TouchableOpacity>
                 </View>
-              )}
+              ) : null}
             </Card>
             
             {/* Products Card - Only show if transaction has products */}
-            {transaction.products && transaction.products.length > 0 && (
+            {transaction.products && transaction.products.length > 0 ? (
               <Card style={styles.productsCard}>
                 <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
                   {getTranslation('Products', 'Товары')}
@@ -800,7 +800,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
                   </Text>
                 </View>
               </Card>
-            )}
+            ) : null}
             
             {/* Action Buttons */}
             <View style={styles.actionButtons}>

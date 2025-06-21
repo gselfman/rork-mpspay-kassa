@@ -53,7 +53,7 @@ export default function HistoryScreen() {
   const [isSending, setIsSending] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   
-  // Fetch all transactions for the last 30 days
+  // Stable fetch function with minimal dependencies
   const fetchAllTransactions = useCallback(async (refresh = false) => {
     if (!credentials) return;
     
@@ -125,12 +125,14 @@ export default function HistoryScreen() {
       if (credentials) {
         fetchAllTransactions();
       }
-    }, [credentials])
+    }, [credentials, fetchAllTransactions])
   );
   
   const handleRefresh = useCallback(() => {
-    fetchAllTransactions(true);
-  }, [fetchAllTransactions]);
+    if (credentials) {
+      fetchAllTransactions(true);
+    }
+  }, [credentials, fetchAllTransactions]);
   
   const handleTransactionPress = useCallback((transaction: PaymentHistoryItem) => {
     // Navigate to transaction details page using id_2.tsx
@@ -197,7 +199,8 @@ export default function HistoryScreen() {
     setDateFilterError(null);
   }, [filterDateRange, customStartDate, customEndDate, language]);
   
-  const getFilteredTransactions = useCallback((): PaymentHistoryItem[] => {
+  // Memoize filtered transactions to prevent unnecessary recalculations
+  const filteredTransactions = useMemo(() => {
     if (!allTransactions || allTransactions.length === 0) {
       console.log('No transactions to filter');
       return [];
@@ -290,11 +293,6 @@ export default function HistoryScreen() {
     console.log(`Filtered to ${statusFiltered.length} transactions after status filter`);
     return statusFiltered;
   }, [allTransactions, filterDateRange, showSuccessful, showPending, customStartDate, customEndDate]);
-  
-  // Memoize filtered transactions to prevent unnecessary recalculations
-  const filteredTransactions = useMemo(() => {
-    return getFilteredTransactions();
-  }, [getFilteredTransactions]);
   
   const handleSendTelegram = useCallback(async () => {
     if (!selectedTransaction || !credentials) return;
@@ -500,21 +498,21 @@ export default function HistoryScreen() {
       </View>
       
       <View style={styles.content}>
-        {item.comment && (
+        {item.comment ? (
           <Text style={[styles.comment, { color: theme.text }]} numberOfLines={2} allowFontScaling={false}>
             {item.comment}
           </Text>
-        )}
+        ) : null}
         
         <Text style={[styles.paymentId, { color: theme.placeholder }]} allowFontScaling={false}>
           {language === 'en' ? 'Payment ID:' : 'ID платежа:'} {item.id}
         </Text>
         
-        {item.tag && item.paymentStatus === 3 && (
+        {item.tag && item.paymentStatus === 3 ? (
           <Text style={[styles.sbpId, { color: theme.placeholder }]} allowFontScaling={false}>
             {language === 'en' ? 'SBP ID:' : 'СБП ID:'} {item.tag}
           </Text>
-        )}
+        ) : null}
         
         <Text style={[styles.date, { color: theme.placeholder }]} allowFontScaling={false}>
           {item.createdAt ? new Date(item.createdAt).toLocaleDateString(language === 'en' ? 'en-US' : 'ru-RU', {
@@ -918,11 +916,11 @@ export default function HistoryScreen() {
                     </View>
                   </View>
                   
-                  {dateFilterError && (
+                  {dateFilterError ? (
                     <Text style={[styles.dateFilterError, { color: theme.notification }]} allowFontScaling={false}>
                       {dateFilterError}
                     </Text>
-                  )}
+                  ) : null}
                   
                   <Button
                     title={language === 'en' ? 'Apply Custom Range' : 'Применить'}
