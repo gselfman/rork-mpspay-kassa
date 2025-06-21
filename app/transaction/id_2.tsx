@@ -88,7 +88,29 @@ export default function TransactionDetailsScreen() {
       const result = await checkTransactionStatus(credentials, id as string);
       
       if (result.found && result.transaction) {
-        setTransaction(result.transaction);
+        // Convert Transaction to PaymentHistoryItem format
+        const convertedTransaction: PaymentHistoryItem = {
+          id: result.transaction.id,
+          amount: result.transaction.amount,
+          totalCommission: result.transaction.commission || 0,
+          currency: 643, // RUB
+          paymentDirection: 1,
+          paymentType: 1,
+          paymentStatus: result.transaction.status === 'completed' ? 3 : result.transaction.status === 'failed' ? 2 : 1,
+          comment: result.transaction.customerInfo || '',
+          accountToName: result.transaction.merchantName || '',
+          amountFrom: result.transaction.amount,
+          amountTo: result.transaction.amount,
+          rubRate: 1,
+          currencyFrom: 643,
+          currencyTo: 643,
+          totalCommissionFrom: result.transaction.commission || 0,
+          totalCommissionTo: result.transaction.commission || 0,
+          createdAt: result.transaction.createdAt,
+          finishedAt: result.transaction.finishedAt,
+          tag: result.transaction.tag
+        };
+        setTransaction(convertedTransaction);
       } else {
         setError(result.error || (language === 'en' ? 'Transaction not found' : 'Транзакция не найдена'));
         setShowErrorPopup(true);
@@ -111,7 +133,29 @@ export default function TransactionDetailsScreen() {
       const result = await checkTransactionStatus(credentials, id as string);
       
       if (result.found && result.transaction) {
-        setTransaction(result.transaction);
+        // Convert Transaction to PaymentHistoryItem format
+        const convertedTransaction: PaymentHistoryItem = {
+          id: result.transaction.id,
+          amount: result.transaction.amount,
+          totalCommission: result.transaction.commission || 0,
+          currency: 643, // RUB
+          paymentDirection: 1,
+          paymentType: 1,
+          paymentStatus: result.transaction.status === 'completed' ? 3 : result.transaction.status === 'failed' ? 2 : 1,
+          comment: result.transaction.customerInfo || '',
+          accountToName: result.transaction.merchantName || '',
+          amountFrom: result.transaction.amount,
+          amountTo: result.transaction.amount,
+          rubRate: 1,
+          currencyFrom: 643,
+          currencyTo: 643,
+          totalCommissionFrom: result.transaction.commission || 0,
+          totalCommissionTo: result.transaction.commission || 0,
+          createdAt: result.transaction.createdAt,
+          finishedAt: result.transaction.finishedAt,
+          tag: result.transaction.tag
+        };
+        setTransaction(convertedTransaction);
         Alert.alert(
           language === 'en' ? 'Updated' : 'Обновлено',
           language === 'en' ? 'Transaction status updated' : 'Статус транзакции обновлен'
@@ -223,16 +267,16 @@ export default function TransactionDetailsScreen() {
     if (!transaction) return;
     
     try {
-      const statusText = transaction.status === 'completed' 
+      const statusText = transaction.paymentStatus === 3 
         ? (language === 'en' ? 'Completed' : 'Оплачен')
-        : transaction.status === 'failed' 
+        : transaction.paymentStatus === 2 
           ? (language === 'en' ? 'Failed' : 'Не оплачен')
           : (language === 'en' ? 'Pending' : 'В ожидании');
       
       const shareText = `${language === 'en' ? 'Transaction' : 'Транзакция'} #${transaction.id}
 ${language === 'en' ? 'Amount:' : 'Сумма:'} ₽${transaction.amount}
 ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}
-${transaction.customerInfo ? `${language === 'en' ? 'Comment:' : 'Комментарий:'} ${transaction.customerInfo}` : ''}`;
+${transaction.comment ? `${language === 'en' ? 'Comment:' : 'Комментарий:'} ${transaction.comment}` : ''}`;
       
       if (Platform.OS === 'web') {
         await navigator.share({
@@ -250,9 +294,9 @@ ${transaction.customerInfo ? `${language === 'en' ? 'Comment:' : 'Коммент
       console.error('Error sharing:', error);
       // Fallback to copying to clipboard
       if (transaction) {
-        const statusText = transaction.status === 'completed' 
+        const statusText = transaction.paymentStatus === 3 
           ? (language === 'en' ? 'Completed' : 'Оплачен')
-          : transaction.status === 'failed' 
+          : transaction.paymentStatus === 2 
             ? (language === 'en' ? 'Failed' : 'Не оплачен')
             : (language === 'en' ? 'Pending' : 'В ожидании');
         
@@ -265,33 +309,33 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
     }
   };
   
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
+  const getStatusIcon = (paymentStatus: number) => {
+    switch (paymentStatus) {
+      case 3:
         return <CheckCircle size={24} color={theme.success} />;
-      case 'failed':
+      case 2:
         return <XCircle size={24} color={theme.notification} />;
       default:
         return <Clock size={24} color={theme.warning} />;
     }
   };
   
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed':
+  const getStatusText = (paymentStatus: number) => {
+    switch (paymentStatus) {
+      case 3:
         return language === 'en' ? 'Completed' : 'Оплачен';
-      case 'failed':
+      case 2:
         return language === 'en' ? 'Failed' : 'Не оплачен';
       default:
         return language === 'en' ? 'Pending' : 'В ожидании';
     }
   };
   
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
+  const getStatusColor = (paymentStatus: number) => {
+    switch (paymentStatus) {
+      case 3:
         return theme.success;
-      case 'failed':
+      case 2:
         return theme.notification;
       default:
         return theme.warning;
@@ -393,10 +437,10 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
         {/* Status Card */}
         <Card style={styles.statusCard}>
           <View style={styles.statusHeader}>
-            {getStatusIcon(transaction.status)}
+            {getStatusIcon(transaction.paymentStatus)}
             <View style={styles.statusTextContainer}>
-              <Text style={[styles.statusTitle, { color: getStatusColor(transaction.status) }]} allowFontScaling={false}>
-                {getStatusText(transaction.status)}
+              <Text style={[styles.statusTitle, { color: getStatusColor(transaction.paymentStatus) }]} allowFontScaling={false}>
+                {getStatusText(transaction.paymentStatus)}
               </Text>
               <Text style={[styles.transactionId, { color: theme.placeholder }]} allowFontScaling={false}>
                 {language === 'en' ? 'Transaction' : 'Транзакция'} #{transaction.id}
@@ -454,7 +498,7 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
             </View>
             
             {/* Commission */}
-            {transaction.commission !== undefined && (
+            {transaction.totalCommission !== undefined && transaction.totalCommission > 0 && (
               <View style={styles.detailItem}>
                 <View style={styles.detailHeader}>
                   <CreditCard size={16} color={theme.placeholder} />
@@ -463,13 +507,13 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
                   </Text>
                 </View>
                 <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                  ₽{transaction.commission.toLocaleString(undefined, {maximumFractionDigits: 2})}
+                  ₽{transaction.totalCommission.toLocaleString(undefined, {maximumFractionDigits: 2})}
                 </Text>
               </View>
             )}
             
             {/* Customer Info / Comment */}
-            {transaction.customerInfo && (
+            {transaction.comment && (
               <View style={styles.detailItem}>
                 <View style={styles.detailHeader}>
                   <User size={16} color={theme.placeholder} />
@@ -478,13 +522,13 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
                   </Text>
                 </View>
                 <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                  {transaction.customerInfo}
+                  {transaction.comment}
                 </Text>
               </View>
             )}
             
             {/* SBP ID */}
-            {transaction.tag && transaction.status === 'completed' && (
+            {transaction.tag && transaction.paymentStatus === 3 && (
               <View style={styles.detailItem}>
                 <View style={styles.detailHeader}>
                   <ExternalLink size={16} color={theme.placeholder} />
@@ -595,7 +639,7 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
         <Card style={styles.receiptCard}>
           <View style={styles.receiptHeader}>
             <Image 
-              source={{ uri: 'https://i.imgur.com/QCp2zDE.png' }} 
+              source={{ uri: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=100&h=100&fit=crop&crop=center' }} 
               style={styles.receiptLogo}
               resizeMode="contain"
             />
@@ -625,13 +669,13 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
               </Text>
             </View>
             
-            {transaction.commission !== undefined && (
+            {transaction.totalCommission !== undefined && transaction.totalCommission > 0 && (
               <View style={styles.receiptRow}>
                 <Text style={[styles.receiptLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                   {language === 'en' ? 'Commission:' : 'Комиссия:'}
                 </Text>
                 <Text style={[styles.receiptValue, { color: theme.text }]} allowFontScaling={false}>
-                  ₽{transaction.commission.toLocaleString(undefined, {maximumFractionDigits: 2})}
+                  ₽{transaction.totalCommission.toLocaleString(undefined, {maximumFractionDigits: 2})}
                 </Text>
               </View>
             )}
@@ -640,8 +684,8 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
               <Text style={[styles.receiptLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                 {language === 'en' ? 'Status:' : 'Статус:'}
               </Text>
-              <Text style={[styles.receiptValue, { color: getStatusColor(transaction.status) }]} allowFontScaling={false}>
-                {getStatusText(transaction.status)}
+              <Text style={[styles.receiptValue, { color: getStatusColor(transaction.paymentStatus) }]} allowFontScaling={false}>
+                {getStatusText(transaction.paymentStatus)}
               </Text>
             </View>
             

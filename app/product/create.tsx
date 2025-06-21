@@ -4,22 +4,23 @@ import {
   Text, 
   StyleSheet, 
   ScrollView, 
-  KeyboardAvoidingView, 
-  Platform, 
-  TouchableWithoutFeedback, 
-  Keyboard,
   Alert,
-  TextInput
+  TextInput,
+  TouchableOpacity,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Input } from '@/components/Input';
+import { useRouter, Stack } from 'expo-router';
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { ErrorPopup } from '@/components/ErrorPopup';
 import { useProductStore } from '@/store/product-store';
 import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
 import { Product } from '@/types/api';
 import colors from '@/constants/colors';
+import { ArrowLeft, Package, DollarSign, FileText, Hash } from 'lucide-react-native';
+import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
 
 export default function CreateProductScreen() {
   const router = useRouter();
@@ -30,200 +31,331 @@ export default function CreateProductScreen() {
   
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [description, setDescription] = useState('');
+  const [sku, setSku] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    price?: string;
+    description?: string;
+    sku?: string;
+  }>({});
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   
-  // Refs for input fields
-  const nameInputRef = useRef<any>(null);
+  // Refs for input focus management
+  const nameInputRef = useRef<TextInput>(null);
   const priceInputRef = useRef<TextInput>(null);
+  const descriptionInputRef = useRef<TextInput>(null);
+  const skuInputRef = useRef<TextInput>(null);
   
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
+  const validateForm = useCallback(() => {
+    const newErrors: typeof errors = {};
     
-    // Validate name (required, max 64 characters)
     if (!name.trim()) {
       newErrors.name = language === 'en' ? 'Product name is required' : 'Название товара обязательно';
-    } else if (name.trim().length > 64) {
-      newErrors.name = language === 'en' ? 'Product name must be 64 characters or less' : 'Название товара должно быть не более 64 символов';
+    } else if (name.trim().length < 2) {
+      newErrors.name = language === 'en' ? 'Product name must be at least 2 characters' : 'Название товара должно содержать минимум 2 символа';
+    } else if (name.trim().length > 100) {
+      newErrors.name = language === 'en' ? 'Product name must be less than 100 characters' : 'Название товара должно содержать менее 100 символов';
     }
     
-    // Validate price (required, integer, 1-1000000)
     if (!price.trim()) {
       newErrors.price = language === 'en' ? 'Price is required' : 'Цена обязательна';
     } else {
-      const numPrice = parseInt(price, 10);
-      if (isNaN(numPrice) || numPrice < 1 || numPrice > 1000000) {
-        newErrors.price = language === 'en' ? 'Price must be a whole number between 1 and 1,000,000' : 'Цена должна быть целым числом от 1 до 1 000 000';
+      const numericPrice = parseFloat(price);
+      if (isNaN(numericPrice) || numericPrice <= 0) {
+        newErrors.price = language === 'en' ? 'Price must be a positive number' : 'Цена должна быть положительным числом';
+      } else if (numericPrice > 1000000) {
+        newErrors.price = language === 'en' ? 'Price cannot exceed 1,000,000 RUB' : 'Цена не может превышать 1 000 000 руб.';
       }
+    }
+    
+    if (description.trim().length > 500) {
+      newErrors.description = language === 'en' ? 'Description must be less than 500 characters' : 'Описание должно содержать менее 500 символов';
+    }
+    
+    if (sku.trim().length > 50) {
+      newErrors.sku = language === 'en' ? 'SKU must be less than 50 characters' : 'Артикул должен содержать менее 50 символов';
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [name, price, description, sku, language]);
   
-  const handleSubmit = () => {
-    if (!validate()) return;
-    
-    setIsLoading(true);
-    
-    try {
-      // Create new product
-      const newProduct: Product = {
-        id: Date.now().toString(),
-        name: name.trim(),
-        description: '',
-        price: parseInt(price, 10)
-      };
-      
-      // Add to store
-      addProduct(newProduct);
-      
-      // Show success message and navigate back to products page
-      Alert.alert(
-        language === 'en' ? 'Success' : 'Успех',
-        language === 'en' ? 'Product created successfully' : 'Товар успешно создан',
-        [
-          { 
-            text: 'OK', 
-            onPress: () => router.push('/product')
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Error creating product:', error);
-      Alert.alert(
-        language === 'en' ? 'Error' : 'Ошибка',
-        language === 'en' ? 'Failed to create product' : 'Не удалось создать товар'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Optimized price change handler with useCallback
-  const handlePriceChange = useCallback((text: string) => {
-    // Only filter if there are non-numeric characters
-    const numericText = text.replace(/[^0-9]/g, '');
-    
-    // Only update if value actually changed
-    if (numericText !== price) {
-      setPrice(numericText);
-    }
-    
-    // Clear price error when user starts typing (only if needed)
-    if (errors.price && numericText && !errors.price.includes('required')) {
-      setErrors(prev => ({ ...prev, price: '' }));
-    }
-  }, [price, errors.price]);
-  
-  // Optimized name change handler with useCallback
   const handleNameChange = useCallback((text: string) => {
     setName(text);
     
-    // Clear name error when user starts typing (only if needed)
     if (errors.name && text.trim()) {
       setErrors(prev => ({ ...prev, name: '' }));
     }
   }, [errors.name]);
   
-  const focusNextInput = () => {
-    if (priceInputRef.current) {
-      priceInputRef.current.focus();
+  const handlePriceChange = useCallback((text: string) => {
+    // Only allow numbers and decimal point
+    const numericText = text.replace(/[^0-9.]/g, '');
+    
+    // Prevent multiple decimal points
+    const parts = numericText.split('.');
+    if (parts.length > 2) {
+      return;
     }
-  };
+    
+    // Limit decimal places to 2
+    if (parts[1] && parts[1].length > 2) {
+      return;
+    }
+    
+    setPrice(numericText);
+    
+    if (errors.price && numericText && !errors.price.includes('required')) {
+      setErrors(prev => ({ ...prev, price: '' }));
+    }
+  }, [errors.price]);
+  
+  const handleDescriptionChange = useCallback((text: string) => {
+    setDescription(text);
+    
+    if (errors.description && text.trim().length <= 500) {
+      setErrors(prev => ({ ...prev, description: '' }));
+    }
+  }, [errors.description]);
+  
+  const handleSkuChange = useCallback((text: string) => {
+    setSku(text);
+    
+    if (errors.sku && text.trim().length <= 50) {
+      setErrors(prev => ({ ...prev, sku: '' }));
+    }
+  }, [errors.sku]);
+  
+  const handleSubmit = useCallback(async () => {
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const newProduct: Product = {
+        id: Date.now().toString(),
+        name: name.trim(),
+        price: parseFloat(price),
+        description: description.trim() || undefined,
+        sku: sku.trim() || undefined,
+      };
+      
+      addProduct(newProduct);
+      
+      Alert.alert(
+        language === 'en' ? 'Success' : 'Успех',
+        language === 'en' ? 'Product created successfully!' : 'Товар успешно создан!',
+        [
+          {
+            text: language === 'en' ? 'OK' : 'ОК',
+            onPress: () => router.back()
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error creating product:', error);
+      setErrorMessage(language === 'en' ? 'Failed to create product' : 'Не удалось создать товар');
+      setShowErrorPopup(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [validateForm, name, price, description, sku, addProduct, language, router]);
   
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['bottom']}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoidingView}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+      <Stack.Screen 
+        options={{
+          title: language === 'en' ? 'Create Product' : 'Создать товар',
+          headerShown: true,
+          headerStyle: { backgroundColor: theme.background },
+          headerTintColor: theme.text,
+          headerTitleStyle: { color: theme.text },
+        }}
+      />
+      
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView 
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            <Text style={[styles.title, { color: theme.text }]} allowFontScaling={false}>
-              {language === 'en' ? 'Create New Product' : 'Создать новый товар'}
+        <Card style={styles.formCard}>
+          <View style={styles.formHeader}>
+            <Package size={24} color={theme.primary} />
+            <Text style={[styles.formTitle, { color: theme.text }]} allowFontScaling={false}>
+              {language === 'en' ? 'Product Information' : 'Информация о товаре'}
             </Text>
-            
-            <View style={[styles.formContainer, { backgroundColor: theme.card }]}>
-              <Input
-                ref={nameInputRef}
-                label={language === 'en' ? 'Product Name' : 'Название товара и услуги'}
-                placeholder={language === 'en' ? 'Enter product name (max 64 characters)' : 'Введите название товара (макс. 64 символа)'}
-                value={name}
-                onChangeText={handleNameChange}
-                error={errors.name}
-                darkMode={darkMode}
-                maxLength={64}
-                autoFocus={true}
+          </View>
+          
+          {/* Product Name */}
+          <View style={styles.inputContainer}>
+            <Text style={[styles.label, { color: theme.text }]} allowFontScaling={false}>
+              {language === 'en' ? 'Product Name' : 'Название товара'} *
+            </Text>
+            <TextInput
+              ref={nameInputRef}
+              style={[
+                styles.textInput, 
+                { 
+                  backgroundColor: theme.inputBackground,
+                  color: theme.text,
+                  borderColor: errors.name ? colors.error : theme.border
+                }
+              ]}
+              placeholder={language === 'en' ? 'Enter product name' : 'Введите название товара'}
+              placeholderTextColor={theme.placeholder}
+              value={name}
+              onChangeText={handleNameChange}
+              returnKeyType="next"
+              onSubmitEditing={() => priceInputRef.current?.focus()}
+              blurOnSubmit={false}
+              allowFontScaling={false}
+            />
+            {errors.name && (
+              <Text style={[styles.errorText, { color: colors.error }]} allowFontScaling={false}>
+                {errors.name}
+              </Text>
+            )}
+          </View>
+          
+          {/* Price */}
+          <View style={styles.inputContainer}>
+            <Text style={[styles.label, { color: theme.text }]} allowFontScaling={false}>
+              {language === 'en' ? 'Price (RUB)' : 'Цена (руб.)'} *
+            </Text>
+            <View style={styles.priceInputContainer}>
+              <DollarSign size={20} color={theme.placeholder} style={styles.priceIcon} />
+              <TextInput
+                ref={priceInputRef}
+                style={[
+                  styles.priceInput, 
+                  { 
+                    backgroundColor: theme.inputBackground,
+                    color: theme.text,
+                    borderColor: errors.price ? colors.error : theme.border
+                  }
+                ]}
+                placeholder={language === 'en' ? 'Enter price (1 - 1,000,000)' : 'Введите цену (1 - 1 000 000)'}
+                placeholderTextColor={theme.placeholder}
+                value={price}
+                onChangeText={handlePriceChange}
+                keyboardType="decimal-pad"
                 returnKeyType="next"
-                onSubmitEditing={focusNextInput}
+                onSubmitEditing={() => descriptionInputRef.current?.focus()}
                 blurOnSubmit={false}
+                allowFontScaling={false}
               />
-              
-              {/* Use native TextInput for price to avoid focus issues */}
-              <View style={styles.priceInputContainer}>
-                <Text style={[styles.priceLabel, { color: theme.text }]} allowFontScaling={false}>
-                  {language === 'en' ? 'Price (RUB)' : 'Цена (руб.)'}
-                </Text>
-                <TextInput
-                  ref={priceInputRef}
-                  style={[
-                    styles.priceInput, 
-                    { 
-                      backgroundColor: theme.inputBackground,
-                      color: theme.text,
-                      borderColor: errors.price ? theme.notification : theme.border
-                    }
-                  ]}
-                  placeholder={language === 'en' ? 'Enter price (1 - 1,000,000)' : 'Введите цену (1 - 1 000 000)'}
-                  placeholderTextColor={theme.placeholder}
-                  value={price}
-                  onChangeText={handlePriceChange}
-                  keyboardType="numeric"
-                  returnKeyType="done"
-                  onSubmitEditing={handleSubmit}
-                  blurOnSubmit={false}
-                  textContentType="none"
-                  autoComplete="off"
-                  autoCorrect={false}
-                  spellCheck={false}
-                  selectionColor={theme.primary}
-                  caretHidden={false}
-                  allowFontScaling={false}
-                />
-                {errors.price ? (
-                  <Text style={[styles.priceError, { color: theme.notification }]} allowFontScaling={false}>
-                    {errors.price}
-                  </Text>
-                ) : null}
-              </View>
-              
-              <View style={styles.buttonContainer}>
-                <Button
-                  title={language === 'en' ? 'Create Product' : 'Создать товар'}
-                  onPress={handleSubmit}
-                  loading={isLoading}
-                  style={styles.submitButton}
-                />
-                
-                <Button
-                  title={language === 'en' ? 'Cancel' : 'Отмена'}
-                  variant="outline"
-                  onPress={() => router.back()}
-                  style={styles.cancelButton}
-                  disabled={isLoading}
-                />
-              </View>
             </View>
-          </ScrollView>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+            {errors.price && (
+              <Text style={[styles.errorText, { color: colors.error }]} allowFontScaling={false}>
+                {errors.price}
+              </Text>
+            )}
+          </View>
+          
+          {/* Description */}
+          <View style={styles.inputContainer}>
+            <Text style={[styles.label, { color: theme.text }]} allowFontScaling={false}>
+              {language === 'en' ? 'Description' : 'Описание'} ({language === 'en' ? 'optional' : 'необязательно'})
+            </Text>
+            <TextInput
+              ref={descriptionInputRef}
+              style={[
+                styles.textAreaInput, 
+                { 
+                  backgroundColor: theme.inputBackground,
+                  color: theme.text,
+                  borderColor: errors.description ? colors.error : theme.border
+                }
+              ]}
+              placeholder={language === 'en' ? 'Enter product description (max 500 characters)' : 'Введите описание товара (макс. 500 символов)'}
+              placeholderTextColor={theme.placeholder}
+              value={description}
+              onChangeText={handleDescriptionChange}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              returnKeyType="next"
+              onSubmitEditing={() => skuInputRef.current?.focus()}
+              blurOnSubmit={false}
+              allowFontScaling={false}
+            />
+            <Text style={[styles.characterCount, { color: theme.placeholder }]} allowFontScaling={false}>
+              {description.length}/500
+            </Text>
+            {errors.description && (
+              <Text style={[styles.errorText, { color: colors.error }]} allowFontScaling={false}>
+                {errors.description}
+              </Text>
+            )}
+          </View>
+          
+          {/* SKU */}
+          <View style={styles.inputContainer}>
+            <Text style={[styles.label, { color: theme.text }]} allowFontScaling={false}>
+              {language === 'en' ? 'SKU / Article' : 'Артикул'} ({language === 'en' ? 'optional' : 'необязательно'})
+            </Text>
+            <View style={styles.skuInputContainer}>
+              <Hash size={20} color={theme.placeholder} style={styles.skuIcon} />
+              <TextInput
+                ref={skuInputRef}
+                style={[
+                  styles.skuInput, 
+                  { 
+                    backgroundColor: theme.inputBackground,
+                    color: theme.text,
+                    borderColor: errors.sku ? colors.error : theme.border
+                  }
+                ]}
+                placeholder={language === 'en' ? 'Enter SKU or article number' : 'Введите артикул или номер товара'}
+                placeholderTextColor={theme.placeholder}
+                value={sku}
+                onChangeText={handleSkuChange}
+                returnKeyType="done"
+                onSubmitEditing={handleSubmit}
+                allowFontScaling={false}
+              />
+            </View>
+            {errors.sku && (
+              <Text style={[styles.errorText, { color: colors.error }]} allowFontScaling={false}>
+                {errors.sku}
+              </Text>
+            )}
+          </View>
+        </Card>
+        
+        {/* Action Buttons */}
+        <View style={styles.buttonContainer}>
+          <Button
+            title={language === 'en' ? 'Create Product' : 'Создать товар'}
+            onPress={handleSubmit}
+            loading={isLoading}
+            disabled={isLoading}
+            style={styles.createButton}
+          />
+          
+          <Button
+            title={language === 'en' ? 'Cancel' : 'Отмена'}
+            variant="outline"
+            onPress={() => router.back()}
+            disabled={isLoading}
+            style={styles.cancelButton}
+          />
+        </View>
+      </ScrollView>
+      
+      <ErrorPopup
+        visible={showErrorPopup}
+        message={errorMessage}
+        onClose={() => setShowErrorPopup(false)}
+        darkMode={darkMode}
+        title={language === 'en' ? 'Error' : 'Ошибка'}
+      />
     </SafeAreaView>
   );
 }
@@ -232,65 +364,103 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-    flexGrow: 1,
+    padding: scaleSpacing(16),
+    paddingBottom: scaleSpacing(32),
   },
-  title: {
-    fontSize: 24,
+  formCard: {
+    marginBottom: scaleSpacing(24),
+  },
+  formHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: scaleSpacing(24),
+  },
+  formTitle: {
+    fontSize: scaleFontSize(20),
     fontWeight: 'bold',
-    marginBottom: 24,
-    textAlign: 'center',
+    marginLeft: scaleSpacing(12),
   },
-  formContainer: {
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+  inputContainer: {
+    marginBottom: scaleSpacing(20),
   },
-  // Price input specific styles
-  priceInputContainer: {
-    marginBottom: 12,
-  },
-  priceLabel: {
-    marginBottom: 6,
-    fontSize: 14,
+  label: {
+    fontSize: scaleFontSize(16),
     fontWeight: '500',
+    marginBottom: scaleSpacing(8),
   },
-  priceInput: {
+  textInput: {
+    height: 48,
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
-    fontSize: 16,
-    minHeight: 48,
-    textAlignVertical: 'center',
+    paddingHorizontal: scaleSpacing(16),
+    fontSize: scaleFontSize(16),
   },
-  priceError: {
-    marginTop: 4,
-    fontSize: 12,
+  priceInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  priceIcon: {
+    position: 'absolute',
+    left: scaleSpacing(12),
+    zIndex: 1,
+  },
+  priceInput: {
+    flex: 1,
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingLeft: scaleSpacing(40),
+    paddingRight: scaleSpacing(16),
+    fontSize: scaleFontSize(16),
+  },
+  textAreaInput: {
+    minHeight: 100,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: scaleSpacing(16),
+    paddingVertical: scaleSpacing(12),
+    fontSize: scaleFontSize(16),
+  },
+  characterCount: {
+    fontSize: scaleFontSize(12),
+    textAlign: 'right',
+    marginTop: scaleSpacing(4),
+  },
+  skuInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  skuIcon: {
+    position: 'absolute',
+    left: scaleSpacing(12),
+    zIndex: 1,
+  },
+  skuInput: {
+    flex: 1,
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingLeft: scaleSpacing(40),
+    paddingRight: scaleSpacing(16),
+    fontSize: scaleFontSize(16),
+  },
+  errorText: {
+    fontSize: scaleFontSize(14),
+    marginTop: scaleSpacing(4),
   },
   buttonContainer: {
-    marginTop: 24,
-    gap: 12,
+    gap: scaleSpacing(12),
   },
-  submitButton: {
-    marginBottom: 0,
+  createButton: {
+    marginBottom: scaleSpacing(8),
   },
   cancelButton: {
-    marginBottom: 0,
+    marginBottom: scaleSpacing(8),
   },
 });

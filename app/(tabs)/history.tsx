@@ -521,7 +521,7 @@ export default function HistoryScreen() {
   const renderHeader = useCallback(() => (
     <View style={styles.header}>
       <Image 
-        source={{ uri: 'https://i.imgur.com/QCp2zDE.png' }} 
+        source={{ uri: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=100&h=100&fit=crop&crop=center' }} 
         style={styles.logo}
         resizeMode="contain"
       />
