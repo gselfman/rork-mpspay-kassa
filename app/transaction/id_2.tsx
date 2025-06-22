@@ -20,35 +20,31 @@ import { ErrorPopup } from '@/components/ErrorPopup';
 import { useAuthStore } from '@/store/auth-store';
 import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
-import { checkTransactionStatus, sendTransactionDetailsTelegram, sendTransactionDetailsEmail } from '@/utils/api';
+import { checkTransactionStatus } from '@/utils/api';
 import { PaymentHistoryItem, Transaction } from '@/types/api';
 import { formatMoscowTime } from '@/utils/timezone';
 import colors from '@/constants/colors';
+import IMAGES from '@/constants/images';
 import { 
   ArrowLeft, 
   CheckCircle, 
   XCircle, 
   Clock, 
   Copy, 
-  Share, 
   RefreshCw,
-  MessageCircle,
-  Mail,
   ExternalLink,
   Calendar,
   CreditCard,
   User,
   Hash,
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  Printer
 } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
 
 const { width: screenWidth } = Dimensions.get('window');
-
-// Logo URL for the receipt
-const LOGO_URL = 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=100&h=100&fit=crop&crop=center';
 
 export default function TransactionDetailsScreen() {
   const router = useRouter();
@@ -63,7 +59,6 @@ export default function TransactionDetailsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
-  const [isSending, setIsSending] = useState(false);
   
   // Load transaction data
   useEffect(() => {
@@ -197,120 +192,324 @@ export default function TransactionDetailsScreen() {
     }
   };
   
-  const handleSendTelegram = async () => {
-    if (!transaction || !credentials) return;
-    
-    setIsSending(true);
-    try {
-      const success = await sendTransactionDetailsTelegram(transaction, credentials, language);
-      if (success) {
-        Alert.alert(
-          language === 'en' ? 'Success' : 'Успех',
-          language === 'en' ? 'Transaction details sent to Telegram' : 'Детали операции отправлены в Телеграм'
-        );
-      } else {
-        Alert.alert(
-          language === 'en' ? 'Error' : 'Ошибка',
-          language === 'en' ? 'Failed to send to Telegram' : 'Не удалось отправить в Телеграм'
-        );
-      }
-    } catch (error) {
-      Alert.alert(
-        language === 'en' ? 'Error' : 'Ошибка',
-        language === 'en' ? 'Failed to send to Telegram' : 'Не удалось отправить в Телеграм'
-      );
-    } finally {
-      setIsSending(false);
-    }
-  };
-  
-  const handleSendEmail = async () => {
-    if (!transaction || !credentials) return;
-    
-    // Prompt for email address
-    Alert.prompt(
-      language === 'en' ? 'Send via Email' : 'Отправить по Email',
-      language === 'en' ? 'Enter email address:' : 'Введите email адрес:',
-      async (email) => {
-        if (!email || !email.includes('@')) {
-          Alert.alert(
-            language === 'en' ? 'Error' : 'Ошибка',
-            language === 'en' ? 'Please enter a valid email address' : 'Пожалуйста, введите корректный email адрес'
-          );
-          return;
-        }
-        
-        setIsSending(true);
-        try {
-          const success = await sendTransactionDetailsEmail(transaction, email, credentials, language);
-          if (success) {
-            Alert.alert(
-              language === 'en' ? 'Success' : 'Успех',
-              language === 'en' ? 'Transaction details sent to email' : 'Детали операции отправлены на email'
-            );
-          } else {
-            Alert.alert(
-              language === 'en' ? 'Error' : 'Ошибка',
-              language === 'en' ? 'Failed to send email' : 'Не удалось отправить email'
-            );
-          }
-        } catch (error) {
-          Alert.alert(
-            language === 'en' ? 'Error' : 'Ошибка',
-            language === 'en' ? 'Failed to send email' : 'Не удалось отправить email'
-          );
-        } finally {
-          setIsSending(false);
-        }
-      },
-      'plain-text'
-    );
-  };
-  
-  const handleShare = async () => {
+  const generatePDFReceipt = async () => {
     if (!transaction) return;
     
     try {
-      const statusText = transaction.paymentStatus === 3 
-        ? (language === 'en' ? 'Completed' : 'Оплачен')
-        : transaction.paymentStatus === 2 
-          ? (language === 'en' ? 'Failed' : 'Не оплачен')
-          : (language === 'en' ? 'Pending' : 'В ожидании');
+      // Generate receipt data
+      const receiptData = {
+        transactionId: transaction.id,
+        amount: transaction.amount,
+        status: getStatusText(transaction.paymentStatus),
+        date: formatMoscowTime(transaction.createdAt, language),
+        customerInfo: transaction.comment || '',
+        merchantName: transaction.accountToName || '',
+        tag: transaction.tag || '',
+        commission: transaction.totalCommission || 0
+      };
       
-      const shareText = `${language === 'en' ? 'Transaction' : 'Транзакция'} #${transaction.id}
-${language === 'en' ? 'Amount:' : 'Сумма:'} ₽${transaction.amount}
-${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}
-${transaction.comment ? `${language === 'en' ? 'Comment:' : 'Комментарий:'} ${transaction.comment}` : ''}`;
+      // Create PDF-optimized HTML content
+      const htmlContent = generatePDFReceiptHTML(receiptData);
       
       if (Platform.OS === 'web') {
-        await navigator.share({
-          title: language === 'en' ? 'Transaction Details' : 'Детали транзакции',
-          text: shareText
-        });
+        // For web, create a new window with print-optimized content
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          
+          // Wait for content to load, then trigger print dialog
+          printWindow.onload = () => {
+            setTimeout(() => {
+              printWindow.print();
+            }, 500);
+          };
+        }
       } else {
-        const { Share } = await import('react-native');
-        await Share.share({
-          message: shareText,
-          title: language === 'en' ? 'Transaction Details' : 'Детали транзакции'
-        });
+        // For mobile, create a data URL and open it
+        const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
+        await Linking.openURL(dataUrl);
       }
     } catch (error) {
-      console.error('Error sharing:', error);
-      // Fallback to copying to clipboard
-      if (transaction) {
-        const statusText = transaction.paymentStatus === 3 
-          ? (language === 'en' ? 'Completed' : 'Оплачен')
-          : transaction.paymentStatus === 2 
-            ? (language === 'en' ? 'Failed' : 'Не оплачен')
-            : (language === 'en' ? 'Pending' : 'В ожидании');
-        
-        const shareText = `${language === 'en' ? 'Transaction' : 'Транзакция'} #${transaction.id}
-${language === 'en' ? 'Amount:' : 'Сумма:'} ₽${transaction.amount}
-${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
-        
-        await copyToClipboard(shareText, language === 'en' ? 'Transaction details' : 'Детали транзакции');
-      }
+      console.error('Error generating PDF receipt:', error);
+      Alert.alert(
+        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' ? 'Failed to generate PDF receipt' : 'Не удалось создать PDF чек'
+      );
     }
+  };
+  
+  // Generate PDF-optimized HTML receipt
+  const generatePDFReceiptHTML = (data: any): string => {
+    return `
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чек - ${data.transactionId}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        
+        body { 
+            font-family: 'Arial', sans-serif; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: white;
+            color: #333;
+            line-height: 1.4;
+        }
+        
+        .header { 
+            text-align: center; 
+            border-bottom: 3px solid #007AFF; 
+            padding-bottom: 20px; 
+            margin-bottom: 30px; 
+        }
+        
+        .logo { 
+            width: 100px; 
+            height: 100px; 
+            margin: 0 auto 20px; 
+            border-radius: 16px;
+            background: linear-gradient(135deg, #007AFF, #5856D6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .company-name {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #007AFF;
+        }
+        
+        .receipt-title {
+            font-size: 20px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .content {
+            margin: 30px 0;
+        }
+        
+        .row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin: 16px 0; 
+            padding: 12px 0;
+            border-bottom: 1px dotted #ddd;
+            align-items: center;
+        }
+        
+        .row:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            font-weight: 600;
+            color: #555;
+            font-size: 16px;
+        }
+        
+        .value {
+            font-weight: bold;
+            color: #000;
+            font-size: 16px;
+            text-align: right;
+        }
+        
+        .total { 
+            font-weight: bold; 
+            font-size: 1.5em; 
+            border-top: 3px solid #007AFF; 
+            padding-top: 20px; 
+            margin-top: 30px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .status.completed {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        
+        .status.failed {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .qr-placeholder {
+            width: 100px;
+            height: 100px;
+            background: #f0f0f0;
+            border: 2px dashed #ccc;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        @media print { 
+            body { 
+                margin: 0; 
+                padding: 15px;
+                font-size: 14px;
+            }
+            
+            .no-print {
+                display: none;
+            }
+            
+            .header {
+                break-inside: avoid;
+            }
+            
+            .total {
+                break-inside: avoid;
+            }
+        }
+        
+        @media screen {
+            body {
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                border-radius: 8px;
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            MPSPAY
+        </div>
+        <div class="company-name">MPSPAY</div>
+        <div class="receipt-title">Чек об оплате</div>
+    </div>
+    
+    <div class="content">
+        <div class="row">
+            <span class="label">ID транзакции:</span>
+            <span class="value">${data.transactionId}</span>
+        </div>
+        
+        <div class="row">
+            <span class="label">Сумма:</span>
+            <span class="value">₽${data.amount.toLocaleString('ru-RU', {minimumFractionDigits: 2})}</span>
+        </div>
+        
+        <div class="row">
+            <span class="label">Статус:</span>
+            <span class="value">
+                <span class="status ${data.status.toLowerCase().includes('выполнено') || data.status.toLowerCase().includes('completed') ? 'completed' : 
+                                    data.status.toLowerCase().includes('ошибка') || data.status.toLowerCase().includes('failed') ? 'failed' : 'pending'}">
+                    ${data.status}
+                </span>
+            </span>
+        </div>
+        
+        <div class="row">
+            <span class="label">Дата и время:</span>
+            <span class="value">${data.date}</span>
+        </div>
+        
+        ${data.customerInfo ? `
+        <div class="row">
+            <span class="label">Покупатель:</span>
+            <span class="value">${data.customerInfo}</span>
+        </div>
+        ` : ''}
+        
+        ${data.merchantName ? `
+        <div class="row">
+            <span class="label">Продавец:</span>
+            <span class="value">${data.merchantName}</span>
+        </div>
+        ` : ''}
+        
+        ${data.commission && data.commission > 0 ? `
+        <div class="row">
+            <span class="label">Комиссия:</span>
+            <span class="value">₽${data.commission.toLocaleString('ru-RU', {minimumFractionDigits: 2})}</span>
+        </div>
+        ` : ''}
+        
+        ${data.tag ? `
+        <div class="row">
+            <span class="label">СБП ID:</span>
+            <span class="value">${data.tag}</span>
+        </div>
+        ` : ''}
+        
+        <div class="total">
+            <div class="row">
+                <span class="label">Итого к оплате:</span>
+                <span class="value">₽${data.amount.toLocaleString('ru-RU', {minimumFractionDigits: 2})}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div class="qr-placeholder">
+            QR-код для проверки
+        </div>
+        <p><strong>Спасибо за использование MPSPAY!</strong></p>
+        <p>Дата печати: ${new Date().toLocaleString('ru-RU')}</p>
+        <p>Этот документ является электронным чеком</p>
+    </div>
+    
+    <script>
+        // Auto-print for PDF generation
+        window.onload = function() {
+            setTimeout(function() {
+                if (window.location.search.includes('print=true')) {
+                    window.print();
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>`;
   };
   
   const getStatusIcon = (paymentStatus: number) => {
@@ -607,33 +806,11 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
           <View style={styles.actionButtons}>
             <TouchableOpacity 
               style={[styles.actionButton, { backgroundColor: theme.card }]}
-              onPress={handleShare}
+              onPress={generatePDFReceipt}
             >
-              <Share size={20} color={theme.primary} />
+              <Printer size={20} color={theme.primary} />
               <Text style={[styles.actionButtonText, { color: theme.text }]} allowFontScaling={false}>
-                {language === 'en' ? 'Share' : 'Поделиться'}
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.card }]}
-              onPress={handleSendTelegram}
-              disabled={isSending}
-            >
-              <MessageCircle size={20} color={theme.primary} />
-              <Text style={[styles.actionButtonText, { color: theme.text }]} allowFontScaling={false}>
-                {language === 'en' ? 'Telegram' : 'Телеграм'}
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: theme.card }]}
-              onPress={handleSendEmail}
-              disabled={isSending}
-            >
-              <Mail size={20} color={theme.primary} />
-              <Text style={[styles.actionButtonText, { color: theme.text }]} allowFontScaling={false}>
-                {language === 'en' ? 'Email' : 'Email'}
+                {language === 'en' ? 'PDF Receipt' : 'Счёт PDF'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -643,7 +820,7 @@ ${language === 'en' ? 'Status:' : 'Статус:'} ${statusText}`;
         <Card style={styles.receiptCard}>
           <View style={styles.receiptHeader}>
             <Image 
-              source={{ uri: LOGO_URL }} 
+              source={{ uri: IMAGES.LOGO }} 
               style={styles.receiptLogo}
               resizeMode="contain"
             />
@@ -846,7 +1023,7 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     gap: scaleSpacing(12),
   },
   actionButton: {

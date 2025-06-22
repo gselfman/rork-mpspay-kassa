@@ -3,26 +3,21 @@ import { publicProcedure } from '../../create-context';
 
 // Cache for exchange rate
 let cachedRate: { rate: number; timestamp: number } | null = null;
-const CACHE_DURATION = 90 * 1000; // 90 seconds
+const CACHE_DURATION = 60 * 1000; // 60 seconds (1 minute)
 
 /**
  * Fetch USDT/RUB rate from CoinGecko API
  */
 async function fetchUSDTRate(): Promise<number> {
   try {
-    const apiKey = process.env.COINGECKO_API_KEY;
-    const url = 'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=rub';
+    const apiKey = process.env.COINGECKO_API_KEY || 'CG-RnesFdso5VKH3owLCHrpPw99';
+    const url = `https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=rub&x_cg_demo_api_key=${apiKey}`;
     
-    const headers: Record<string, string> = {
-      'Accept': 'application/json',
-    };
-    
-    // Add API key if available
-    if (apiKey) {
-      headers['x-cg-demo-api-key'] = apiKey;
-    }
-    
-    const response = await fetch(url, { headers });
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
     
     if (!response.ok) {
       throw new Error(`CoinGecko API error: ${response.status}`);

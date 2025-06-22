@@ -25,12 +25,10 @@ import { getPaymentHistory, sendTransactionDetailsTelegram, sendTransactionDetai
 import { PaymentHistoryItem } from '@/types/api';
 import { formatMoscowTime, formatMoscowTimeForCSV } from '@/utils/timezone';
 import colors from '@/constants/colors';
+import IMAGES from '@/constants/images';
 import { Calendar, RefreshCw, AlertCircle, CalendarIcon, CheckCircle, Send, Mail, MessageCircle, Clock, XCircle, Download } from 'lucide-react-native';
 import { useFocusEffect } from 'expo-router';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
-
-// Logo URL
-const LOGO_URL = 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=100&h=100&fit=crop&crop=center';
 
 export default function HistoryScreen() {
   const router = useRouter();
@@ -519,7 +517,7 @@ export default function HistoryScreen() {
   const renderHeader = useCallback(() => (
     <View style={styles.header}>
       <Image 
-        source={{ uri: LOGO_URL }} 
+        source={{ uri: IMAGES.LOGO_REPORTS }} 
         style={styles.logo}
         resizeMode="contain"
       />

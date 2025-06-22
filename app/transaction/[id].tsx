@@ -8,7 +8,8 @@ import {
   Alert,
   Platform,
   Share,
-  Linking
+  Linking,
+  Image
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
@@ -21,17 +22,18 @@ import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { ErrorPopup } from '@/components/ErrorPopup';
 import colors from '@/constants/colors';
+import IMAGES from '@/constants/images';
 import { 
   CheckCircle, 
   XCircle, 
   Clock, 
   RefreshCw, 
   ArrowLeft, 
-  Share as ShareIcon,
   Printer,
   AlertCircle
 } from 'lucide-react-native';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
+import { formatMoscowTime } from '@/utils/timezone';
 
 export default function TransactionDetailsScreen() {
   const params = useLocalSearchParams();
@@ -64,8 +66,7 @@ export default function TransactionDetailsScreen() {
     if (!dateString) return '';
     
     try {
-      const date = new Date(dateString);
-      return date.toLocaleString();
+      return formatMoscowTime(dateString, language);
     } catch (error) {
       console.error('Error formatting date:', error);
       return dateString || '';
@@ -209,36 +210,6 @@ export default function TransactionDetailsScreen() {
       setIsRefreshing(false);
     }
   }, [credentials, transactionId, getTranslation, addTransaction]);
-  
-  // Share transaction details
-  const shareTransactionDetails = async () => {
-    if (!transaction) return;
-    
-    try {
-      const message = `
-${getTranslation('Transaction Details', 'Детали транзакции')}:
-${getTranslation('ID', 'ID')}: ${transaction.id}
-${getTranslation('Amount', 'Сумма')}: ₽${transaction.amount}
-${getTranslation('Status', 'Статус')}: ${getStatusText(transaction.status)}
-${getTranslation('Date', 'Дата')}: ${formatDate(transaction.createdAt)}
-${transaction.customerInfo ? `${getTranslation('Customer', 'Покупатель')}: ${transaction.customerInfo}` : ''}
-${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag}` : ''}
-`;
-      
-      await Share.share({
-        message: message.trim()
-      });
-    } catch (error) {
-      console.error('Error sharing transaction details:', error);
-      Alert.alert(
-        getTranslation('Error', 'Ошибка'),
-        getTranslation(
-          'Failed to share transaction details',
-          'Не удалось поделиться деталями транзакции'
-        )
-      );
-    }
-  };
   
   // Generate PDF receipt
   const generatePDFReceipt = async () => {
@@ -618,6 +589,11 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
         contentContainerStyle={styles.contentContainer}
       >
         <View style={styles.headerContainer}>
+          <Image 
+            source={{ uri: IMAGES.LOGO_TRANSACTION }} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={[styles.headerTitle, { color: theme.text }]} allowFontScaling={false}>
             {getTranslation('Transaction Details', 'Детали транзакции')}
           </Text>
@@ -821,14 +797,7 @@ ${transaction.tag ? `${getTranslation('SBP ID', 'СБП ID')}: ${transaction.tag
             {/* Action Buttons */}
             <View style={styles.actionButtons}>
               <Button
-                title={getTranslation('Share', 'Поделиться')}
-                onPress={shareTransactionDetails}
-                icon={<ShareIcon size={20} color="white" />}
-                style={styles.actionButton}
-              />
-              
-              <Button
-                title={getTranslation('Print PDF Receipt', 'Печать PDF чека')}
+                title={getTranslation('PDF Receipt', 'Счёт PDF')}
                 onPress={generatePDFReceipt}
                 icon={<Printer size={20} color="white" />}
                 style={styles.actionButton}
@@ -871,9 +840,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: scaleSpacing(16),
   },
+  logo: {
+    width: 40,
+    height: 40,
+    marginRight: scaleSpacing(8),
+  },
   headerTitle: {
     fontSize: scaleFontSize(20),
     fontWeight: 'bold',
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
