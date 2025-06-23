@@ -425,7 +425,7 @@ export default function TransactionDetailsScreen() {
 <body>
     <div class="header">
         <div class="logo">
-            <img src="https://i.imgur.com/5la0Aov.png" alt="MPSPAY" style="width: 80px; height: 80px; border-radius: 12px;" />
+            <img src="${IMAGES.LOGO}" alt="MPSPAY" style="width: 80px; height: 80px; border-radius: 12px;" />
         </div>
         <div class="company-name">MPSPAY</div>
         <div class="receipt-title">Чек об оплате</div>
