@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { procedure } from '../../create-context';
+import { publicProcedure } from '../../create-context';
 
 // Cache for exchange rate
 let cachedRate: { rate: number; timestamp: number } | null = null;
 const CACHE_DURATION = 60 * 1000; // 1 minute in milliseconds
 
-export const exchangeRateQuery = procedure
+export const exchangeRateQuery = publicProcedure
   .query(async () => {
     try {
       // Check if we have cached data that's still valid
