@@ -425,7 +425,7 @@ export default function TransactionDetailsScreen() {
 <body>
     <div class="header">
         <div class="logo">
-            <img src="${IMAGES.LOGO}" alt="MPSPAY" style="width: 80px; height: 80px; border-radius: 12px;" />
+            <img src="https://i.imgur.com/5la0Aov.png" alt="MPSPAY" style="width: 80px; height: 80px; border-radius: 12px;" />
         </div>
         <div class="company-name">MPSPAY</div>
         <div class="receipt-title">Чек об оплате</div>
@@ -824,7 +824,7 @@ export default function TransactionDetailsScreen() {
         <Card style={styles.receiptCard}>
           <View style={styles.receiptHeader}>
             <Image 
-              source={{ uri: IMAGES.LOGO_TRANSACTION }} 
+              source={IMAGES.LOGO_TRANSACTION} 
               style={styles.receiptLogo}
               resizeMode="contain"
             />

@@ -106,7 +106,8 @@ export default function WithdrawScreen() {
       if (result.success && result.rate) {
         setExchangeRate(result.rate);
       } else {
-        const errorMessage = 'error' in result ? result.error : getTranslation(
+        // Handle the case where result has an error property
+        const errorMessage = 'error' in result && result.error ? result.error : getTranslation(
           'Failed to load exchange rate',
           'Не удалось загрузить курс'
         );
@@ -276,7 +277,7 @@ export default function WithdrawScreen() {
       >
         <View style={styles.header}>
           <Image 
-            source={{ uri: IMAGES.LOGO }} 
+            source={IMAGES.LOGO} 
             style={styles.logo} 
             resizeMode="contain"
           />

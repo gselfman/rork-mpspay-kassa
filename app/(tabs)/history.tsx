@@ -525,7 +525,7 @@ export default function HistoryScreen() {
   const renderHeader = useCallback(() => (
     <View style={styles.header}>
       <Image 
-        source={{ uri: IMAGES.LOGO_REPORTS }} 
+        source={IMAGES.LOGO_REPORTS} 
         style={styles.logo}
         resizeMode="contain"
       />

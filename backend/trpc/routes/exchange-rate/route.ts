@@ -17,18 +17,9 @@ export const exchangeRateQuery = publicProcedure
         };
       }
 
-      // Get API key from environment
-      const apiKey = process.env.COINGECKO_API_KEY;
-      if (!apiKey) {
-        console.error('COINGECKO_API_KEY not found in environment variables');
-        return {
-          success: false,
-          rate: null,
-          timestamp: new Date().toISOString(),
-          error: 'API key not configured'
-        };
-      }
-
+      // Use the CoinGecko API with the provided API key
+      const apiKey = 'CG-RnesFdso5VKH3owLCHrpPw99';
+      
       // Fetch exchange rate from CoinGecko
       const response = await fetch(
         `https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=rub&x_cg_demo_api_key=${apiKey}`,
