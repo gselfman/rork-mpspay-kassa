@@ -54,7 +54,10 @@ export default function HistoryScreen() {
   const [isSending, setIsSending] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   
-  // Stable fetch function with minimal dependencies
+  // СКОПИРУЙ И ЗАМЕНИ ЭТОТ БЛОК В history.tsx
+
+  // 1. Стабилизируем функцию fetchAllTransactions, оставляя только 'credentials' в зависимостях.
+  // Теперь ее ссылка не будет меняться при каждом рендере.
   const fetchAllTransactions = useCallback(async (refresh = false) => {
     if (!credentials) return;
     
@@ -112,16 +115,21 @@ export default function HistoryScreen() {
     }
   }, [credentials]);
   
-  // Fetch transactions when the screen comes into focus
+  // 2. Исправляем useFocusEffect.
+  // Мы используем fetchAllTransactions, но не включаем ее в зависимости,
+  // так как она уже стабилизирована через useCallback и зависит только от 'credentials'.
   useFocusEffect(
     useCallback(() => {
       if (credentials) {
         fetchAllTransactions();
       }
+      // Следующая строка отключает предупреждение линтера, так как мы намеренно
+      // не включаем fetchAllTransactions в зависимости, чтобы избежать цикла.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [credentials])
+    }, [credentials]) // Эффект перезапустится ТОЛЬКО при изменении credentials.
   );
   
+  // 3. Исправляем handleRefresh по тому же принципу.
   const handleRefresh = useCallback(() => {
     if (credentials) {
       fetchAllTransactions(true);

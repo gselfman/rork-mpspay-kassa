@@ -226,9 +226,13 @@ export default function TransactionDetailsScreen() {
           };
         }
       } else {
-        // For mobile, create a data URL and open it
-        const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
-        await Linking.openURL(dataUrl);
+        // For mobile - use Blob API
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        await Linking.openURL(url);
+        
+        // Clean up URL after 5 seconds
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
       }
     } catch (error) {
       console.error('Error generating PDF receipt:', error);
@@ -421,7 +425,7 @@ export default function TransactionDetailsScreen() {
 <body>
     <div class="header">
         <div class="logo">
-            MPSPAY
+            <img src="https://i.imgur.com/5la0Aov.png" alt="MPSPAY" style="width: 80px; height: 80px; border-radius: 12px;" />
         </div>
         <div class="company-name">MPSPAY</div>
         <div class="receipt-title">Чек об оплате</div>
@@ -820,7 +824,7 @@ export default function TransactionDetailsScreen() {
         <Card style={styles.receiptCard}>
           <View style={styles.receiptHeader}>
             <Image 
-              source={{ uri: IMAGES.LOGO }} 
+              source={{ uri: IMAGES.LOGO_TRANSACTION }} 
               style={styles.receiptLogo}
               resizeMode="contain"
             />

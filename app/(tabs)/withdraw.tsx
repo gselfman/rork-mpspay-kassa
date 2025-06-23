@@ -106,7 +106,7 @@ export default function WithdrawScreen() {
       if (result.success && result.rate) {
         setExchangeRate(result.rate);
       } else {
-        const errorMessage = 'error' in result ? result.error : getTranslation(
+        const errorMessage = result.success === false && 'error' in result ? result.error : getTranslation(
           'Failed to load exchange rate',
           'Не удалось загрузить курс'
         );
@@ -391,9 +391,6 @@ export default function WithdrawScreen() {
                 // Only allow integer values
                 const integerValue = text.replace(/[^0-9]/g, '');
                 setAmount(integerValue);
-                if (errors.amount) {
-                  setErrors({ ...errors, amount: undefined });
-                }
               }}
               placeholder="1000"
               keyboardType="numeric"
