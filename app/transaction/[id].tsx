@@ -590,7 +590,7 @@ export default function TransactionDetailsScreen() {
       >
         <View style={styles.headerContainer}>
           <Image 
-            source={{ uri: IMAGES.LOGO_TRANSACTION }} 
+            source={IMAGES.LOGO_TRANSACTION} 
             style={styles.logo}
             resizeMode="contain"
           />
