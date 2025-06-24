@@ -418,7 +418,7 @@ export default function HomeScreen() {
             {/* Header with Logo and Title */}
             <View style={styles.header}>
               <Image 
-                source={{ uri: IMAGES.LOGO }} 
+                source={IMAGES.LOGO} 
                 style={styles.logo} 
                 resizeMode="contain"
               />

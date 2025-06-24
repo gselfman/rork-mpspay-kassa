@@ -246,9 +246,13 @@ export default function TransactionDetailsScreen() {
           };
         }
       } else {
-        // For mobile, create a data URL and open it
-        const dataUrl = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
-        await Linking.openURL(dataUrl);
+        // For mobile - use Blob API
+        const blob = new Blob([htmlContent], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        await Linking.openURL(url);
+        
+        // Clean up URL after 5 seconds
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
       }
     } catch (error) {
       console.error('Error generating PDF receipt:', error);
@@ -312,7 +316,7 @@ export default function TransactionDetailsScreen() {
             font-size: 32px;
             font-weight: bold;
             margin-bottom: 8px;
-            color: #007AFF;
+            color: #FF8C00;
         }
         
         .receipt-title {
@@ -398,20 +402,6 @@ export default function TransactionDetailsScreen() {
             font-size: 14px;
         }
         
-        .qr-placeholder {
-            width: 100px;
-            height: 100px;
-            background: #f0f0f0;
-            border: 2px dashed #ccc;
-            margin: 20px auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            font-size: 12px;
-            color: #999;
-        }
-        
         @media print { 
             body { 
                 margin: 0; 
@@ -444,9 +434,9 @@ export default function TransactionDetailsScreen() {
 <body>
     <div class="header">
         <div class="logo">
-            MPSPAY
+            <img src="https://i.imgur.com/5la0Aov.png" alt="MPSPAY" style="width: 80px; height: 80px; border-radius: 12px;" />
         </div>
-        <div class="company-name">MPSPAY</div>
+        <div class="company-name">MPSPAY Kassa</div>
         <div class="receipt-title">Чек об оплате</div>
     </div>
     
@@ -513,9 +503,6 @@ export default function TransactionDetailsScreen() {
     </div>
     
     <div class="footer">
-        <div class="qr-placeholder">
-            QR-код для проверки
-        </div>
         <p><strong>Спасибо за использование MPSPAY!</strong></p>
         <p>Дата печати: ${new Date().toLocaleString('ru-RU')}</p>
         <p>Этот документ является электронным чеком</p>
@@ -590,7 +577,7 @@ export default function TransactionDetailsScreen() {
       >
         <View style={styles.headerContainer}>
           <Image 
-            source={IMAGES.LOGO_TRANSACTION} 
+            source={IMAGES.LOGO} 
             style={styles.logo}
             resizeMode="contain"
           />

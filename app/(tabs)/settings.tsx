@@ -144,7 +144,7 @@ export default function SettingsScreen() {
           {/* Header */}
           <View style={styles.header}>
             <Image 
-              source={{ uri: IMAGES.PAYMENT_LOGO }} 
+              source={IMAGES.LOGO_SET} 
               style={styles.logo}
               resizeMode="contain"
             />

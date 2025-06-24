@@ -268,7 +268,7 @@ export default function AuthScreen() {
           <View style={styles.welcomeContainer}>
             <View style={styles.logoContainer}>
               <Image 
-                source={{ uri: IMAGES.LOGO }} 
+                source={IMAGES.LOGO} 
                 style={styles.welcomeLogo} 
                 resizeMode="contain"
               />
@@ -318,7 +318,7 @@ export default function AuthScreen() {
             >
               <View style={styles.header}>
                 <Image 
-                  source={{ uri: IMAGES.LOGO }} 
+                  source={IMAGES.LOGO} 
                   style={styles.logo} 
                   resizeMode="contain"
                 />

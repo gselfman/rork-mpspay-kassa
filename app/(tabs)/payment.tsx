@@ -360,7 +360,7 @@ export default function PaymentScreen() {
           {/* Header - Updated for large devices */}
           <View style={[styles.header, isLargeDevice && styles.headerLarge]}>
             <Image 
-              source={{ uri: IMAGES.LOGO }} 
+              source={IMAGES.PAYMENT_LOGO} 
               style={styles.logo} 
               resizeMode="contain"
             />
