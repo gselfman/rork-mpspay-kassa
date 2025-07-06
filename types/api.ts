@@ -5,18 +5,18 @@ export interface Credentials {
   clientId: string;
   currencyAccountGuid: string;
   merchantName?: string;
-  clientSecret?: string; // Made optional for compatibility
-  commentNumber?: number; // Added for export/import functionality
-  apiKey?: string; // Added for API key
-  secretKey?: string; // Added for secret key
-  accountNumber?: string; // Added for account number
-  accountGuid?: string; // Added for account GUID
+  clientSecret?: string;
+  commentNumber?: number;
+  apiKey?: string;
+  secretKey?: string;
+  accountNumber?: string;
+  accountGuid?: string;
 }
 
 export interface Transaction {
   id: string;
   amount: number;
-  status: 'pending' | 'completed' | 'failed' | number; // Allow both string and number status
+  status: 'pending' | 'completed' | 'failed' | number;
   createdAt: string;
   customerInfo?: string;
   merchantName?: string;
@@ -29,9 +29,9 @@ export interface Transaction {
     price: number;
     quantity: number;
   }[];
-  credentials?: Credentials; // Added for API calls that need credentials
-  commission?: number; // Added for commission information
-  finishedAt?: string; // Added for completion time
+  credentials?: Credentials;
+  commission?: number;
+  finishedAt?: string;
 }
 
 export interface Product {
@@ -62,27 +62,26 @@ export interface Balance {
   accountName?: string;
 }
 
-// Alias for Balance to maintain compatibility
 export type AccountBalance = Balance;
 
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
-  message?: string; // Added for MPSPAY API responses
-  value?: any; // Added for MPSPAY API responses with nested value
-  isSuccess?: boolean; // Added for MPSPAY API responses
-  isFailure?: boolean; // Added for MPSPAY API responses
-  failures?: any[]; // Added for MPSPAY API responses
+  message?: string;
+  value?: any;
+  isSuccess?: boolean;
+  isFailure?: boolean;
+  failures?: any[];
 }
 
 export interface ValidationResult {
   success: boolean;
   error?: string;
   step?: number;
-  data?: any; // Added to store API response data
-  rawResponse?: string; // Added to store the raw API response for debugging
-  statusCode?: number; // Added to store the HTTP status code
+  data?: any;
+  rawResponse?: string;
+  statusCode?: number;
 }
 
 export interface ShareReceiptOptions {
@@ -95,9 +94,9 @@ export interface CheckTransactionResult {
   found: boolean;
   transaction?: Transaction;
   error?: string;
-  status?: number; // Added for MPSPAY API responses
-  tag?: string; // Added for MPSPAY API responses
-  rawResponse?: string; // Added to store the raw API response for debugging
+  status?: number;
+  tag?: string;
+  rawResponse?: string;
 }
 
 export interface WithdrawalRequest {
@@ -109,21 +108,21 @@ export interface WithdrawalRequest {
   telegramContact?: string;
   createdAt?: string;
   status?: 'pending' | 'completed' | 'rejected';
-  bankDetails?: string; // Added for bank details
+  bankDetails?: string;
 }
 
 export interface WithdrawalResult {
   success: boolean;
   withdrawal?: Withdrawal;
   error?: string;
-  rawResponse?: string; // Added to store the raw API response for debugging
+  rawResponse?: string;
 }
 
 export interface PaymentRequest {
   amount: number;
   customerInfo?: string;
   products?: {
-    id: string; // Made required to fix type issues
+    id: string;
     name: string;
     price: number;
     quantity: number;
@@ -135,7 +134,7 @@ export interface PaymentResult {
   success: boolean;
   transaction?: Transaction;
   error?: string;
-  rawResponse?: string; // Added to store the raw API response for debugging
+  rawResponse?: string;
 }
 
 export interface PaymentHistoryItem {
@@ -202,9 +201,6 @@ export interface EmailReceiptRequest {
   products?: Array<{id: string, name: string, price: number, quantity: number}>;
 }
 
-/**
- * SMTP Configuration for email sending
- */
 export interface SmtpConfig {
   host: string;
   port: number;

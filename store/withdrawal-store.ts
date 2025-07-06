@@ -66,7 +66,6 @@ export const useWithdrawalStore = create<WithdrawalState>()(
       storage: createJSONStorage(() => AsyncStorage),
       migrate: (persistedState: any, version: number): PersistedWithdrawalState => {
         try {
-          // Version 1: Initial version with validation
           if (version === 0 || !version) {
             const validatedRequests = persistedState?.requests 
               ? validateWithdrawalRequests(persistedState.requests)
@@ -77,7 +76,6 @@ export const useWithdrawalStore = create<WithdrawalState>()(
             };
           }
           
-          // Future versions can be handled here
           return persistedState as PersistedWithdrawalState;
         } catch (error) {
           console.warn('Withdrawal store migration failed:', error);

@@ -29,7 +29,6 @@ export const ProductItem: React.FC<ProductItemProps> = ({
 }) => {
   const theme = darkMode ? colors.dark : colors.light;
 
-  // Fix for web compatibility - remove responder props on web
   const webSafeProps = Platform.OS === 'web' 
     ? { onStartShouldSetResponder: undefined, onResponderGrant: undefined, 
         onResponderMove: undefined, onResponderRelease: undefined, onResponderTerminate: undefined } 

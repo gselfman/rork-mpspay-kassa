@@ -53,10 +53,8 @@ export const useTransactionStore = create<TransactionState>()(
       
       addTransaction: (transaction: Transaction) => {
         set((state) => {
-          // Check if transaction already exists
           const existingIndex = state.transactions.findIndex(t => t.id === transaction.id);
           if (existingIndex >= 0) {
-            // Update existing transaction but preserve paymentUrl if it exists and the new one doesn't
             const updatedTransactions = [...state.transactions];
             if (!transaction.paymentUrl && updatedTransactions[existingIndex].paymentUrl) {
               transaction.paymentUrl = updatedTransactions[existingIndex].paymentUrl;
@@ -64,7 +62,6 @@ export const useTransactionStore = create<TransactionState>()(
             updatedTransactions[existingIndex] = transaction;
             return { transactions: updatedTransactions };
           } else {
-            // Add new transaction
             return { transactions: [transaction, ...state.transactions] };
           }
         });
@@ -74,8 +71,6 @@ export const useTransactionStore = create<TransactionState>()(
         set((state) => {
           const existingTransaction = state.transactions.find(t => t.id === transaction.id);
           
-          // If the transaction exists and has a paymentUrl but the new one doesn't,
-          // preserve the existing paymentUrl
           if (existingTransaction && existingTransaction.paymentUrl && !transaction.paymentUrl) {
             transaction.paymentUrl = existingTransaction.paymentUrl;
           }
@@ -104,7 +99,6 @@ export const useTransactionStore = create<TransactionState>()(
       storage: createJSONStorage(() => AsyncStorage),
       migrate: (persistedState: any, version: number): PersistedTransactionState => {
         try {
-          // Version 1: Initial version with validation
           if (version === 0 || !version) {
             const validatedTransactions = persistedState?.transactions 
               ? validateTransactions(persistedState.transactions)
@@ -115,7 +109,6 @@ export const useTransactionStore = create<TransactionState>()(
             };
           }
           
-          // Future versions can be handled here
           return persistedState as PersistedTransactionState;
         } catch (error) {
           console.warn('Transaction store migration failed:', error);

@@ -40,7 +40,6 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
-// Utility function to format file size
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -126,7 +125,6 @@ export default function SettingsScreen() {
       return;
     }
 
-    // Show warning about sensitive data
     Alert.alert(
       language === 'en' ? 'Export Configuration' : 'Экспорт конфигурации',
       language === 'en' 
@@ -162,7 +160,11 @@ export default function SettingsScreen() {
           currencyAccountNumber: credentials?.currencyAccountNumber || '',
           currencyAccountGuid: credentials?.currencyAccountGuid || '',
           currencyCode: credentials?.currencyCode || '643',
-          commentNumber: credentials?.commentNumber || 1
+          commentNumber: credentials?.commentNumber || 1,
+          apiKey: credentials?.apiKey || credentials?.readOnlyAccessKey || '',
+          secretKey: credentials?.secretKey || credentials?.clientSecret || '',
+          accountNumber: credentials?.accountNumber || credentials?.currencyAccountNumber || '',
+          accountGuid: credentials?.accountGuid || credentials?.currencyAccountGuid || ''
         },
         settings: {
           language,
@@ -188,7 +190,6 @@ export default function SettingsScreen() {
       const fileName = `kassa-config-${timestamp}.json`;
 
       if (Platform.OS === 'web') {
-        // Web export - trigger download
         const blob = new Blob([configJson], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -207,7 +208,6 @@ export default function SettingsScreen() {
             : `Файл конфигурации "${fileName}" был загружен.`
         );
       } else {
-        // Mobile export - use FileSystem and Sharing
         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(fileUri, configJson);
         
@@ -266,7 +266,6 @@ export default function SettingsScreen() {
       let fileName = '';
 
       if (Platform.OS === 'web') {
-        // Web import - file picker
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json,application/json';
@@ -303,7 +302,6 @@ export default function SettingsScreen() {
         configContent = result.content;
         fileName = result.name;
       } else {
-        // Mobile import - use DocumentPicker and FileSystem
         const result = await DocumentPicker.getDocumentAsync({
           type: ['application/json', 'text/json'],
           copyToCacheDirectory: true,
@@ -325,7 +323,6 @@ export default function SettingsScreen() {
         configContent = await FileSystem.readAsStringAsync(asset.uri);
       }
 
-      // Parse and validate configuration
       let configuration;
       try {
         configuration = JSON.parse(configContent);
@@ -341,7 +338,6 @@ export default function SettingsScreen() {
         throw new Error('Configuration file is missing credentials');
       }
 
-      // Show preview and confirm
       const productCount = configuration.products?.length || 0;
       const exportDate = configuration.exportDate ? new Date(configuration.exportDate).toLocaleDateString() : 'Unknown';
       
@@ -383,9 +379,7 @@ export default function SettingsScreen() {
     try {
       let appliedItems = [];
       
-      // Apply credentials
       if (configuration.credentials) {
-        // Validate credentials before applying
         const requiredFields = ['clientId', 'readOnlyAccessKey', 'currencyAccountNumber', 'currencyAccountGuid'];
         const missingFields = requiredFields.filter(field => !configuration.credentials[field]);
         
@@ -397,7 +391,6 @@ export default function SettingsScreen() {
         appliedItems.push(language === 'en' ? 'Credentials' : 'Учетные данные');
       }
 
-      // Apply settings
       if (configuration.settings) {
         if (configuration.settings.language && configuration.settings.language !== language) {
           setLanguage(configuration.settings.language);
@@ -409,9 +402,7 @@ export default function SettingsScreen() {
         }
       }
 
-      // Apply products
       if (configuration.products && Array.isArray(configuration.products)) {
-        // Validate products before importing
         const validProducts = configuration.products.filter((product: any) => {
           return product && 
                  typeof product.name === 'string' && 
@@ -502,7 +493,6 @@ export default function SettingsScreen() {
       
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          {/* Header */}
           <View style={styles.header}>
             <Image 
               source={IMAGES.LOGO_SET} 
@@ -517,7 +507,6 @@ export default function SettingsScreen() {
             </Text>
           </View>
           
-          {/* Profile Section */}
           <Card style={styles.profileCard}>
             <View style={styles.profileInfo}>
               <View style={[styles.profileAvatar, { backgroundColor: theme.primary + '20' }]}>
@@ -541,7 +530,6 @@ export default function SettingsScreen() {
             />
           </Card>
           
-          {/* App Settings */}
           <Card style={styles.settingsCard}>
             <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
               {language === 'en' ? 'App Settings' : 'Настройки приложения'}
@@ -562,7 +550,6 @@ export default function SettingsScreen() {
             )}
           </Card>
           
-          {/* Products Management */}
           <Card style={styles.settingsCard}>
             <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
               {language === 'en' ? 'Products' : 'Товары'}
@@ -576,7 +563,6 @@ export default function SettingsScreen() {
             )}
           </Card>
 
-          {/* Configuration Management */}
           <Card style={styles.settingsCard}>
             <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
               {language === 'en' ? 'Configuration' : 'Конфигурация'}
@@ -599,7 +585,6 @@ export default function SettingsScreen() {
             )}
           </Card>
           
-          {/* Security */}
           <Card style={styles.settingsCard}>
             <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
               {language === 'en' ? 'Security' : 'Безопасность'}
@@ -616,7 +601,6 @@ export default function SettingsScreen() {
             )}
           </Card>
           
-          {/* Support */}
           <Card style={styles.settingsCard}>
             <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
               {language === 'en' ? 'Support' : 'Поддержка'}
@@ -652,7 +636,6 @@ export default function SettingsScreen() {
             )}
           </Card>
           
-          {/* Logout */}
           <Card style={styles.logoutCard}>
             <Button
               title={language === 'en' ? 'Logout' : 'Выйти'}
