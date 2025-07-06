@@ -40,29 +40,22 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
-// Type declarations for Telegram properties
-declare global {
-  interface Window {
-    TelegramWebviewProxy?: any;
-    TelegramWebApp?: any;
-    Telegram?: any;
-  }
-}
-
 // Environment detection function
 const detectEnvironment = () => {
-  // Check if we're in Telegram Mini App
+  // Check for Telegram Mini App
   if (typeof window !== 'undefined' && 
-      (window.TelegramWebviewProxy || window.TelegramWebApp || window.Telegram)) {
+      ((window as any).TelegramWebviewProxy || (window as any).TelegramWebApp || (window as any).Telegram)) {
     return 'telegram';
   }
   
-  // Check if we're in a regular web browser
-  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  // Check for web browser capabilities
+  if (typeof window !== 'undefined' && 
+      typeof document !== 'undefined' && 
+      typeof Blob !== 'undefined' && 
+      typeof URL !== 'undefined') {
     return 'web';
   }
   
-  // Mobile platform
   return 'mobile';
 };
 
@@ -143,36 +136,17 @@ export default function SettingsScreen() {
   };
 
   const handleExportConfiguration = () => {
-    console.log('Export button clicked!');
-    
-    // Simple test first
-    Alert.alert(
-      'Export Test',
-      'Export button is working! Click OK to proceed with actual export.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'OK',
-          onPress: () => {
-            if (!credentials) {
-              Alert.alert(
-                language === 'en' ? 'Error' : 'Ошибка',
-                language === 'en' ? 'No configuration to export. Please set up your credentials first.' : 'Нет конфигурации для экспорта. Пожалуйста, сначала настройте учетные данные.'
-              );
-              return;
-            }
-            performExport();
-          }
-        }
-      ]
-    );
+    if (!credentials) {
+      Alert.alert(
+        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' ? 'No configuration to export. Please set up your credentials first.' : 'Нет конфигурации для экспорта. Пожалуйста, сначала настройте учетные данные.'
+      );
+      return;
+    }
+    performExport();
   };
 
   const performExport = async () => {
-    console.log('performExport called');
     setIsExporting(true);
     
     try {
@@ -189,10 +163,10 @@ export default function SettingsScreen() {
           currencyAccountGuid: credentials?.currencyAccountGuid || '',
           currencyCode: credentials?.currencyCode || '643',
           commentNumber: credentials?.commentNumber || undefined,
-          apiKey: credentials?.apiKey || credentials?.readOnlyAccessKey || '',
-          secretKey: credentials?.secretKey || credentials?.clientSecret || '',
-          accountNumber: credentials?.accountNumber || credentials?.currencyAccountNumber || '',
-          accountGuid: credentials?.accountGuid || credentials?.currencyAccountGuid || ''
+          apiKey: credentials?.readOnlyAccessKey || '',
+          secretKey: credentials?.clientSecret || '',
+          accountNumber: credentials?.currencyAccountNumber || '',
+          accountGuid: credentials?.currencyAccountGuid || ''
         },
         settings: {
           language,
@@ -217,34 +191,47 @@ export default function SettingsScreen() {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
       const fileName = `kassa-config-${timestamp}.json`;
       
-      // Try web download first
-      if (Platform.OS === 'web') {
-        try {
-          const blob = new Blob([configJson], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          
-          Alert.alert(
-            language === 'en' ? 'Export Successful' : 'Экспорт успешен',
-            language === 'en' 
-              ? `Configuration file "${fileName}" has been downloaded.`
-              : `Файл конфигурации "${fileName}" был загружен.`
-          );
-          return;
-        } catch (webError) {
-          console.log('Web download failed:', webError);
-        }
-      }
+      const environment = detectEnvironment();
       
-      // Mobile platform or web fallback
-      try {
+      if (environment === 'web') {
+        // Web browser download
+        const blob = new Blob([configJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        Alert.alert(
+          language === 'en' ? 'Export Successful' : 'Экспорт успешен',
+          language === 'en' 
+            ? `Configuration file "${fileName}" has been downloaded.`
+            : `Файл конфигурации "${fileName}" был загружен.`
+        );
+      } else if (environment === 'telegram') {
+        // Telegram Mini App - copy to clipboard
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(configJson);
+          Alert.alert(
+            language === 'en' ? 'Configuration Copied' : 'Конфигурация скопирована',
+            language === 'en' 
+              ? 'Configuration has been copied to clipboard. You can paste it into a text file.'
+              : 'Конфигурация скопирована в буфер обмена. Вы можете вставить её в текстовый файл.'
+          );
+        } else {
+          // Show config in alert for manual copying
+          Alert.alert(
+            language === 'en' ? 'Export Configuration' : 'Экспорт конфигурации',
+            configJson.substring(0, 500) + '...\n\n' + 
+            (language === 'en' ? 'Copy this text and save it manually.' : 'Скопируйте этот текст и сохраните вручную.')
+          );
+        }
+      } else {
+        // Mobile platform
         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(fileUri, configJson);
         
@@ -261,31 +248,14 @@ export default function SettingsScreen() {
               : `Конфигурация сохранена в: ${fileUri}`
           );
         }
-      } catch (mobileError) {
-        console.log('Mobile export failed:', mobileError);
-        // Final fallback: copy to clipboard
-        Alert.alert(
-          language === 'en' ? 'Export Data' : 'Данные экспорта',
-          language === 'en' 
-            ? 'Copy this configuration data and save it manually:'
-            : 'Скопируйте эти данные конфигурации:',
-          [
-            {
-              text: language === 'en' ? 'Show Data' : 'Показать данные',
-              onPress: () => {
-                Alert.alert('Configuration Data', configJson.substring(0, 1000) + '...');
-              }
-            }
-          ]
-        );
       }
     } catch (error) {
       console.error('Export error:', error);
       Alert.alert(
         language === 'en' ? 'Export Error' : 'Ошибка экспорта',
         language === 'en' 
-          ? `Failed to export configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
-          : `Не удалось экспортировать конфигурацию: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
+          ? `Failed to export: ${error instanceof Error ? error.message : 'Unknown error'}`
+          : `Ошибка экспорта: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
       );
     } finally {
       setIsExporting(false);
@@ -293,86 +263,94 @@ export default function SettingsScreen() {
   };
 
   const handleImportConfiguration = () => {
-    console.log('Import button clicked!');
-    
-    // Simple test first
     Alert.alert(
-      'Import Test',
-      'Import button is working! Click OK to proceed with actual import.',
+      language === 'en' ? 'Warning' : 'Предупреждение',
+      language === 'en' 
+        ? 'This will replace ALL current settings, credentials and products with data from the imported file.\n\nMake sure you exported your current configuration as backup before continuing.\n\nContinue with import?'
+        : 'Это заменит ВСЕ текущие настройки, учетные данные и товары данными из импортируемого файла.\n\nУбедитесь, что вы экспортировали текущую конфигурацию как резервную копию перед продолжением.\n\nПродолжить импорт?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'OK',
-          onPress: () => performImport()
-        }
+        { text: language === 'en' ? 'Cancel' : 'Отмена', style: 'cancel' },
+        { text: language === 'en' ? 'Import' : 'Импорт', onPress: performImport }
       ]
     );
   };
 
   const performImport = async () => {
-    console.log('performImport called');
     setIsImporting(true);
 
     try {
       let configContent = '';
       let fileName = '';
       
-      if (Platform.OS === 'web') {
-        // Web approach
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json,application/json';
-        input.multiple = false;
-        input.style.display = 'none';
+      const environment = detectEnvironment();
+      
+      if (environment === 'web' || environment === 'telegram') {
+        // Create a promise that resolves when file is selected
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json,application/json';
+        fileInput.style.display = 'none';
         
         const filePromise = new Promise<{content: string, name: string}>((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error('File selection timeout'));
-          }, 30000);
+          let resolved = false;
           
-          input.onchange = (event: any) => {
-            clearTimeout(timeout);
-            const file = event.target.files?.[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                const content = e.target?.result;
-                if (typeof content === 'string') {
-                  resolve({ content, name: file.name });
-                } else {
-                  reject(new Error('Failed to read file content'));
-                }
-              };
-              reader.onerror = () => reject(new Error('Failed to read file'));
-              reader.readAsText(file);
-            } else {
-              reject(new Error('No file selected'));
+          const cleanup = () => {
+            if (document.body.contains(fileInput)) {
+              document.body.removeChild(fileInput);
             }
           };
           
-          input.oncancel = () => {
-            clearTimeout(timeout);
-            reject(new Error('File selection cancelled'));
+          fileInput.onchange = (event: any) => {
+            if (resolved) return;
+            resolved = true;
+            
+            const file = event.target.files?.[0];
+            if (!file) {
+              cleanup();
+              reject(new Error('No file selected'));
+              return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              cleanup();
+              const content = e.target?.result;
+              if (typeof content === 'string') {
+                resolve({ content, name: file.name });
+              } else {
+                reject(new Error('Failed to read file content'));
+              }
+            };
+            reader.onerror = () => {
+              cleanup();
+              reject(new Error('Failed to read file'));
+            };
+            reader.readAsText(file);
           };
+          
+          // Handle file dialog cancellation
+          const checkCancellation = () => {
+            setTimeout(() => {
+              if (!resolved) {
+                resolved = true;
+                cleanup();
+                reject(new Error('File selection cancelled'));
+              }
+            }, 1000);
+          };
+          
+          document.body.appendChild(fileInput);
+          fileInput.click();
+          checkCancellation();
         });
 
-        document.body.appendChild(input);
-        input.click();
-        
-        try {
-          const result = await filePromise;
-          configContent = result.content;
-          fileName = result.name;
-        } finally {
-          document.body.removeChild(input);
-        }
+        const result = await filePromise;
+        configContent = result.content;
+        fileName = result.name;
       } else {
         // Mobile approach
         const result = await DocumentPicker.getDocumentAsync({
-          type: ['application/json', 'text/json', '*/*'],
+          type: ['application/json', 'text/json'],
           copyToCacheDirectory: true,
           multiple: false
         });
@@ -387,52 +365,38 @@ export default function SettingsScreen() {
         configContent = await FileSystem.readAsStringAsync(asset.uri);
       }
 
-      // Parse and validate configuration
+      // Parse and validate
       let configuration;
       try {
         configuration = JSON.parse(configContent);
       } catch (parseError) {
-        throw new Error('Invalid JSON format in configuration file');
+        throw new Error('Invalid JSON format');
       }
       
-      if (!configuration || typeof configuration !== 'object') {
-        throw new Error('Configuration file does not contain valid data');
-      }
-      
-      if (!configuration.credentials) {
+      if (!configuration?.credentials) {
         throw new Error('Configuration file is missing credentials');
       }
 
-      // Show preview and confirmation
+      // Show preview and apply
       const productCount = configuration.products?.length || 0;
-      const previewMessage = language === 'en' 
-        ? `Import Configuration from "${fileName}"?\n\nContains:\n• Credentials and API keys\n• ${productCount} products\n• App settings\n\n⚠️ This will replace ALL current data!\n\nContinue?`
-        : `Импортировать конфигурацию из "${fileName}"?\n\nСодержит:\n• Учетные данные и API ключи\n• ${productCount} товаров\n• Настройки приложения\n\n⚠️ Это заменит ВСЕ текущие данные!\n\nПродолжить?`;
-
       Alert.alert(
         language === 'en' ? 'Confirm Import' : 'Подтвердить импорт',
-        previewMessage,
+        language === 'en' 
+          ? `Import from "${fileName}"?\n\n• Credentials\n• ${productCount} products\n• Settings\n\n⚠️ This will replace ALL current data!`
+          : `Импорт из "${fileName}"?\n\n• Учетные данные\n• ${productCount} товаров\n• Настройки\n\n⚠️ Это заменит ВСЕ текущие данные!`,
         [
-          {
-            text: language === 'en' ? 'Cancel' : 'Отмена',
-            style: 'cancel'
-          },
-          {
-            text: language === 'en' ? 'Import' : 'Импортировать',
-            style: 'destructive',
-            onPress: () => applyConfiguration(configuration)
-          }
+          { text: language === 'en' ? 'Cancel' : 'Отмена', style: 'cancel' },
+          { text: language === 'en' ? 'Import' : 'Импорт', onPress: () => applyConfiguration(configuration) }
         ]
       );
 
     } catch (error) {
       console.error('Import error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       Alert.alert(
         language === 'en' ? 'Import Error' : 'Ошибка импорта',
         language === 'en' 
-          ? `Failed to import configuration: ${errorMessage}`
-          : `Не удалось импортировать конфигурацию: ${errorMessage}`
+          ? `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          : `Ошибка импорта: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
       );
     } finally {
       setIsImporting(false);

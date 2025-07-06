@@ -4,6 +4,11 @@ export interface TRPCContext {
   // Add context properties here if needed
 }
 
+// Create context function for tRPC
+export const createContext = () => {
+  return {} as TRPCContext;
+};
+
 const t = initTRPC.context<TRPCContext>().create();
 
 export const router = t.router;
