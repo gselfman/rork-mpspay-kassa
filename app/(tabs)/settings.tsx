@@ -40,11 +40,20 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
+// Type declarations for Telegram properties
+declare global {
+  interface Window {
+    TelegramWebviewProxy?: any;
+    TelegramWebApp?: any;
+    Telegram?: any;
+  }
+}
+
 // Environment detection function
 const detectEnvironment = () => {
   // Check if we're in Telegram Mini App
   if (typeof window !== 'undefined' && 
-      (window['TelegramWebviewProxy'] || window['TelegramWebApp'] || window['Telegram'])) {
+      (window.TelegramWebviewProxy || window.TelegramWebApp || window.Telegram)) {
     return 'telegram';
   }
   
@@ -133,35 +142,37 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleExportConfiguration = async () => {
-    if (!credentials) {
-      Alert.alert(
-        language === 'en' ? 'Error' : 'Ошибка',
-        language === 'en' ? 'No configuration to export. Please set up your credentials first.' : 'Нет конфигурации для экспорта. Пожалуйста, сначала настройте учетные данные.'
-      );
-      return;
-    }
-
+  const handleExportConfiguration = () => {
+    console.log('Export button clicked!');
+    
+    // Simple test first
     Alert.alert(
-      language === 'en' ? 'Export Configuration' : 'Экспорт конфигурации',
-      language === 'en' 
-        ? '⚠️ Security Warning\n\nThis file will contain sensitive data including API keys and credentials. Keep it secure and do not share it publicly.\n\nContinue with export?'
-        : '⚠️ Предупреждение безопасности\n\nЭтот файл будет содержать конфиденциальные данные, включая API ключи и учетные данные. Храните его в безопасности и не делитесь им публично.\n\nПродолжить экспорт?',
+      'Export Test',
+      'Export button is working! Click OK to proceed with actual export.',
       [
         {
-          text: language === 'en' ? 'Cancel' : 'Отмена',
+          text: 'Cancel',
           style: 'cancel'
         },
         {
-          text: language === 'en' ? 'Export' : 'Экспорт',
-          style: 'default',
-          onPress: performExport
+          text: 'OK',
+          onPress: () => {
+            if (!credentials) {
+              Alert.alert(
+                language === 'en' ? 'Error' : 'Ошибка',
+                language === 'en' ? 'No configuration to export. Please set up your credentials first.' : 'Нет конфигурации для экспорта. Пожалуйста, сначала настройте учетные данные.'
+              );
+              return;
+            }
+            performExport();
+          }
         }
       ]
     );
   };
 
   const performExport = async () => {
+    console.log('performExport called');
     setIsExporting(true);
     
     try {
@@ -176,7 +187,12 @@ export default function SettingsScreen() {
           clientSecret: credentials?.clientSecret || '',
           currencyAccountNumber: credentials?.currencyAccountNumber || '',
           currencyAccountGuid: credentials?.currencyAccountGuid || '',
-          currencyCode: credentials?.currencyCode || '643'
+          currencyCode: credentials?.currencyCode || '643',
+          commentNumber: credentials?.commentNumber || undefined,
+          apiKey: credentials?.apiKey || credentials?.readOnlyAccessKey || '',
+          secretKey: credentials?.secretKey || credentials?.clientSecret || '',
+          accountNumber: credentials?.accountNumber || credentials?.currencyAccountNumber || '',
+          accountGuid: credentials?.accountGuid || credentials?.currencyAccountGuid || ''
         },
         settings: {
           language,
@@ -201,10 +217,8 @@ export default function SettingsScreen() {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
       const fileName = `kassa-config-${timestamp}.json`;
       
-      const environment = detectEnvironment();
-      
-      if (environment === 'web' || environment === 'telegram') {
-        // Always use download approach for web/telegram
+      // Try web download first
+      if (Platform.OS === 'web') {
         try {
           const blob = new Blob([configJson], { type: 'application/json' });
           const url = URL.createObjectURL(blob);
@@ -223,55 +237,47 @@ export default function SettingsScreen() {
               ? `Configuration file "${fileName}" has been downloaded.`
               : `Файл конфигурации "${fileName}" был загружен.`
           );
+          return;
         } catch (webError) {
-          // Fallback: show JSON in alert for copying
-          Alert.alert(
-            language === 'en' ? 'Export Data' : 'Данные экспорта',
-            language === 'en' 
-              ? 'Copy this configuration data and save it manually:'
-              : 'Скопируйте эти данные конфигурации и сохраните вручную:',
-            [
-              {
-                text: language === 'en' ? 'Copy' : 'Копировать',
-                onPress: () => {
-                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                    navigator.clipboard.writeText(configJson);
-                  }
-                }
-              }
-            ]
-          );
+          console.log('Web download failed:', webError);
         }
-      } else {
-        // Mobile platform - use file system + multiple sharing options
+      }
+      
+      // Mobile platform or web fallback
+      try {
         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(fileUri, configJson);
         
-        // Try multiple sharing methods
-        let shareSuccess = false;
-        
-        // Method 1: Try expo-sharing
-        try {
-          if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(fileUri, {
-              mimeType: 'application/json',
-              dialogTitle: language === 'en' ? 'Save Configuration File' : 'Сохранить файл конфигурации'
-            });
-            shareSuccess = true;
-          }
-        } catch (sharingError) {
-          console.log('Sharing failed, trying alternative:', sharingError);
-        }
-        
-        // Method 2: If sharing failed, show file location
-        if (!shareSuccess) {
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/json',
+            dialogTitle: language === 'en' ? 'Save Configuration File' : 'Сохранить файл конфигурации'
+          });
+        } else {
           Alert.alert(
             language === 'en' ? 'Export Complete' : 'Экспорт завершен',
             language === 'en' 
-              ? `Configuration saved to: ${fileUri}\n\nYou can find this file in your device's file manager.`
-              : `Конфигурация сохранена в: ${fileUri}\n\nВы можете найти этот файл в файловом менеджере устройства.`
+              ? `Configuration saved to: ${fileUri}`
+              : `Конфигурация сохранена в: ${fileUri}`
           );
         }
+      } catch (mobileError) {
+        console.log('Mobile export failed:', mobileError);
+        // Final fallback: copy to clipboard
+        Alert.alert(
+          language === 'en' ? 'Export Data' : 'Данные экспорта',
+          language === 'en' 
+            ? 'Copy this configuration data and save it manually:'
+            : 'Скопируйте эти данные конфигурации:',
+          [
+            {
+              text: language === 'en' ? 'Show Data' : 'Показать данные',
+              onPress: () => {
+                Alert.alert('Configuration Data', configJson.substring(0, 1000) + '...');
+              }
+            }
+          ]
+        );
       }
     } catch (error) {
       console.error('Export error:', error);
@@ -286,37 +292,36 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleImportConfiguration = async () => {
+  const handleImportConfiguration = () => {
+    console.log('Import button clicked!');
+    
+    // Simple test first
     Alert.alert(
-      language === 'en' ? 'Import Configuration' : 'Импорт конфигурации',
-      language === 'en' 
-        ? '⚠️ Warning\n\nThis will replace ALL current settings, credentials, and products with data from the imported file.\n\nMake sure you have exported your current configuration as backup before proceeding.\n\nContinue with import?'
-        : '⚠️ Предупреждение\n\nЭто заменит ВСЕ текущие настройки, учетные данные и товары данными из импортируемого файла.\n\nУбедитесь, что вы экспортировали текущую конфигурацию как резервную копию перед продолжением.\n\nПродолжить импорт?',
+      'Import Test',
+      'Import button is working! Click OK to proceed with actual import.',
       [
         {
-          text: language === 'en' ? 'Cancel' : 'Отмена',
+          text: 'Cancel',
           style: 'cancel'
         },
         {
-          text: language === 'en' ? 'Import' : 'Импорт',
-          style: 'destructive',
-          onPress: performImport
+          text: 'OK',
+          onPress: () => performImport()
         }
       ]
     );
   };
 
   const performImport = async () => {
+    console.log('performImport called');
     setIsImporting(true);
 
     try {
       let configContent = '';
       let fileName = '';
       
-      const environment = detectEnvironment();
-      
-      if (environment === 'web' || environment === 'telegram') {
-        // Web/Telegram approach
+      if (Platform.OS === 'web') {
+        // Web approach
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json,application/json';
@@ -326,17 +331,12 @@ export default function SettingsScreen() {
         const filePromise = new Promise<{content: string, name: string}>((resolve, reject) => {
           const timeout = setTimeout(() => {
             reject(new Error('File selection timeout'));
-          }, 30000); // 30 second timeout
+          }, 30000);
           
           input.onchange = (event: any) => {
             clearTimeout(timeout);
             const file = event.target.files?.[0];
             if (file) {
-              if (!file.name.toLowerCase().endsWith('.json')) {
-                reject(new Error('Please select a JSON file'));
-                return;
-              }
-              
               const reader = new FileReader();
               reader.onload = (e) => {
                 const content = e.target?.result;
@@ -359,7 +359,6 @@ export default function SettingsScreen() {
           };
         });
 
-        // Add to DOM and trigger click
         document.body.appendChild(input);
         input.click();
         
@@ -373,7 +372,7 @@ export default function SettingsScreen() {
       } else {
         // Mobile approach
         const result = await DocumentPicker.getDocumentAsync({
-          type: ['application/json', 'text/json', '*/*'], // Accept all files as fallback
+          type: ['application/json', 'text/json', '*/*'],
           copyToCacheDirectory: true,
           multiple: false
         });
@@ -385,11 +384,6 @@ export default function SettingsScreen() {
 
         const asset = result.assets[0];
         fileName = asset.name;
-        
-        if (!fileName.toLowerCase().endsWith('.json')) {
-          throw new Error('Please select a JSON configuration file');
-        }
-
         configContent = await FileSystem.readAsStringAsync(asset.uri);
       }
 
