@@ -9,7 +9,8 @@ export interface Credentials {
   clientId: string;
   currencyAccountGuid: string;
   merchantName?: string;
-  clientSecret?: string; // Added as optional
+  clientSecret?: string;
+  commentNumber?: number;
 }
 
 interface AuthState {
@@ -18,6 +19,7 @@ interface AuthState {
   isInitialized: boolean;
   setCredentials: (credentials: Credentials) => void;
   updateCredentials: (credentials: Credentials) => void;
+  importCredentials: (credentials: Credentials) => void;
   logout: () => void;
 }
 
@@ -38,6 +40,14 @@ export const useAuthStore = create<AuthState>()(
       
       updateCredentials: (credentials: Credentials) => {
         set({ credentials: credentials });
+      },
+      
+      importCredentials: (credentials: Credentials) => {
+        set({ 
+          credentials: credentials,
+          isAuthenticated: true,
+          isInitialized: true
+        });
       },
       
       logout: () => {

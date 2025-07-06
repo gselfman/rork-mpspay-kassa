@@ -40,12 +40,21 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
+// Utility function to format file size
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
 export default function SettingsScreen() {
   const router = useRouter();
-  const { credentials, logout } = useAuthStore();
+  const { credentials, logout, importCredentials } = useAuthStore();
   const { language, setLanguage } = useLanguageStore();
   const { darkMode, toggleDarkMode } = useThemeStore();
-  const { products } = useProductStore();
+  const { products, importProducts } = useProductStore();
   const theme = darkMode ? colors.dark : colors.light;
   
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -112,7 +121,7 @@ export default function SettingsScreen() {
     if (!credentials) {
       Alert.alert(
         language === 'en' ? 'Error' : 'Ошибка',
-        language === 'en' ? 'No configuration to export' : 'Нет конфигурации для экспорта'
+        language === 'en' ? 'No configuration to export. Please set up your credentials first.' : 'Нет конфигурации для экспорта. Пожалуйста, сначала настройте учетные данные.'
       );
       return;
     }
@@ -121,15 +130,16 @@ export default function SettingsScreen() {
     Alert.alert(
       language === 'en' ? 'Export Configuration' : 'Экспорт конфигурации',
       language === 'en' 
-        ? 'This file will contain sensitive data including API keys and credentials. Keep it secure.'
-        : 'Этот файл будет содержать конфиденциальные данные, включая API ключи и учетные данные. Храните его в безопасности.',
+        ? '⚠️ Security Warning\n\nThis file will contain sensitive data including API keys and credentials. Keep it secure and do not share it publicly.\n\nContinue with export?'
+        : '⚠️ Предупреждение безопасности\n\nЭтот файл будет содержать конфиденциальные данные, включая API ключи и учетные данные. Храните его в безопасности и не делитесь им публично.\n\nПродолжить экспорт?',
       [
         {
           text: language === 'en' ? 'Cancel' : 'Отмена',
           style: 'cancel'
         },
         {
-          text: language === 'en' ? 'Export' : 'Экспортировать',
+          text: language === 'en' ? 'Export' : 'Экспорт',
+          style: 'default',
           onPress: performExport
         }
       ]
@@ -143,6 +153,7 @@ export default function SettingsScreen() {
       const configuration = {
         version: '1.0',
         exportDate: new Date().toISOString(),
+        appName: 'MPSPAY Kassa',
         credentials: {
           clientId: credentials?.clientId || '',
           merchantName: credentials?.merchantName || '',
@@ -164,30 +175,56 @@ export default function SettingsScreen() {
           description: product.description || '',
           sku: product.sku || '',
           imageUrl: product.imageUrl || ''
-        }))
+        })),
+        statistics: {
+          totalProducts: products.length,
+          exportedBy: credentials?.merchantName || 'Unknown',
+          exportTimestamp: Date.now()
+        }
       };
 
       const configJson = JSON.stringify(configuration, null, 2);
-      const fileName = `mpspay_config_${new Date().toISOString().split('T')[0]}.json`;
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+      const fileName = `kassa-config-${timestamp}.json`;
 
       if (Platform.OS === 'web') {
-        // Web export
-        const blob = new Blob([configJson], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        // Web export - trigger download
+        try {
+          const blob = new Blob([configJson], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          
+          // Clean up
+          setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }, 100);
+          
+          Alert.alert(
+            language === 'en' ? 'Export Successful' : 'Экспорт успешен',
+            language === 'en' 
+              ? `Configuration file "${fileName}" has been downloaded to your Downloads folder.`
+              : `Файл конфигурации "${fileName}" был загружен в папку Загрузки.`
+          );
+        } catch (webError) {
+          console.error('Web export error:', webError);
+          throw new Error('Failed to download file on web platform');
+        }
       } else {
-        // Mobile export
+        // Mobile export - use sharing
         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(fileUri, configJson);
         
         if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(fileUri);
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/json',
+            dialogTitle: language === 'en' ? 'Save Configuration File' : 'Сохранить файл конфигурации'
+          });
         } else {
           Alert.alert(
             language === 'en' ? 'Export Complete' : 'Экспорт завершен',
@@ -197,20 +234,13 @@ export default function SettingsScreen() {
           );
         }
       }
-
-      Alert.alert(
-        language === 'en' ? 'Success' : 'Успех',
-        language === 'en' 
-          ? 'Configuration exported successfully'
-          : 'Конфигурация успешно экспортирована'
-      );
     } catch (error) {
       console.error('Export error:', error);
       Alert.alert(
-        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' ? 'Export Error' : 'Ошибка экспорта',
         language === 'en' 
-          ? 'Failed to export configuration'
-          : 'Не удалось экспортировать конфигурацию'
+          ? `Failed to export configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
+          : `Не удалось экспортировать конфигурацию: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
       );
     } finally {
       setIsExporting(false);
@@ -221,15 +251,16 @@ export default function SettingsScreen() {
     Alert.alert(
       language === 'en' ? 'Import Configuration' : 'Импорт конфигурации',
       language === 'en' 
-        ? 'This will replace all current settings and products. Continue?'
-        : 'Это заменит все текущие настройки и товары. Продолжить?',
+        ? '⚠️ Warning\n\nThis will replace ALL current settings, credentials, and products with data from the imported file.\n\nMake sure you have exported your current configuration as backup before proceeding.\n\nContinue with import?'
+        : '⚠️ Предупреждение\n\nЭто заменит ВСЕ текущие настройки, учетные данные и товары данными из импортируемого файла.\n\nУбедитесь, что вы экспортировали текущую конфигурацию как резервную копию перед продолжением.\n\nПродолжить импорт?',
       [
         {
           text: language === 'en' ? 'Cancel' : 'Отмена',
           style: 'cancel'
         },
         {
-          text: language === 'en' ? 'Import' : 'Импортировать',
+          text: language === 'en' ? 'Import' : 'Импорт',
+          style: 'destructive',
           onPress: performImport
         }
       ]
@@ -241,34 +272,80 @@ export default function SettingsScreen() {
 
     try {
       let configContent = '';
+      let fileName = '';
 
       if (Platform.OS === 'web') {
-        // Web import
+        // Web import - file picker
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = '.json';
+        input.accept = '.json,application/json';
+        input.multiple = false;
         
-        const filePromise = new Promise<string>((resolve, reject) => {
+        const filePromise = new Promise<{content: string, name: string}>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('File selection timeout'));
+          }, 60000); // 60 second timeout
+          
           input.onchange = (event: any) => {
-            const file = event.target.files[0];
+            clearTimeout(timeout);
+            const file = event.target.files?.[0];
             if (file) {
+              if (!file.name.toLowerCase().endsWith('.json')) {
+                reject(new Error('Please select a JSON file'));
+                return;
+              }
+              if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                reject(new Error('File is too large. Maximum size is 10MB'));
+                return;
+              }
               const reader = new FileReader();
-              reader.onload = (e) => resolve(e.target?.result as string);
-              reader.onerror = reject;
+              reader.onload = (e) => {
+                const content = e.target?.result;
+                if (typeof content === 'string') {
+                  resolve({
+                    content,
+                    name: file.name
+                  });
+                } else {
+                  reject(new Error('Failed to read file content'));
+                }
+              };
+              reader.onerror = () => reject(new Error('Failed to read file'));
               reader.readAsText(file);
             } else {
               reject(new Error('No file selected'));
             }
           };
+          
+          // Handle user cancellation
+          const handleCancel = () => {
+            clearTimeout(timeout);
+            reject(new Error('File selection cancelled'));
+          };
+          
+          // Listen for focus return (indicates dialog was closed)
+          const handleFocus = () => {
+            setTimeout(() => {
+              if (!input.files || input.files.length === 0) {
+                handleCancel();
+              }
+              window.removeEventListener('focus', handleFocus);
+            }, 300);
+          };
+          
+          window.addEventListener('focus', handleFocus);
         });
 
         input.click();
-        configContent = await filePromise;
+        const result = await filePromise;
+        configContent = result.content;
+        fileName = result.name;
       } else {
-        // Mobile import
+        // Mobile import - document picker
         const result = await DocumentPicker.getDocumentAsync({
-          type: 'application/json',
-          copyToCacheDirectory: true
+          type: ['application/json', 'text/json', '*/*'], // Allow all files as fallback
+          copyToCacheDirectory: true,
+          multiple: false
         });
 
         if (result.canceled) {
@@ -276,31 +353,81 @@ export default function SettingsScreen() {
           return;
         }
 
-        configContent = await FileSystem.readAsStringAsync(result.assets[0].uri);
+        const asset = result.assets[0];
+        fileName = asset.name;
+        
+        if (!fileName.toLowerCase().endsWith('.json')) {
+          throw new Error('Please select a JSON configuration file');
+        }
+
+        configContent = await FileSystem.readAsStringAsync(asset.uri);
       }
 
       // Parse and validate configuration
-      const configuration = JSON.parse(configContent);
+      let configuration;
+      try {
+        configuration = JSON.parse(configContent);
+      } catch (parseError) {
+        throw new Error('Invalid JSON format in configuration file');
+      }
       
-      if (!configuration.version || !configuration.credentials) {
-        throw new Error('Invalid configuration file format');
+      // Validate required fields
+      if (!configuration.version) {
+        throw new Error('Configuration file is missing version information');
+      }
+      
+      if (!configuration.credentials) {
+        throw new Error('Configuration file is missing credentials');
+      }
+      
+      // Validate credentials structure
+      const requiredCredentialFields = ['clientId', 'readOnlyAccessKey', 'currencyAccountNumber', 'currencyAccountGuid'];
+      const missingFields = requiredCredentialFields.filter(field => !configuration.credentials[field]);
+      if (missingFields.length > 0) {
+        throw new Error(`Configuration is missing required credential fields: ${missingFields.join(', ')}`);
+      }
+      
+      // Validate products if present
+      if (configuration.products && !Array.isArray(configuration.products)) {
+        throw new Error('Products data in configuration file is invalid');
       }
 
-      // Show preview and confirm
+      // Show detailed preview and confirm
       const productCount = configuration.products?.length || 0;
+      const exportDate = configuration.exportDate ? new Date(configuration.exportDate).toLocaleDateString() : 'Unknown';
+      const exportedBy = configuration.statistics?.exportedBy || configuration.credentials?.merchantName || 'Unknown';
+      
       const previewMessage = language === 'en' 
-        ? `Configuration contains:
+        ? `Import Configuration from "${fileName}"?
+
+File Details:
+• Exported: ${exportDate}
+• Exported by: ${exportedBy}
+• Version: ${configuration.version}
+
+Contains:
 • Credentials and API keys
 • ${productCount} products
 • App settings
 
-Apply this configuration?`
-        : `Конфигурация содержит:
+⚠️ This will replace ALL current data!
+
+Continue with import?`
+        : `Импортировать конфигурацию из "${fileName}"?
+
+Детали файла:
+• Экспортирован: ${exportDate}
+• Экспортирован: ${exportedBy}
+• Версия: ${configuration.version}
+
+Содержит:
 • Учетные данные и API ключи
 • ${productCount} товаров
 • Настройки приложения
 
-Применить эту конфигурацию?`;
+⚠️ Это заменит ВСЕ текущие данные!
+
+Продолжить импорт?`;
 
       Alert.alert(
         language === 'en' ? 'Confirm Import' : 'Подтвердить импорт',
@@ -311,7 +438,8 @@ Apply this configuration?`
             style: 'cancel'
           },
           {
-            text: language === 'en' ? 'Apply' : 'Применить',
+            text: language === 'en' ? 'Import' : 'Импортировать',
+            style: 'destructive',
             onPress: () => applyConfiguration(configuration)
           }
         ]
@@ -319,11 +447,12 @@ Apply this configuration?`
 
     } catch (error) {
       console.error('Import error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       Alert.alert(
-        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' ? 'Import Error' : 'Ошибка импорта',
         language === 'en' 
-          ? 'Invalid configuration file or import failed'
-          : 'Неверный файл конфигурации или ошибка импорта'
+          ? `Failed to import configuration:\n${errorMessage}`
+          : `Не удалось импортировать конфигурацию:\n${errorMessage}`
       );
     } finally {
       setIsImporting(false);
@@ -332,41 +461,56 @@ Apply this configuration?`
 
   const applyConfiguration = async (configuration: any) => {
     try {
-      // Apply credentials (this would need to be implemented in auth store)
+      let appliedItems = [];
+      
+      // Apply credentials
       if (configuration.credentials) {
-        // Note: This would require updating the auth store to support setting credentials
-        console.log('Would apply credentials:', configuration.credentials);
+        importCredentials(configuration.credentials);
+        appliedItems.push(language === 'en' ? 'Credentials' : 'Учетные данные');
       }
 
       // Apply settings
       if (configuration.settings) {
-        if (configuration.settings.language !== language) {
+        if (configuration.settings.language && configuration.settings.language !== language) {
           setLanguage(configuration.settings.language);
+          appliedItems.push(language === 'en' ? 'Language' : 'Язык');
         }
-        if (configuration.settings.darkMode !== darkMode) {
+        if (typeof configuration.settings.darkMode === 'boolean' && configuration.settings.darkMode !== darkMode) {
           toggleDarkMode();
+          appliedItems.push(language === 'en' ? 'Theme' : 'Тема');
         }
       }
 
-      // Apply products (this would need to be implemented in product store)
-      if (configuration.products) {
-        // Note: This would require updating the product store to support bulk import
-        console.log('Would apply products:', configuration.products);
+      // Apply products
+      if (configuration.products && Array.isArray(configuration.products)) {
+        importProducts(configuration.products);
+        appliedItems.push(`${configuration.products.length} ${language === 'en' ? 'products' : 'товаров'}`);
       }
+
+      const appliedItemsText = appliedItems.length > 0 
+        ? appliedItems.join(', ')
+        : (language === 'en' ? 'No items' : 'Нет элементов');
 
       Alert.alert(
-        language === 'en' ? 'Success' : 'Успех',
+        language === 'en' ? 'Import Successful' : 'Импорт успешен',
         language === 'en' 
-          ? 'Configuration imported successfully. Please restart the app to apply all changes.'
-          : 'Конфигурация успешно импортирована. Пожалуйста, перезапустите приложение для применения всех изменений.'
+          ? `Successfully imported: ${appliedItemsText}\n\nSome changes may require restarting the app to take full effect.`
+          : `Успешно импортировано: ${appliedItemsText}\n\nНекоторые изменения могут потребовать перезапуска приложения для полного применения.`,
+        [
+          {
+            text: 'OK',
+            style: 'default'
+          }
+        ]
       );
     } catch (error) {
       console.error('Apply configuration error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       Alert.alert(
-        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' ? 'Apply Error' : 'Ошибка применения',
         language === 'en' 
-          ? 'Failed to apply configuration'
-          : 'Не удалось применить конфигурацию'
+          ? `Failed to apply configuration:\n${errorMessage}`
+          : `Не удалось применить конфигурацию:\n${errorMessage}`
       );
     }
   };
