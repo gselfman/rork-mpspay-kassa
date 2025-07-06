@@ -162,11 +162,7 @@ export default function SettingsScreen() {
           currencyAccountNumber: credentials?.currencyAccountNumber || '',
           currencyAccountGuid: credentials?.currencyAccountGuid || '',
           currencyCode: credentials?.currencyCode || '643',
-          commentNumber: credentials?.commentNumber || 1,
-          apiKey: credentials?.apiKey || credentials?.readOnlyAccessKey || '',
-          secretKey: credentials?.secretKey || credentials?.clientSecret || '',
-          accountNumber: credentials?.accountNumber || credentials?.currencyAccountNumber || '',
-          accountGuid: credentials?.accountGuid || credentials?.currencyAccountGuid || ''
+          commentNumber: credentials?.commentNumber || 1
         },
         settings: {
           language,
@@ -193,49 +189,23 @@ export default function SettingsScreen() {
 
       if (Platform.OS === 'web') {
         // Web export - trigger download
-        try {
-          // Check if required web APIs are available
-          if (typeof Blob === 'undefined' || typeof URL === 'undefined' || typeof document === 'undefined') {
-            throw new Error('Required web APIs are not available in this browser');
-          }
-          
-          const blob = new Blob([configJson], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = fileName;
-          link.style.display = 'none';
-          
-          // Check if document.body exists
-          if (!document.body) {
-            throw new Error('Document body is not available');
-          }
-          
-          document.body.appendChild(link);
-          link.click();
-          
-          // Clean up
-          setTimeout(() => {
-            try {
-              if (document.body && document.body.contains(link)) {
-                document.body.removeChild(link);
-              }
-              URL.revokeObjectURL(url);
-            } catch (cleanupError) {
-              console.warn('Cleanup error:', cleanupError);
-            }
-          }, 100);
-          
-          Alert.alert(
-            language === 'en' ? 'Export Successful' : 'Экспорт успешен',
-            language === 'en' 
-              ? `Configuration file "${fileName}" has been downloaded to your Downloads folder.`
-              : `Файл конфигурации "${fileName}" был загружен в папку Загрузки.`
-          );
-        } catch (webError) {
-          console.error('Web export error:', webError);
-          throw new Error(`Failed to download file on web platform: ${webError instanceof Error ? webError.message : 'Unknown error'}`);
-        }
+        const blob = new Blob([configJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        Alert.alert(
+          language === 'en' ? 'Export Successful' : 'Экспорт успешен',
+          language === 'en' 
+            ? `Configuration file "${fileName}" has been downloaded.`
+            : `Файл конфигурации "${fileName}" был загружен.`
+        );
       } else {
         // Mobile export - use FileSystem and Sharing
         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
@@ -246,19 +216,12 @@ export default function SettingsScreen() {
             mimeType: 'application/json',
             dialogTitle: language === 'en' ? 'Save Configuration File' : 'Сохранить файл конфигурации'
           });
-          
-          Alert.alert(
-            language === 'en' ? 'Export Successful' : 'Экспорт успешен',
-            language === 'en' 
-              ? `Configuration file "${fileName}" has been shared. You can save it to your preferred location.`
-              : `Файл конфигурации "${fileName}" был отправлен. Вы можете сохранить его в предпочитаемое место.`
-          );
         } else {
           Alert.alert(
             language === 'en' ? 'Export Complete' : 'Экспорт завершен',
             language === 'en' 
-              ? `Configuration saved to: ${fileUri}\n\nNote: Sharing is not available on this device.`
-              : `Конфигурация сохранена в: ${fileUri}\n\nПримечание: Обмен файлами недоступен на этом устройстве.`
+              ? `Configuration saved to: ${fileUri}`
+              : `Конфигурация сохранена в: ${fileUri}`
           );
         }
       }
@@ -310,26 +273,11 @@ export default function SettingsScreen() {
         input.multiple = false;
         
         const filePromise = new Promise<{content: string, name: string}>((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error('File selection timeout'));
-          }, 60000); // 60 second timeout
-          
           input.onchange = (event: any) => {
-            clearTimeout(timeout);
             const file = event.target.files?.[0];
             if (file) {
               if (!file.name.toLowerCase().endsWith('.json')) {
                 reject(new Error('Please select a JSON file'));
-                return;
-              }
-              if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                reject(new Error('File is too large. Maximum size is 10MB'));
-                return;
-              }
-              
-              // Check if FileReader is available
-              if (typeof FileReader === 'undefined') {
-                reject(new Error('File reading is not supported in this browser'));
                 return;
               }
               
@@ -337,10 +285,7 @@ export default function SettingsScreen() {
               reader.onload = (e) => {
                 const content = e.target?.result;
                 if (typeof content === 'string') {
-                  resolve({
-                    content,
-                    name: file.name
-                  });
+                  resolve({ content, name: file.name });
                 } else {
                   reject(new Error('Failed to read file content'));
                 }
@@ -351,24 +296,6 @@ export default function SettingsScreen() {
               reject(new Error('No file selected'));
             }
           };
-          
-          // Handle user cancellation
-          const handleCancel = () => {
-            clearTimeout(timeout);
-            reject(new Error('File selection cancelled'));
-          };
-          
-          // Listen for focus return (indicates dialog was closed)
-          const handleFocus = () => {
-            setTimeout(() => {
-              if (!input.files || input.files.length === 0) {
-                handleCancel();
-              }
-              window.removeEventListener('focus', handleFocus);
-            }, 300);
-          };
-          
-          window.addEventListener('focus', handleFocus);
         });
 
         input.click();
@@ -378,7 +305,7 @@ export default function SettingsScreen() {
       } else {
         // Mobile import - use DocumentPicker and FileSystem
         const result = await DocumentPicker.getDocumentAsync({
-          type: ['application/json', 'text/json', '*/*'], // Allow all files as fallback
+          type: ['application/json', 'text/json'],
           copyToCacheDirectory: true,
           multiple: false
         });
@@ -395,94 +322,32 @@ export default function SettingsScreen() {
           throw new Error('Please select a JSON configuration file');
         }
 
-        // Check file size (10MB limit)
-        if (asset.size && asset.size > 10 * 1024 * 1024) {
-          throw new Error('File is too large. Maximum size is 10MB');
-        }
-
         configContent = await FileSystem.readAsStringAsync(asset.uri);
       }
 
-      // Validate file content is not empty
-      if (!configContent || configContent.trim().length === 0) {
-        throw new Error('Configuration file is empty');
-      }
-      
-      // Check file size in content (additional safety check)
-      if (configContent.length > 50 * 1024 * 1024) { // 50MB content limit
-        throw new Error('Configuration file content is too large');
-      }
-      
       // Parse and validate configuration
       let configuration;
       try {
         configuration = JSON.parse(configContent);
       } catch (parseError) {
-        throw new Error('Invalid JSON format in configuration file. Please check the file format.');
+        throw new Error('Invalid JSON format in configuration file');
       }
       
-      // Validate configuration is an object
       if (!configuration || typeof configuration !== 'object') {
-        throw new Error('Configuration file does not contain valid configuration data');
-      }
-      
-      // Validate required fields
-      if (!configuration.version) {
-        throw new Error('Configuration file is missing version information');
+        throw new Error('Configuration file does not contain valid data');
       }
       
       if (!configuration.credentials) {
         throw new Error('Configuration file is missing credentials');
       }
-      
-      // Validate credentials structure
-      const requiredCredentialFields = ['clientId', 'readOnlyAccessKey', 'currencyAccountNumber', 'currencyAccountGuid'];
-      const missingFields = requiredCredentialFields.filter(field => !configuration.credentials[field]);
-      if (missingFields.length > 0) {
-        throw new Error(`Configuration is missing required credential fields: ${missingFields.join(', ')}`);
-      }
-      
-      // Validate products if present
-      if (configuration.products && !Array.isArray(configuration.products)) {
-        throw new Error('Products data in configuration file is invalid');
-      }
 
-      // Show detailed preview and confirm
+      // Show preview and confirm
       const productCount = configuration.products?.length || 0;
       const exportDate = configuration.exportDate ? new Date(configuration.exportDate).toLocaleDateString() : 'Unknown';
-      const exportedBy = configuration.statistics?.exportedBy || configuration.credentials?.merchantName || 'Unknown';
       
       const previewMessage = language === 'en' 
-        ? `Import Configuration from "${fileName}"?
-
-File Details:
-• Exported: ${exportDate}
-• Exported by: ${exportedBy}
-• Version: ${configuration.version}
-
-Contains:
-• Credentials and API keys
-• ${productCount} products
-• App settings
-
-⚠️ This will replace ALL current data!
-
-Continue with import?`
-        : `Импортировать конфигурацию из "${fileName}"?
-
-Детали файла:
-• Экспортирован: ${exportDate}
-• Экспортирован: ${exportedBy}
-• Версия: ${configuration.version}
-
-Содержит:
-• Учетные данные и API ключи
-• ${productCount} товаров
-• Настройки приложения
-
-⚠️ Это заменит ВСЕ текущие данные!
-
-Продолжить импорт?`;
+        ? `Import Configuration from "${fileName}"?\n\nContains:\n• Credentials and API keys\n• ${productCount} products\n• App settings\n\n⚠️ This will replace ALL current data!\n\nContinue?`
+        : `Импортировать конфигурацию из "${fileName}"?\n\nСодержит:\n• Учетные данные и API ключи\n• ${productCount} товаров\n• Настройки приложения\n\n⚠️ Это заменит ВСЕ текущие данные!\n\nПродолжить?`;
 
       Alert.alert(
         language === 'en' ? 'Confirm Import' : 'Подтвердить импорт',
@@ -506,8 +371,8 @@ Continue with import?`
       Alert.alert(
         language === 'en' ? 'Import Error' : 'Ошибка импорта',
         language === 'en' 
-          ? `Failed to import configuration:\n${errorMessage}`
-          : `Не удалось импортировать конфигурацию:\n${errorMessage}`
+          ? `Failed to import configuration: ${errorMessage}`
+          : `Не удалось импортировать конфигурацию: ${errorMessage}`
       );
     } finally {
       setIsImporting(false);
@@ -614,15 +479,15 @@ Continue with import?`
           <Text style={[styles.settingTitle, { color: theme.text }]} allowFontScaling={false}>
             {title}
           </Text>
-          {subtitle ? (
+          {subtitle && (
             <Text style={[styles.settingSubtitle, { color: theme.placeholder }]} allowFontScaling={false}>
               {subtitle}
             </Text>
-          ) : null}
+          )}
         </View>
       </View>
       <View style={styles.settingRight}>
-        {rightElement || <ChevronRight size={20} color={theme.placeholder} />}
+        {rightElement ? rightElement : <ChevronRight size={20} color={theme.placeholder} />}
       </View>
     </TouchableOpacity>
   );
@@ -722,7 +587,7 @@ Continue with import?`
               language === 'en' ? 'Export' : 'Экспорт',
               language === 'en' ? 'Save all settings and products to file' : 'Сохранить все настройки и товары в файл',
               handleExportConfiguration,
-              isExporting ? <Text style={[styles.loadingText, { color: theme.placeholder }]}>...</Text> : undefined
+              isExporting ? <Text style={[styles.loadingText, { color: theme.placeholder }]}>...</Text> : null
             )}
             
             {renderSettingItem(
@@ -730,7 +595,7 @@ Continue with import?`
               language === 'en' ? 'Import' : 'Импорт',
               language === 'en' ? 'Load settings and products from file' : 'Загрузить настройки и товары из файла',
               handleImportConfiguration,
-              isImporting ? <Text style={[styles.loadingText, { color: theme.placeholder }]}>...</Text> : undefined
+              isImporting ? <Text style={[styles.loadingText, { color: theme.placeholder }]}>...</Text> : null
             )}
           </Card>
           

@@ -27,7 +27,6 @@ const validateTransaction = (transaction: any): Transaction | null => {
     amount: transaction.amount,
     status: transaction.status,
     createdAt: typeof transaction.createdAt === 'string' ? transaction.createdAt : new Date().toISOString(),
-    description: typeof transaction.description === 'string' ? transaction.description : undefined,
     paymentUrl: typeof transaction.paymentUrl === 'string' ? transaction.paymentUrl : undefined,
     customerInfo: typeof transaction.customerInfo === 'string' ? transaction.customerInfo : undefined,
     merchantName: typeof transaction.merchantName === 'string' ? transaction.merchantName : undefined,
