@@ -25,7 +25,7 @@ import { useProductStore } from '@/store/product-store';
 import { createTransaction } from '@/utils/api';
 import colors from '@/constants/colors';
 import IMAGES from '@/constants/images';
-import { CreditCard, Plus, Minus, ShoppingBag, Check } from 'lucide-react-native';
+import { CreditCard, Plus, Minus, ShoppingBag, Check, Search } from 'lucide-react-native';
 import { scaleFontSize, scaleSpacing, isLargeDevice } from '@/utils/responsive';
 
 export default function PaymentScreen() {
@@ -50,11 +50,17 @@ export default function PaymentScreen() {
   const [productPrice, setProductPrice] = useState('');
   const [productQuantity, setProductQuantity] = useState('1');
   const [productErrors, setProductErrors] = useState<{name?: string, price?: string, quantity?: string}>({});
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Translations
   const getTranslation = (en: string, ru: string): string => {
     return language === 'en' ? en : ru;
   };
+  
+  // Filter products based on search query
+  const filteredStoreProducts = storeProducts.filter(product =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   
   const validateForm = () => {
     const errors: {amount?: string, customerInfo?: string} = {};
@@ -454,28 +460,58 @@ export default function PaymentScreen() {
               </View>
             </View>
             
+            {/* Product Search - Only show if there are products to search */}
+            {storeProducts.length > 0 && (
+              <View style={styles.searchContainer}>
+                <View style={styles.searchInputContainer}>
+                  <Search size={20} color={theme.placeholder} style={styles.searchIcon} />
+                  <TextInput
+                    style={[
+                      styles.searchInput,
+                      {
+                        backgroundColor: theme.inputBackground || theme.background,
+                        color: theme.text,
+                        borderColor: theme.border,
+                      }
+                    ]}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder={getTranslation('Search products...', 'Поиск товаров...')}
+                    placeholderTextColor={theme.placeholder}
+                    autoFocus={Platform.OS !== 'web'}
+                  />
+                </View>
+              </View>
+            )}
+            
             {/* Show available products if any exist and no forms are shown */}
             {storeProducts.length > 0 && !showProductForm && !showProductSelector && (
               <View style={styles.availableProductsList}>
                 <Text style={[styles.availableProductsTitle, { color: theme.text }]} allowFontScaling={false}>
                   {getTranslation('Available Products', 'Доступные товары')}
                 </Text>
-                <ScrollView style={styles.availableProductsScroll} horizontal showsHorizontalScrollIndicator={false}>
-                  {storeProducts.map((product) => (
-                    <TouchableOpacity
-                      key={product.id}
-                      style={[styles.availableProductItem, { backgroundColor: theme.card, borderColor: theme.border }]}
-                      onPress={() => handleSelectProduct(product)}
-                    >
-                      <Text style={[styles.availableProductName, { color: theme.text }]} allowFontScaling={false}>
-                        {product.name}
-                      </Text>
-                      <Text style={[styles.availableProductPrice, { color: theme.text }]} allowFontScaling={false}>
-                        ₽{product.price.toFixed(2)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                {filteredStoreProducts.length > 0 ? (
+                  <ScrollView style={styles.availableProductsScroll} horizontal showsHorizontalScrollIndicator={false}>
+                    {filteredStoreProducts.map((product) => (
+                      <TouchableOpacity
+                        key={product.id}
+                        style={[styles.availableProductItem, { backgroundColor: theme.card, borderColor: theme.border }]}
+                        onPress={() => handleSelectProduct(product)}
+                      >
+                        <Text style={[styles.availableProductName, { color: theme.text }]} allowFontScaling={false}>
+                          {product.name}
+                        </Text>
+                        <Text style={[styles.availableProductPrice, { color: theme.text }]} allowFontScaling={false}>
+                          ₽{product.price.toFixed(2)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <Text style={[styles.noProductsFound, { color: theme.placeholder }]} allowFontScaling={false}>
+                    {getTranslation('No products found.', 'Товары не найдены.')}
+                  </Text>
+                )}
               </View>
             )}
             
@@ -609,14 +645,14 @@ export default function PaymentScreen() {
               </View>
             )}
             
-            {showProductSelector && storeProducts.length > 0 && (
+            {showProductSelector && filteredStoreProducts.length > 0 && (
               <View style={[styles.productSelector, { backgroundColor: theme.card }]}>
                 <Text style={[styles.productSelectorTitle, { color: theme.text }]} allowFontScaling={false}>
                   {getTranslation('Select Product', 'Выбрать товар')}
                 </Text>
                 
                 <ScrollView style={styles.productSelectorList}>
-                  {storeProducts.map((product) => (
+                  {filteredStoreProducts.map((product) => (
                     <TouchableOpacity
                       key={product.id}
                       style={[styles.productSelectorItem, { borderBottomColor: theme.border }]}
@@ -773,6 +809,36 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  // Search styles
+  searchContainer: {
+    marginBottom: scaleSpacing(16),
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  searchIcon: {
+    position: 'absolute',
+    left: 12,
+    zIndex: 1,
+  },
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingLeft: 40,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+    fontSize: scaleFontSize(16),
+    minHeight: 48,
+  },
+  noProductsFound: {
+    textAlign: 'center',
+    fontSize: scaleFontSize(14),
+    fontStyle: 'italic',
+    padding: scaleSpacing(16),
   },
   // Available products styles
   availableProductsList: {

@@ -60,6 +60,18 @@ export default function TransactionDetailsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   
+  // Format date function to match [id].tsx formatting
+  const formatDate = (dateString: string | undefined): string => {
+    if (!dateString) return '';
+    
+    try {
+      return formatMoscowTime(dateString, language);
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString || '';
+    }
+  };
+  
   // Load transaction data
   useEffect(() => {
     if (data && typeof data === 'string') {
@@ -201,7 +213,7 @@ export default function TransactionDetailsScreen() {
         transactionId: transaction.id,
         amount: transaction.amount,
         status: getStatusText(transaction.paymentStatus),
-        date: formatMoscowTime(transaction.createdAt, language),
+        date: formatDate(transaction.createdAt),
         customerInfo: transaction.comment || '',
         merchantName: transaction.accountToName || '',
         tag: transaction.tag || '',
@@ -738,7 +750,7 @@ export default function TransactionDetailsScreen() {
               </View>
             )}
             
-            {/* Created Date */}
+            {/* Created Date - Always show for all transactions, especially for PaymentStatus: 2 (Not paid) */}
             {transaction.createdAt && (
               <View style={styles.detailItem}>
                 <View style={styles.detailHeader}>
@@ -748,20 +760,13 @@ export default function TransactionDetailsScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                  {formatMoscowTime(transaction.createdAt, language, {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                  })}
+                  {formatDate(transaction.createdAt)}
                 </Text>
               </View>
             )}
             
-            {/* Finished Date */}
-            {transaction.finishedAt && (
+            {/* Finished Date - Only show for completed transactions */}
+            {transaction.finishedAt && transaction.paymentStatus === 3 && (
               <View style={styles.detailItem}>
                 <View style={styles.detailHeader}>
                   <CheckCircle size={16} color={theme.placeholder} />
@@ -770,14 +775,7 @@ export default function TransactionDetailsScreen() {
                   </Text>
                 </View>
                 <Text style={[styles.detailValue, { color: theme.text }]} allowFontScaling={false}>
-                  {formatMoscowTime(transaction.finishedAt, language, {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                  })}
+                  {formatDate(transaction.finishedAt)}
                 </Text>
               </View>
             )}
@@ -857,13 +855,14 @@ export default function TransactionDetailsScreen() {
               </Text>
             </View>
             
+            {/* Always show creation date in receipt, especially for PaymentStatus: 2 (Not paid) */}
             {transaction.createdAt && (
               <View style={styles.receiptRow}>
                 <Text style={[styles.receiptLabel, { color: theme.placeholder }]} allowFontScaling={false}>
                   {language === 'en' ? 'Date:' : 'Дата:'}
                 </Text>
                 <Text style={[styles.receiptValue, { color: theme.text }]} allowFontScaling={false}>
-                  {formatMoscowTime(transaction.createdAt, language)}
+                  {formatDate(transaction.createdAt)}
                 </Text>
               </View>
             )}

@@ -13,10 +13,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProductItem } from '@/components/ProductItem';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/Button';
+import { BulkImportModal } from '@/components/BulkImportModal';
 import { useProductStore } from '@/store/product-store';
 import { useLanguageStore } from '@/store/language-store';
 import colors from '@/constants/colors';
-import { Package, Plus, Edit, Trash2 } from 'lucide-react-native';
+import { Package, Plus, Edit, Trash2, Upload } from 'lucide-react-native';
 
 interface Product {
   id: string;
@@ -33,9 +34,14 @@ export default function ProductsScreen() {
   const { language } = useLanguageStore();
   
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   
   const handleAddProduct = () => {
     router.push('/product/create');
+  };
+  
+  const handleBulkImport = () => {
+    setShowBulkImportModal(true);
   };
   
   const handleEditProduct = (productId: string) => {
@@ -109,12 +115,20 @@ export default function ProductsScreen() {
           title: language === 'en' ? 'Products' : 'Товары',
           headerShown: true,
           headerRight: () => (
-            <TouchableOpacity
-              onPress={handleAddProduct}
-              style={styles.headerButton}
-            >
-              <Plus size={24} color={colors.light.primary} />
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity
+                onPress={handleBulkImport}
+                style={styles.headerButton}
+              >
+                <Upload size={24} color={colors.light.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleAddProduct}
+                style={styles.headerButton}
+              >
+                <Plus size={24} color={colors.light.primary} />
+              </TouchableOpacity>
+            </View>
           ),
         }} 
       />
@@ -140,12 +154,24 @@ export default function ProductsScreen() {
       
       <View style={styles.buttonContainer}>
         <Button
+          title={language === 'en' ? 'Import Product List' : 'Импорт списка товаров'}
+          variant="secondary"
+          onPress={handleBulkImport}
+          style={styles.importButton}
+          icon={<Upload size={20} color="white" />}
+        />
+        <Button
           title={language === 'en' ? 'Return to Main Menu' : 'Вернуться в главное меню'}
           variant="outline"
           onPress={() => router.push('/(tabs)')}
           style={styles.backButton}
         />
       </View>
+      
+      <BulkImportModal
+        visible={showBulkImportModal}
+        onClose={() => setShowBulkImportModal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -155,13 +181,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.light.background,
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   headerButton: {
     padding: 8,
-    marginRight: 8,
+    marginLeft: 8,
   },
   listContent: {
     padding: 16,
-    paddingBottom: Platform.OS === 'ios' ? 100 : 80,
+    paddingBottom: Platform.OS === 'ios' ? 140 : 120,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -181,6 +211,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.light.border,
     paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+  },
+  importButton: {
+    width: '100%',
+    marginBottom: 8,
   },
   backButton: {
     width: '100%',
