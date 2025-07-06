@@ -11,6 +11,10 @@ export interface Credentials {
   merchantName?: string;
   clientSecret?: string;
   commentNumber?: number;
+  apiKey?: string;
+  secretKey?: string;
+  accountNumber?: string;
+  accountGuid?: string;
 }
 
 interface AuthState {
@@ -46,6 +50,10 @@ const validateCredentials = (credentials: any): Credentials | null => {
     merchantName: credentials.merchantName || undefined,
     clientSecret: credentials.clientSecret || undefined,
     commentNumber: typeof credentials.commentNumber === 'number' ? credentials.commentNumber : undefined,
+    apiKey: credentials.apiKey || credentials.readOnlyAccessKey || undefined,
+    secretKey: credentials.secretKey || credentials.clientSecret || undefined,
+    accountNumber: credentials.accountNumber || credentials.currencyAccountNumber || undefined,
+    accountGuid: credentials.accountGuid || credentials.currencyAccountGuid || undefined,
   };
 };
 

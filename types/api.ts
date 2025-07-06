@@ -7,13 +7,18 @@ export interface Credentials {
   merchantName?: string;
   clientSecret?: string; // Made optional for compatibility
   commentNumber?: number; // Added for export/import functionality
+  apiKey?: string; // Added for API key
+  secretKey?: string; // Added for secret key
+  accountNumber?: string; // Added for account number
+  accountGuid?: string; // Added for account GUID
 }
 
 export interface Transaction {
   id: string;
   amount: number;
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'completed' | 'failed' | number; // Allow both string and number status
   createdAt: string;
+  description?: string; // Added for transaction description
   customerInfo?: string;
   merchantName?: string;
   tag?: string;
@@ -99,12 +104,14 @@ export interface CheckTransactionResult {
 export interface WithdrawalRequest {
   id?: string;
   amount: number;
+  description?: string; // Added for withdrawal description
   destinationAccount?: string;
   destinationBank?: string;
   walletAddress?: string;
   telegramContact?: string;
   createdAt?: string;
   status?: 'pending' | 'completed' | 'rejected';
+  bankDetails?: string; // Added for bank details
 }
 
 export interface WithdrawalResult {

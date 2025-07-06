@@ -26,7 +26,11 @@ const validateWithdrawalRequest = (request: any): WithdrawalRequest | null => {
     amount: request.amount,
     status: request.status,
     createdAt: typeof request.createdAt === 'string' ? request.createdAt : new Date().toISOString(),
-    description: typeof request.description === 'string' ? request.description : '',
+    description: typeof request.description === 'string' ? request.description : undefined,
+    destinationAccount: typeof request.destinationAccount === 'string' ? request.destinationAccount : undefined,
+    destinationBank: typeof request.destinationBank === 'string' ? request.destinationBank : undefined,
+    walletAddress: typeof request.walletAddress === 'string' ? request.walletAddress : undefined,
+    telegramContact: typeof request.telegramContact === 'string' ? request.telegramContact : undefined,
     bankDetails: typeof request.bankDetails === 'string' ? request.bankDetails : undefined,
   };
 };

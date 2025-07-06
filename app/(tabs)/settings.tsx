@@ -162,7 +162,11 @@ export default function SettingsScreen() {
           currencyAccountNumber: credentials?.currencyAccountNumber || '',
           currencyAccountGuid: credentials?.currencyAccountGuid || '',
           currencyCode: credentials?.currencyCode || '643',
-          commentNumber: credentials?.commentNumber || 1
+          commentNumber: credentials?.commentNumber || 1,
+          apiKey: credentials?.apiKey || credentials?.readOnlyAccessKey || '',
+          secretKey: credentials?.secretKey || credentials?.clientSecret || '',
+          accountNumber: credentials?.accountNumber || credentials?.currencyAccountNumber || '',
+          accountGuid: credentials?.accountGuid || credentials?.currencyAccountGuid || ''
         },
         settings: {
           language,
@@ -190,19 +194,36 @@ export default function SettingsScreen() {
       if (Platform.OS === 'web') {
         // Web export - trigger download
         try {
+          // Check if required web APIs are available
+          if (typeof Blob === 'undefined' || typeof URL === 'undefined' || typeof document === 'undefined') {
+            throw new Error('Required web APIs are not available in this browser');
+          }
+          
           const blob = new Blob([configJson], { type: 'application/json' });
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
           link.download = fileName;
           link.style.display = 'none';
+          
+          // Check if document.body exists
+          if (!document.body) {
+            throw new Error('Document body is not available');
+          }
+          
           document.body.appendChild(link);
           link.click();
           
           // Clean up
           setTimeout(() => {
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            try {
+              if (document.body && document.body.contains(link)) {
+                document.body.removeChild(link);
+              }
+              URL.revokeObjectURL(url);
+            } catch (cleanupError) {
+              console.warn('Cleanup error:', cleanupError);
+            }
           }, 100);
           
           Alert.alert(
@@ -213,10 +234,10 @@ export default function SettingsScreen() {
           );
         } catch (webError) {
           console.error('Web export error:', webError);
-          throw new Error('Failed to download file on web platform');
+          throw new Error(`Failed to download file on web platform: ${webError instanceof Error ? webError.message : 'Unknown error'}`);
         }
       } else {
-        // Mobile export - use sharing
+        // Mobile export - use FileSystem and Sharing
         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(fileUri, configJson);
         
@@ -225,12 +246,19 @@ export default function SettingsScreen() {
             mimeType: 'application/json',
             dialogTitle: language === 'en' ? 'Save Configuration File' : 'Сохранить файл конфигурации'
           });
+          
+          Alert.alert(
+            language === 'en' ? 'Export Successful' : 'Экспорт успешен',
+            language === 'en' 
+              ? `Configuration file "${fileName}" has been shared. You can save it to your preferred location.`
+              : `Файл конфигурации "${fileName}" был отправлен. Вы можете сохранить его в предпочитаемое место.`
+          );
         } else {
           Alert.alert(
             language === 'en' ? 'Export Complete' : 'Экспорт завершен',
             language === 'en' 
-              ? `Configuration saved to: ${fileUri}`
-              : `Конфигурация сохранена в: ${fileUri}`
+              ? `Configuration saved to: ${fileUri}\n\nNote: Sharing is not available on this device.`
+              : `Конфигурация сохранена в: ${fileUri}\n\nПримечание: Обмен файлами недоступен на этом устройстве.`
           );
         }
       }
@@ -298,6 +326,13 @@ export default function SettingsScreen() {
                 reject(new Error('File is too large. Maximum size is 10MB'));
                 return;
               }
+              
+              // Check if FileReader is available
+              if (typeof FileReader === 'undefined') {
+                reject(new Error('File reading is not supported in this browser'));
+                return;
+              }
+              
               const reader = new FileReader();
               reader.onload = (e) => {
                 const content = e.target?.result;
@@ -341,7 +376,7 @@ export default function SettingsScreen() {
         configContent = result.content;
         fileName = result.name;
       } else {
-        // Mobile import - document picker
+        // Mobile import - use DocumentPicker and FileSystem
         const result = await DocumentPicker.getDocumentAsync({
           type: ['application/json', 'text/json', '*/*'], // Allow all files as fallback
           copyToCacheDirectory: true,
@@ -360,15 +395,35 @@ export default function SettingsScreen() {
           throw new Error('Please select a JSON configuration file');
         }
 
+        // Check file size (10MB limit)
+        if (asset.size && asset.size > 10 * 1024 * 1024) {
+          throw new Error('File is too large. Maximum size is 10MB');
+        }
+
         configContent = await FileSystem.readAsStringAsync(asset.uri);
       }
 
+      // Validate file content is not empty
+      if (!configContent || configContent.trim().length === 0) {
+        throw new Error('Configuration file is empty');
+      }
+      
+      // Check file size in content (additional safety check)
+      if (configContent.length > 50 * 1024 * 1024) { // 50MB content limit
+        throw new Error('Configuration file content is too large');
+      }
+      
       // Parse and validate configuration
       let configuration;
       try {
         configuration = JSON.parse(configContent);
       } catch (parseError) {
-        throw new Error('Invalid JSON format in configuration file');
+        throw new Error('Invalid JSON format in configuration file. Please check the file format.');
+      }
+      
+      // Validate configuration is an object
+      if (!configuration || typeof configuration !== 'object') {
+        throw new Error('Configuration file does not contain valid configuration data');
       }
       
       // Validate required fields
@@ -465,6 +520,14 @@ Continue with import?`
       
       // Apply credentials
       if (configuration.credentials) {
+        // Validate credentials before applying
+        const requiredFields = ['clientId', 'readOnlyAccessKey', 'currencyAccountNumber', 'currencyAccountGuid'];
+        const missingFields = requiredFields.filter(field => !configuration.credentials[field]);
+        
+        if (missingFields.length > 0) {
+          throw new Error(`Missing required credential fields: ${missingFields.join(', ')}`);
+        }
+        
         importCredentials(configuration.credentials);
         appliedItems.push(language === 'en' ? 'Credentials' : 'Учетные данные');
       }
@@ -483,8 +546,24 @@ Continue with import?`
 
       // Apply products
       if (configuration.products && Array.isArray(configuration.products)) {
-        importProducts(configuration.products);
-        appliedItems.push(`${configuration.products.length} ${language === 'en' ? 'products' : 'товаров'}`);
+        // Validate products before importing
+        const validProducts = configuration.products.filter((product: any) => {
+          return product && 
+                 typeof product.name === 'string' && 
+                 product.name.length > 0 &&
+                 typeof product.price === 'number' && 
+                 product.price > 0;
+        });
+        
+        if (validProducts.length > 0) {
+          importProducts(validProducts);
+          appliedItems.push(`${validProducts.length} ${language === 'en' ? 'products' : 'товаров'}`);
+        }
+        
+        if (validProducts.length < configuration.products.length) {
+          const skipped = configuration.products.length - validProducts.length;
+          console.warn(`Skipped ${skipped} invalid products during import`);
+        }
       }
 
       const appliedItemsText = appliedItems.length > 0 
