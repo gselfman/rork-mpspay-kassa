@@ -40,6 +40,23 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
+// Environment detection function
+const detectEnvironment = () => {
+  // Check if we're in Telegram Mini App
+  if (typeof window !== 'undefined' && 
+      (window.TelegramWebviewProxy || window.TelegramWebApp || window.Telegram)) {
+    return 'telegram';
+  }
+  
+  // Check if we're in a regular web browser
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    return 'web';
+  }
+  
+  // Mobile platform
+  return 'mobile';
+};
+
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -188,40 +205,76 @@ export default function SettingsScreen() {
       const configJson = JSON.stringify(configuration, null, 2);
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
       const fileName = `kassa-config-${timestamp}.json`;
-
-      if (Platform.OS === 'web') {
-        const blob = new Blob([configJson], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        Alert.alert(
-          language === 'en' ? 'Export Successful' : 'Экспорт успешен',
-          language === 'en' 
-            ? `Configuration file "${fileName}" has been downloaded.`
-            : `Файл конфигурации "${fileName}" был загружен.`
-        );
+      
+      const environment = detectEnvironment();
+      
+      if (environment === 'web' || environment === 'telegram') {
+        // Always use download approach for web/telegram
+        try {
+          const blob = new Blob([configJson], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = fileName;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          
+          Alert.alert(
+            language === 'en' ? 'Export Successful' : 'Экспорт успешен',
+            language === 'en' 
+              ? `Configuration file "${fileName}" has been downloaded.`
+              : `Файл конфигурации "${fileName}" был загружен.`
+          );
+        } catch (webError) {
+          // Fallback: show JSON in alert for copying
+          Alert.alert(
+            language === 'en' ? 'Export Data' : 'Данные экспорта',
+            language === 'en' 
+              ? 'Copy this configuration data and save it manually:'
+              : 'Скопируйте эти данные конфигурации и сохраните вручную:',
+            [
+              {
+                text: language === 'en' ? 'Copy' : 'Копировать',
+                onPress: () => {
+                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                    navigator.clipboard.writeText(configJson);
+                  }
+                }
+              }
+            ]
+          );
+        }
       } else {
+        // Mobile platform - use file system + multiple sharing options
         const fileUri = `${FileSystem.documentDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(fileUri, configJson);
         
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(fileUri, {
-            mimeType: 'application/json',
-            dialogTitle: language === 'en' ? 'Save Configuration File' : 'Сохранить файл конфигурации'
-          });
-        } else {
+        // Try multiple sharing methods
+        let shareSuccess = false;
+        
+        // Method 1: Try expo-sharing
+        try {
+          if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(fileUri, {
+              mimeType: 'application/json',
+              dialogTitle: language === 'en' ? 'Save Configuration File' : 'Сохранить файл конфигурации'
+            });
+            shareSuccess = true;
+          }
+        } catch (sharingError) {
+          console.log('Sharing failed, trying alternative:', sharingError);
+        }
+        
+        // Method 2: If sharing failed, show file location
+        if (!shareSuccess) {
           Alert.alert(
             language === 'en' ? 'Export Complete' : 'Экспорт завершен',
             language === 'en' 
-              ? `Configuration saved to: ${fileUri}`
-              : `Конфигурация сохранена в: ${fileUri}`
+              ? `Configuration saved to: ${fileUri}\n\nYou can find this file in your device's file manager.`
+              : `Конфигурация сохранена в: ${fileUri}\n\nВы можете найти этот файл в файловом менеджере устройства.`
           );
         }
       }
@@ -264,15 +317,24 @@ export default function SettingsScreen() {
     try {
       let configContent = '';
       let fileName = '';
-
-      if (Platform.OS === 'web') {
+      
+      const environment = detectEnvironment();
+      
+      if (environment === 'web' || environment === 'telegram') {
+        // Web/Telegram approach
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json,application/json';
         input.multiple = false;
+        input.style.display = 'none';
         
         const filePromise = new Promise<{content: string, name: string}>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('File selection timeout'));
+          }, 30000); // 30 second timeout
+          
           input.onchange = (event: any) => {
+            clearTimeout(timeout);
             const file = event.target.files?.[0];
             if (file) {
               if (!file.name.toLowerCase().endsWith('.json')) {
@@ -295,15 +357,28 @@ export default function SettingsScreen() {
               reject(new Error('No file selected'));
             }
           };
+          
+          input.oncancel = () => {
+            clearTimeout(timeout);
+            reject(new Error('File selection cancelled'));
+          };
         });
 
+        // Add to DOM and trigger click
+        document.body.appendChild(input);
         input.click();
-        const result = await filePromise;
-        configContent = result.content;
-        fileName = result.name;
+        
+        try {
+          const result = await filePromise;
+          configContent = result.content;
+          fileName = result.name;
+        } finally {
+          document.body.removeChild(input);
+        }
       } else {
+        // Mobile approach
         const result = await DocumentPicker.getDocumentAsync({
-          type: ['application/json', 'text/json'],
+          type: ['application/json', 'text/json', '*/*'], // Accept all files as fallback
           copyToCacheDirectory: true,
           multiple: false
         });
@@ -323,6 +398,7 @@ export default function SettingsScreen() {
         configContent = await FileSystem.readAsStringAsync(asset.uri);
       }
 
+      // Parse and validate configuration
       let configuration;
       try {
         configuration = JSON.parse(configContent);
@@ -338,9 +414,8 @@ export default function SettingsScreen() {
         throw new Error('Configuration file is missing credentials');
       }
 
+      // Show preview and confirmation
       const productCount = configuration.products?.length || 0;
-      const exportDate = configuration.exportDate ? new Date(configuration.exportDate).toLocaleDateString() : 'Unknown';
-      
       const previewMessage = language === 'en' 
         ? `Import Configuration from "${fileName}"?\n\nContains:\n• Credentials and API keys\n• ${productCount} products\n• App settings\n\n⚠️ This will replace ALL current data!\n\nContinue?`
         : `Импортировать конфигурацию из "${fileName}"?\n\nСодержит:\n• Учетные данные и API ключи\n• ${productCount} товаров\n• Настройки приложения\n\n⚠️ Это заменит ВСЕ текущие данные!\n\nПродолжить?`;
