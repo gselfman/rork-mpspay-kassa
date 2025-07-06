@@ -14,14 +14,18 @@ import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
 
 interface ProductItemProps {
   product: Product;
-  onPress: () => void;
+  onPress?: () => void;
   darkMode?: boolean;
+  selected?: boolean;
+  rightContent?: React.ReactNode;
 }
 
 export const ProductItem: React.FC<ProductItemProps> = ({ 
   product, 
   onPress,
-  darkMode = false
+  darkMode = false,
+  selected = false,
+  rightContent
 }) => {
   const theme = darkMode ? colors.dark : colors.light;
 
@@ -33,7 +37,11 @@ export const ProductItem: React.FC<ProductItemProps> = ({
 
   return (
     <TouchableOpacity 
-      style={[styles.container, { backgroundColor: theme.card }]} 
+      style={[
+        styles.container, 
+        { backgroundColor: theme.card },
+        selected && { borderWidth: 2, borderColor: theme.primary }
+      ]} 
       onPress={onPress}
       activeOpacity={0.7}
       {...webSafeProps}
@@ -75,6 +83,12 @@ export const ProductItem: React.FC<ProductItemProps> = ({
           )}
         </View>
       </View>
+      
+      {rightContent && (
+        <View style={styles.rightContent}>
+          {rightContent}
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
@@ -125,5 +139,10 @@ const styles = StyleSheet.create({
   },
   sku: {
     fontSize: scaleFontSize(12),
+  },
+  rightContent: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingRight: scaleSpacing(12),
   },
 });
