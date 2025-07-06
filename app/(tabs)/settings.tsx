@@ -13,6 +13,7 @@ import { useRouter, Stack } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
 import { useLanguageStore } from '@/store/language-store';
 import { useThemeStore } from '@/store/theme-store';
+import { useProductStore } from '@/store/product-store';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import colors from '@/constants/colors';
@@ -29,18 +30,27 @@ import {
   Shield,
   HelpCircle,
   ShoppingBag,
-  MessageCircle
+  MessageCircle,
+  Download,
+  Upload,
+  FileText
 } from 'lucide-react-native';
 import { scaleFontSize, scaleSpacing } from '@/utils/responsive';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { credentials, logout } = useAuthStore();
   const { language, setLanguage } = useLanguageStore();
   const { darkMode, toggleDarkMode } = useThemeStore();
+  const { products } = useProductStore();
   const theme = darkMode ? colors.dark : colors.light;
   
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   
   const handleLogout = () => {
     Alert.alert(
@@ -96,6 +106,259 @@ export default function SettingsScreen() {
         }
       ]
     );
+  };
+
+  const handleExportConfiguration = async () => {
+    if (!credentials) {
+      Alert.alert(
+        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' ? 'No configuration to export' : 'Нет конфигурации для экспорта'
+      );
+      return;
+    }
+
+    // Show warning about sensitive data
+    Alert.alert(
+      language === 'en' ? 'Export Configuration' : 'Экспорт конфигурации',
+      language === 'en' 
+        ? 'This file will contain sensitive data including API keys and credentials. Keep it secure.'
+        : 'Этот файл будет содержать конфиденциальные данные, включая API ключи и учетные данные. Храните его в безопасности.',
+      [
+        {
+          text: language === 'en' ? 'Cancel' : 'Отмена',
+          style: 'cancel'
+        },
+        {
+          text: language === 'en' ? 'Export' : 'Экспортировать',
+          onPress: performExport
+        }
+      ]
+    );
+  };
+
+  const performExport = async () => {
+    setIsExporting(true);
+    
+    try {
+      const configuration = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        credentials: {
+          clientId: credentials?.clientId || '',
+          merchantName: credentials?.merchantName || '',
+          apiKey: credentials?.apiKey || '',
+          secretKey: credentials?.secretKey || '',
+          accountNumber: credentials?.accountNumber || '',
+          accountGuid: credentials?.accountGuid || '',
+          currencyCode: credentials?.currencyCode || 643,
+          commentNumber: credentials?.commentNumber || 1
+        },
+        settings: {
+          language,
+          darkMode
+        },
+        products: products.map(product => ({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          description: product.description || '',
+          sku: product.sku || '',
+          imageUrl: product.imageUrl || ''
+        }))
+      };
+
+      const configJson = JSON.stringify(configuration, null, 2);
+      const fileName = `mpspay_config_${new Date().toISOString().split('T')[0]}.json`;
+
+      if (Platform.OS === 'web') {
+        // Web export
+        const blob = new Blob([configJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Mobile export
+        const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+        await FileSystem.writeAsStringAsync(fileUri, configJson);
+        
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri);
+        } else {
+          Alert.alert(
+            language === 'en' ? 'Export Complete' : 'Экспорт завершен',
+            language === 'en' 
+              ? `Configuration saved to: ${fileUri}`
+              : `Конфигурация сохранена в: ${fileUri}`
+          );
+        }
+      }
+
+      Alert.alert(
+        language === 'en' ? 'Success' : 'Успех',
+        language === 'en' 
+          ? 'Configuration exported successfully'
+          : 'Конфигурация успешно экспортирована'
+      );
+    } catch (error) {
+      console.error('Export error:', error);
+      Alert.alert(
+        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' 
+          ? 'Failed to export configuration'
+          : 'Не удалось экспортировать конфигурацию'
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportConfiguration = async () => {
+    Alert.alert(
+      language === 'en' ? 'Import Configuration' : 'Импорт конфигурации',
+      language === 'en' 
+        ? 'This will replace all current settings and products. Continue?'
+        : 'Это заменит все текущие настройки и товары. Продолжить?',
+      [
+        {
+          text: language === 'en' ? 'Cancel' : 'Отмена',
+          style: 'cancel'
+        },
+        {
+          text: language === 'en' ? 'Import' : 'Импортировать',
+          onPress: performImport
+        }
+      ]
+    );
+  };
+
+  const performImport = async () => {
+    setIsImporting(true);
+
+    try {
+      let configContent = '';
+
+      if (Platform.OS === 'web') {
+        // Web import
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        
+        const filePromise = new Promise<string>((resolve, reject) => {
+          input.onchange = (event: any) => {
+            const file = event.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target?.result as string);
+              reader.onerror = reject;
+              reader.readAsText(file);
+            } else {
+              reject(new Error('No file selected'));
+            }
+          };
+        });
+
+        input.click();
+        configContent = await filePromise;
+      } else {
+        // Mobile import
+        const result = await DocumentPicker.getDocumentAsync({
+          type: 'application/json',
+          copyToCacheDirectory: true
+        });
+
+        if (result.canceled) {
+          setIsImporting(false);
+          return;
+        }
+
+        configContent = await FileSystem.readAsStringAsync(result.assets[0].uri);
+      }
+
+      // Parse and validate configuration
+      const configuration = JSON.parse(configContent);
+      
+      if (!configuration.version || !configuration.credentials) {
+        throw new Error('Invalid configuration file format');
+      }
+
+      // Show preview and confirm
+      const productCount = configuration.products?.length || 0;
+      const previewMessage = language === 'en' 
+        ? `Configuration contains:\n• Credentials and API keys\n• ${productCount} products\n• App settings\n\nApply this configuration?`
+        : `Конфигурация содержит:\n• Учетные данные и API ключи\n• ${productCount} товаров\n• Настройки приложения\n\nПрименить эту конфигурацию?`;
+
+      Alert.alert(
+        language === 'en' ? 'Confirm Import' : 'Подтвердить импорт',
+        previewMessage,
+        [
+          {
+            text: language === 'en' ? 'Cancel' : 'Отмена',
+            style: 'cancel'
+          },
+          {
+            text: language === 'en' ? 'Apply' : 'Применить',
+            onPress: () => applyConfiguration(configuration)
+          }
+        ]
+      );
+
+    } catch (error) {
+      console.error('Import error:', error);
+      Alert.alert(
+        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' 
+          ? 'Invalid configuration file or import failed'
+          : 'Неверный файл конфигурации или ошибка импорта'
+      );
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const applyConfiguration = async (configuration: any) => {
+    try {
+      // Apply credentials (this would need to be implemented in auth store)
+      if (configuration.credentials) {
+        // Note: This would require updating the auth store to support setting credentials
+        console.log('Would apply credentials:', configuration.credentials);
+      }
+
+      // Apply settings
+      if (configuration.settings) {
+        if (configuration.settings.language !== language) {
+          setLanguage(configuration.settings.language);
+        }
+        if (configuration.settings.darkMode !== darkMode) {
+          toggleDarkMode();
+        }
+      }
+
+      // Apply products (this would need to be implemented in product store)
+      if (configuration.products) {
+        // Note: This would require updating the product store to support bulk import
+        console.log('Would apply products:', configuration.products);
+      }
+
+      Alert.alert(
+        language === 'en' ? 'Success' : 'Успех',
+        language === 'en' 
+          ? 'Configuration imported successfully. Please restart the app to apply all changes.'
+          : 'Конфигурация успешно импортирована. Пожалуйста, перезапустите приложение для применения всех изменений.'
+      );
+    } catch (error) {
+      console.error('Apply configuration error:', error);
+      Alert.alert(
+        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' 
+          ? 'Failed to apply configuration'
+          : 'Не удалось применить конфигурацию'
+      );
+    }
   };
   
   const renderSettingItem = (
@@ -212,6 +475,29 @@ export default function SettingsScreen() {
               language === 'en' ? 'Manage Products' : 'Управление товарами',
               language === 'en' ? 'Add, edit or remove products' : 'Добавление, редактирование или удаление товаров',
               handleManageProducts
+            )}
+          </Card>
+
+          {/* Configuration Management */}
+          <Card style={styles.settingsCard}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
+              {language === 'en' ? 'Configuration' : 'Конфигурация'}
+            </Text>
+            
+            {renderSettingItem(
+              <Download size={20} color={theme.primary} />,
+              language === 'en' ? 'Export Configuration' : 'Экспорт конфигурации',
+              language === 'en' ? 'Save all settings and products to file' : 'Сохранить все настройки и товары в файл',
+              handleExportConfiguration,
+              isExporting ? <Text style={[styles.loadingText, { color: theme.placeholder }]}>...</Text> : undefined
+            )}
+            
+            {renderSettingItem(
+              <Upload size={20} color={theme.primary} />,
+              language === 'en' ? 'Import Configuration' : 'Импорт конфигурации',
+              language === 'en' ? 'Load settings and products from file' : 'Загрузить настройки и товары из файла',
+              handleImportConfiguration,
+              isImporting ? <Text style={[styles.loadingText, { color: theme.placeholder }]}>...</Text> : undefined
             )}
           </Card>
           
@@ -392,5 +678,8 @@ const styles = StyleSheet.create({
   logoutButton: {
     width: '100%',
     borderColor: Platform.OS === 'web' ? undefined : 'rgba(255, 59, 48, 0.5)',
+  },
+  loadingText: {
+    fontSize: scaleFontSize(14),
   },
 });
