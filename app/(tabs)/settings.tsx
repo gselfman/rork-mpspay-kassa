@@ -146,11 +146,11 @@ export default function SettingsScreen() {
         credentials: {
           clientId: credentials?.clientId || '',
           merchantName: credentials?.merchantName || '',
-          apiKey: credentials?.apiKey || '',
-          secretKey: credentials?.secretKey || '',
-          accountNumber: credentials?.accountNumber || '',
-          accountGuid: credentials?.accountGuid || '',
-          currencyCode: credentials?.currencyCode || 643,
+          readOnlyAccessKey: credentials?.readOnlyAccessKey || '',
+          clientSecret: credentials?.clientSecret || '',
+          currencyAccountNumber: credentials?.currencyAccountNumber || '',
+          currencyAccountGuid: credentials?.currencyAccountGuid || '',
+          currencyCode: credentials?.currencyCode || '643',
           commentNumber: credentials?.commentNumber || 1
         },
         settings: {
@@ -289,8 +289,18 @@ export default function SettingsScreen() {
       // Show preview and confirm
       const productCount = configuration.products?.length || 0;
       const previewMessage = language === 'en' 
-        ? `Configuration contains:\n• Credentials and API keys\n• ${productCount} products\n• App settings\n\nApply this configuration?`
-        : `Конфигурация содержит:\n• Учетные данные и API ключи\n• ${productCount} товаров\n• Настройки приложения\n\nПрименить эту конфигурацию?`;
+        ? `Configuration contains:
+• Credentials and API keys
+• ${productCount} products
+• App settings
+
+Apply this configuration?`
+        : `Конфигурация содержит:
+• Учетные данные и API ключи
+• ${productCount} товаров
+• Настройки приложения
+
+Применить эту конфигурацию?`;
 
       Alert.alert(
         language === 'en' ? 'Confirm Import' : 'Подтвердить импорт',
@@ -486,7 +496,7 @@ export default function SettingsScreen() {
             
             {renderSettingItem(
               <Download size={20} color={theme.primary} />,
-              language === 'en' ? 'Export Configuration' : 'Экспорт конфигурации',
+              language === 'en' ? 'Export' : 'Экспорт',
               language === 'en' ? 'Save all settings and products to file' : 'Сохранить все настройки и товары в файл',
               handleExportConfiguration,
               isExporting ? <Text style={[styles.loadingText, { color: theme.placeholder }]}>...</Text> : undefined
@@ -494,7 +504,7 @@ export default function SettingsScreen() {
             
             {renderSettingItem(
               <Upload size={20} color={theme.primary} />,
-              language === 'en' ? 'Import Configuration' : 'Импорт конфигурации',
+              language === 'en' ? 'Import' : 'Импорт',
               language === 'en' ? 'Load settings and products from file' : 'Загрузить настройки и товары из файла',
               handleImportConfiguration,
               isImporting ? <Text style={[styles.loadingText, { color: theme.placeholder }]}>...</Text> : undefined

@@ -6,6 +6,7 @@ export interface Credentials {
   currencyAccountGuid: string;
   merchantName?: string;
   clientSecret?: string; // Made optional for compatibility
+  commentNumber?: number; // Added for export/import functionality
 }
 
 export interface Transaction {
