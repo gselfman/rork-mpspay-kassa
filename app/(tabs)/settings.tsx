@@ -44,7 +44,7 @@ import * as Sharing from 'expo-sharing';
 const detectEnvironment = () => {
   // Check if we're in Telegram Mini App
   if (typeof window !== 'undefined' && 
-      (window.TelegramWebviewProxy || window.TelegramWebApp || window.Telegram)) {
+      (window['TelegramWebviewProxy'] || window['TelegramWebApp'] || window['Telegram'])) {
     return 'telegram';
   }
   
@@ -176,12 +176,7 @@ export default function SettingsScreen() {
           clientSecret: credentials?.clientSecret || '',
           currencyAccountNumber: credentials?.currencyAccountNumber || '',
           currencyAccountGuid: credentials?.currencyAccountGuid || '',
-          currencyCode: credentials?.currencyCode || '643',
-          commentNumber: credentials?.commentNumber || 1,
-          apiKey: credentials?.apiKey || credentials?.readOnlyAccessKey || '',
-          secretKey: credentials?.secretKey || credentials?.clientSecret || '',
-          accountNumber: credentials?.accountNumber || credentials?.currencyAccountNumber || '',
-          accountGuid: credentials?.accountGuid || credentials?.currencyAccountGuid || ''
+          currencyCode: credentials?.currencyCode || '643'
         },
         settings: {
           language,
