@@ -9,6 +9,17 @@ interface LanguageState {
   setLanguage: (language: Language) => void;
 }
 
+interface PersistedLanguageState {
+  language: Language;
+}
+
+const validateLanguage = (language: any): Language => {
+  if (language === 'en' || language === 'ru') {
+    return language;
+  }
+  return 'ru'; // Default fallback
+};
+
 export const useLanguageStore = create<LanguageState>()(
   persist(
     (set) => ({
@@ -17,7 +28,26 @@ export const useLanguageStore = create<LanguageState>()(
     }),
     {
       name: 'language-storage',
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persistedState: any, version: number): PersistedLanguageState => {
+        try {
+          // Version 1: Initial version with validation
+          if (version === 0 || !version) {
+            return {
+              language: validateLanguage(persistedState?.language),
+            };
+          }
+          
+          // Future versions can be handled here
+          return persistedState as PersistedLanguageState;
+        } catch (error) {
+          console.warn('Language store migration failed:', error);
+          return {
+            language: 'ru',
+          };
+        }
+      },
     }
   )
 );

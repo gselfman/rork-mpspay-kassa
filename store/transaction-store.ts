@@ -11,6 +11,37 @@ interface TransactionState {
   clearTransactions: () => void;
 }
 
+interface PersistedTransactionState {
+  transactions: Transaction[];
+}
+
+const validateTransaction = (transaction: any): Transaction | null => {
+  if (!transaction || typeof transaction !== 'object') return null;
+  
+  if (typeof transaction.id !== 'string' || transaction.id.length === 0) return null;
+  if (typeof transaction.amount !== 'number' || transaction.amount <= 0) return null;
+  if (typeof transaction.status !== 'number') return null;
+  
+  return {
+    id: transaction.id,
+    amount: transaction.amount,
+    status: transaction.status,
+    createdAt: typeof transaction.createdAt === 'string' ? transaction.createdAt : new Date().toISOString(),
+    description: typeof transaction.description === 'string' ? transaction.description : '',
+    paymentUrl: typeof transaction.paymentUrl === 'string' ? transaction.paymentUrl : undefined,
+    currency: typeof transaction.currency === 'string' ? transaction.currency : 'RUB',
+    merchantName: typeof transaction.merchantName === 'string' ? transaction.merchantName : undefined,
+  };
+};
+
+const validateTransactions = (transactions: any[]): Transaction[] => {
+  if (!Array.isArray(transactions)) return [];
+  
+  return transactions
+    .map(validateTransaction)
+    .filter((transaction): transaction is Transaction => transaction !== null);
+};
+
 export const useTransactionStore = create<TransactionState>()(
   persist(
     (set, get) => ({
@@ -65,7 +96,30 @@ export const useTransactionStore = create<TransactionState>()(
     }),
     {
       name: 'transaction-storage',
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persistedState: any, version: number): PersistedTransactionState => {
+        try {
+          // Version 1: Initial version with validation
+          if (version === 0 || !version) {
+            const validatedTransactions = persistedState?.transactions 
+              ? validateTransactions(persistedState.transactions)
+              : [];
+            
+            return {
+              transactions: validatedTransactions,
+            };
+          }
+          
+          // Future versions can be handled here
+          return persistedState as PersistedTransactionState;
+        } catch (error) {
+          console.warn('Transaction store migration failed:', error);
+          return {
+            transactions: [],
+          };
+        }
+      },
     }
   )
 );

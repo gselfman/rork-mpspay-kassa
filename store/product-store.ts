@@ -17,6 +17,33 @@ interface ProductState {
   };
 }
 
+interface PersistedProductState {
+  products: Product[];
+}
+
+const validateProduct = (product: any): Product | null => {
+  if (!product || typeof product !== 'object') return null;
+  
+  if (typeof product.id !== 'string' || product.id.length === 0) return null;
+  if (typeof product.name !== 'string' || product.name.length === 0) return null;
+  if (typeof product.price !== 'number' || product.price <= 0) return null;
+  
+  return {
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    description: typeof product.description === 'string' ? product.description : '',
+  };
+};
+
+const validateProducts = (products: any[]): Product[] => {
+  if (!Array.isArray(products)) return [];
+  
+  return products
+    .map(validateProduct)
+    .filter((product): product is Product => product !== null);
+};
+
 export const useProductStore = create<ProductState>()(
   persist(
     (set, get) => ({
@@ -119,7 +146,30 @@ export const useProductStore = create<ProductState>()(
     }),
     {
       name: 'product-storage',
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persistedState: any, version: number): PersistedProductState => {
+        try {
+          // Version 1: Initial version with validation
+          if (version === 0 || !version) {
+            const validatedProducts = persistedState?.products 
+              ? validateProducts(persistedState.products)
+              : [];
+            
+            return {
+              products: validatedProducts,
+            };
+          }
+          
+          // Future versions can be handled here
+          return persistedState as PersistedProductState;
+        } catch (error) {
+          console.warn('Product store migration failed:', error);
+          return {
+            products: [],
+          };
+        }
+      },
     }
   )
 );

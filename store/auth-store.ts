@@ -23,6 +23,32 @@ interface AuthState {
   logout: () => void;
 }
 
+interface PersistedAuthState {
+  isAuthenticated: boolean;
+  credentials: Credentials | null;
+  isInitialized: boolean;
+}
+
+const validateCredentials = (credentials: any): Credentials | null => {
+  if (!credentials || typeof credentials !== 'object') return null;
+  
+  const required = ['readOnlyAccessKey', 'currencyCode', 'currencyAccountNumber', 'clientId', 'currencyAccountGuid'];
+  const hasRequired = required.every(field => typeof credentials[field] === 'string' && credentials[field].length > 0);
+  
+  if (!hasRequired) return null;
+  
+  return {
+    readOnlyAccessKey: credentials.readOnlyAccessKey,
+    currencyCode: credentials.currencyCode,
+    currencyAccountNumber: credentials.currencyAccountNumber,
+    clientId: credentials.clientId,
+    currencyAccountGuid: credentials.currencyAccountGuid,
+    merchantName: credentials.merchantName || undefined,
+    clientSecret: credentials.clientSecret || undefined,
+    commentNumber: typeof credentials.commentNumber === 'number' ? credentials.commentNumber : undefined,
+  };
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -59,7 +85,34 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persistedState: any, version: number): PersistedAuthState => {
+        try {
+          // Version 1: Initial version with validation
+          if (version === 0 || !version) {
+            const validatedCredentials = persistedState?.credentials 
+              ? validateCredentials(persistedState.credentials)
+              : null;
+            
+            return {
+              isAuthenticated: Boolean(validatedCredentials),
+              credentials: validatedCredentials,
+              isInitialized: true,
+            };
+          }
+          
+          // Future versions can be handled here
+          return persistedState as PersistedAuthState;
+        } catch (error) {
+          console.warn('Auth store migration failed:', error);
+          return {
+            isAuthenticated: false,
+            credentials: null,
+            isInitialized: true,
+          };
+        }
+      },
       onRehydrateStorage: () => (state) => {
         // Set isInitialized to true when rehydration is complete
         if (state) {

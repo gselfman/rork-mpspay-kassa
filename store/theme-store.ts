@@ -10,6 +10,11 @@ export interface ThemeState {
   setUseSystemTheme: (useSystemTheme: boolean) => void;
 }
 
+interface PersistedThemeState {
+  darkMode: boolean;
+  useSystemTheme: boolean;
+}
+
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
@@ -21,7 +26,28 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'theme-storage',
+      version: 1,
       storage: createJSONStorage(() => AsyncStorage),
+      migrate: (persistedState: any, version: number): PersistedThemeState => {
+        try {
+          // Version 1: Initial version with validation
+          if (version === 0 || !version) {
+            return {
+              darkMode: Boolean(persistedState?.darkMode),
+              useSystemTheme: Boolean(persistedState?.useSystemTheme),
+            };
+          }
+          
+          // Future versions can be handled here
+          return persistedState as PersistedThemeState;
+        } catch (error) {
+          console.warn('Theme store migration failed:', error);
+          return {
+            darkMode: false,
+            useSystemTheme: false,
+          };
+        }
+      },
     }
   )
 );
