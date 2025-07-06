@@ -1,8 +1,8 @@
 import { router } from './create-context';
-import { exchangeRateProcedure } from './routes/exchange-rate/route';
+import { exchangeRateQuery } from './routes/exchange-rate/route';
 
 export const appRouter = router({
-  exchangeRate: exchangeRateProcedure,
+  exchangeRate: exchangeRateQuery,
 });
 
 export type AppRouter = typeof appRouter;

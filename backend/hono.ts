@@ -18,8 +18,8 @@ app.get('/', (c) => {
   });
 });
 
-// tRPC endpoint
-app.use('/trpc/*', trpcServer({
+// tRPC endpoint - Fixed URL to match client
+app.use('/api/trpc/*', trpcServer({
   router: appRouter,
   createContext,
   onError({ error }) {
