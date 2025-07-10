@@ -51,9 +51,9 @@ export default function AuthScreen() {
   const [validationStep, setValidationStep] = useState(0);
   const [errorPopupVisible, setErrorPopupVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [rawErrorResponse, setRawErrorResponse] = useState<string | null>(null);
-  const [accountBalance, setAccountBalance] = useState<number | null>(null);
-  const [customerBalance, setCustomerBalance] = useState<number | null>(null);
+  const [rawErrorResponse, setRawErrorResponse] = useState(null);
+  const [accountBalance, setAccountBalance] = useState(null);
+  const [customerBalance, setCustomerBalance] = useState(null);
 
   // Get screen dimensions to adjust font sizes for different devices
   const { width, height } = Dimensions.get('window');
@@ -89,10 +89,10 @@ export default function AuthScreen() {
         : 'Имя продавца не должно превышать 50 символов';
     }
     
-    // Convert ValidationErrors to Record<string, string> to fix TypeScript error
+    // Convert ValidationErrors to Record to fix TypeScript error
     const errorsRecord: Record<string, string> = {};
     Object.entries(validationErrors).forEach(([key, value]) => {
-      if (value !== undefined) {
+      if (value != undefined) {
         errorsRecord[key] = value;
       }
     });
@@ -257,28 +257,20 @@ export default function AuthScreen() {
   if (!showSetupForm) {
     return (
       <>
-        <Stack.Screen 
-          options={{
-            headerShown: false
-          }}
-        />
+        <Stack.Screen options={{ headerShown: false }} />
+        <StatusBar style={darkMode ? 'light' : 'dark'} />
         
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-          <StatusBar style={darkMode ? "light" : "dark"} />
-          <View style={styles.welcomeContainer}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+          <View style={[styles.welcomeContainer, { backgroundColor: theme.background }]}>
             <View style={styles.logoContainer}>
-              <Image 
-                source={IMAGES.LOGO} 
-                style={styles.welcomeLogo} 
-                resizeMode="contain"
-              />
+              <Image source={IMAGES.logo} style={styles.welcomeLogo} />
             </View>
             
-            <Text style={[styles.welcomeTitle, { color: theme.text }]} allowFontScaling={false}>
+            <Text style={[styles.welcomeTitle, { color: theme.text }]}>
               MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
             </Text>
             
-            <Text style={[styles.welcomeSubtitle, { color: theme.placeholder }]} allowFontScaling={false}>
+            <Text style={[styles.welcomeSubtitle, { color: theme.text }]}>
               {language === 'en' 
                 ? 'Mobile terminal for payment processing' 
                 : 'Мобильная касса для приёма платежей'}
@@ -286,7 +278,7 @@ export default function AuthScreen() {
             
             <View style={styles.welcomeButtons}>
               <Button
-                title={language === 'en' ? 'Setup Terminal' : 'Настроить терминал'}
+                title={language === 'en' ? 'Setup Terminal' : 'Настроить кассу'}
                 onPress={() => setShowSetupForm(true)}
                 style={styles.setupButton}
               />
@@ -299,130 +291,341 @@ export default function AuthScreen() {
 
   return (
     <>
-      <Stack.Screen 
-        options={{
-          headerShown: false
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar style={darkMode ? 'light' : 'dark'} />
       
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-        <StatusBar style={darkMode ? "light" : "dark"} />
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoidingView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <ScrollView 
-              contentContainerStyle={[styles.scrollContent, { paddingBottom: Platform.OS === 'ios' ? 50 : 24 }]}
-              showsVerticalScrollIndicator={false}
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
             >
               <View style={styles.header}>
-                <Image 
-                  source={IMAGES.LOGO} 
-                  style={styles.logo} 
-                  resizeMode="contain"
-                />
-                <Text style={[styles.title, { color: theme.text }]} allowFontScaling={false}>
+                <Image source={IMAGES.logo} style={styles.logo} />
+                <Text style={[styles.title, { color: theme.text }]}>
                   MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
                 </Text>
-                <Text style={[styles.subtitle, { color: theme.placeholder }]} allowFontScaling={false}>
+                <Text style={[styles.subtitle, { color: theme.text }]}>
                   {language === 'en' 
                     ? 'To work with the terminal, you need to authorize your workplace. Please prepare the following data from your personal account at merch.mpspay.ru:' 
                     : 'Для работы в кассе вам нужно авторизовать рабочее место, для этого приготовьте следующие данные из личного кабинета merch.mpspay.ru:'}
                 </Text>
               </View>
-              
-              {errors.form && (
-                <Text style={[styles.formError, { color: theme.notification }]} allowFontScaling={false}>
-                  {errors.form}
-                </Text>
-              )}
-              
+
               <View style={styles.form}>
-                <Input
-                  label={language === 'en' ? 'Read Only Access Key' : 'Ключ доступа Read Only'}
-                  placeholder={language === 'en' 
-                    ? 'GUID format: 9cda1144-63ef-496a-a4da-24e03bba2608' 
-                    : 'Формат GUID: 9cda1144-63ef-496a-a4da-24e03bba2608'}
-                  value={readOnlyAccessKey}
-                  onChangeText={setReadOnlyAccessKey}
-                  error={errors.readOnlyAccessKey}
-                  autoCapitalize="none"
-                  style={getInputStyle('readOnlyAccessKey')}
-                  darkMode={darkMode}
-                />
+                {errors.form && (
+                  <Text style={[styles.formError, { color: theme.notification }]}>
+                    {errors.form}
+                  </Text>
+                )}
                 
-                <Input
-                  label={language === 'en' ? 'Currency Code' : 'Код валюты'}
-                  placeholder={language === 'en' 
-                    ? 'e.g., 112 for RUB' 
-                    : 'например, 112 для RUB'}
-                  value={currencyCode}
-                  onChangeText={setCurrencyCode}
-                  error={errors.currencyCode}
-                  keyboardType="numeric"
-                  style={getInputStyle('currencyCode')}
-                  darkMode={darkMode}
-                />
-                
-                <Input
-                  label={language === 'en' ? 'Currency Account Number' : 'Номер счета вашей валюты'}
-                  placeholder={language === 'en' 
-                    ? '5-8 digits, e.g.: 14744' 
-                    : '5-8 цифр, например: 14744'}
-                  value={currencyAccountNumber}
-                  onChangeText={setCurrencyAccountNumber}
-                  error={errors.currencyAccountNumber}
-                  keyboardType="numeric"
-                  style={getInputStyle('currencyAccountNumber')}
-                  darkMode={darkMode}
-                />
-                
-                <Input
-                  label={language === 'en' ? 'Client ID' : 'Клиентский номер'}
-                  placeholder={language === 'en' 
-                    ? '5-8 digits, e.g.: 10221' 
-                    : '5-8 цифр, например: 10221'}
-                  value={clientId}
-                  onChangeText={setClientId}
-                  error={errors.clientId}
-                  keyboardType="numeric"
-                  style={getInputStyle('clientId')}
-                  darkMode={darkMode}
-                />
-                
-                <Input
-                  label={language === 'en' ? 'Currency Account GUID' : 'GUID счета вашей валюты'}
-                  placeholder={language === 'en' 
-                    ? 'GUID format: 3a4e346b-1a30-404e-b12e-4ba3414c30f8' 
-                    : 'Формат GUID: 3a4e346b-1a30-404e-b12e-4ba3414c30f8'}
-                  value={currencyAccountGuid}
-                  onChangeText={setCurrencyAccountGuid}
-                  error={errors.currencyAccountGuid}
-                  autoCapitalize="none"
-                  style={getInputStyle('currencyAccountGuid')}
-                  darkMode={darkMode}
-                />
-                
-                <Input
-                  label={language === 'en' ? 'Merchant Name' : 'Имя продавца'}
-                  placeholder={language === 'en' 
-                    ? 'E.g.: Snow Hotel or Shoelace Online Store' 
-                    : 'Например: Отель Снежинка или Интернет магазин шнурков'}
-                  value={merchantName}
-                  onChangeText={setMerchantName}
-                  error={errors.merchantName}
-                  maxLength={50}
-                  darkMode={darkMode}
-                />
-                
+                {/* ReadOnly Access Key */}
+                {Platform.OS === 'web' ? (
+                  <View style={{ marginBottom: 16 }}>
+                    <Text style={{ 
+                      color: theme.text, 
+                      fontSize: 16, 
+                      fontWeight: '500', 
+                      marginBottom: 8 
+                    }}>
+                      {language === 'en' ? 'ReadOnly Access Key *' : 'ReadOnly ключ доступа *'}
+                    </Text>
+                    <input
+                      style={{
+                        width: '100%',
+                        height: 48,
+                        borderWidth: 1,
+                        borderColor: errors.readOnlyAccessKey ? theme.notification : theme.border,
+                        borderRadius: 8,
+                        padding: '12px',
+                        fontSize: 16,
+                        backgroundColor: theme.background,
+                        color: theme.text,
+                        outline: 'none',
+                        borderStyle: 'solid',
+                        boxSizing: 'border-box',
+                        ...StyleSheet.flatten(getInputStyle('readOnlyAccessKey'))
+                      }}
+                      placeholder=""
+                      value={readOnlyAccessKey}
+                      onChange={e => setReadOnlyAccessKey(e.target.value)}
+                      autoFocus
+                    />
+                    {errors.readOnlyAccessKey && (
+                      <Text style={{ color: theme.notification, fontSize: 12, marginTop: 4 }}>
+                        {errors.readOnlyAccessKey}
+                      </Text>
+                    )}
+                  </View>
+                ) : (
+                  <Input
+                    label={language === 'en' ? 'ReadOnly Access Key *' : 'ReadOnly ключ доступа *'}
+                    value={readOnlyAccessKey}
+                    onChangeText={setReadOnlyAccessKey}
+                    error={errors.readOnlyAccessKey}
+                    darkMode={darkMode}
+                    style={getInputStyle('readOnlyAccessKey')}
+                    autoFocus
+                  />
+                )}
+
+                {/* Currency Code */}
+                {Platform.OS === 'web' ? (
+                  <View style={{ marginBottom: 16 }}>
+                    <Text style={{ 
+                      color: theme.text, 
+                      fontSize: 16, 
+                      fontWeight: '500', 
+                      marginBottom: 8 
+                    }}>
+                      {language === 'en' ? 'Currency Code *' : 'Код валюты *'}
+                    </Text>
+                    <input
+                      style={{
+                        width: '100%',
+                        height: 48,
+                        borderWidth: 1,
+                        borderColor: errors.currencyCode ? theme.notification : theme.border,
+                        borderRadius: 8,
+                        padding: '12px',
+                        fontSize: 16,
+                        backgroundColor: theme.background,
+                        color: theme.text,
+                        outline: 'none',
+                        borderStyle: 'solid',
+                        boxSizing: 'border-box',
+                        ...StyleSheet.flatten(getInputStyle('currencyCode'))
+                      }}
+                      placeholder=""
+                      value={currencyCode}
+                      onChange={e => setCurrencyCode(e.target.value)}
+                      type="number"
+                    />
+                    {errors.currencyCode && (
+                      <Text style={{ color: theme.notification, fontSize: 12, marginTop: 4 }}>
+                        {errors.currencyCode}
+                      </Text>
+                    )}
+                  </View>
+                ) : (
+                  <Input
+                    label={language === 'en' ? 'Currency Code *' : 'Код валюты *'}
+                    value={currencyCode}
+                    onChangeText={setCurrencyCode}
+                    error={errors.currencyCode}
+                    darkMode={darkMode}
+                    style={getInputStyle('currencyCode')}
+                    keyboardType="numeric"
+                  />
+                )}
+
+                {/* Currency Account Number */}
+                {Platform.OS === 'web' ? (
+                  <View style={{ marginBottom: 16 }}>
+                    <Text style={{ 
+                      color: theme.text, 
+                      fontSize: 16, 
+                      fontWeight: '500', 
+                      marginBottom: 8 
+                    }}>
+                      {language === 'en' ? 'Currency Account Number *' : 'Номер счёта валюты *'}
+                    </Text>
+                    <input
+                      style={{
+                        width: '100%',
+                        height: 48,
+                        borderWidth: 1,
+                        borderColor: errors.currencyAccountNumber ? theme.notification : theme.border,
+                        borderRadius: 8,
+                        padding: '12px',
+                        fontSize: 16,
+                        backgroundColor: theme.background,
+                        color: theme.text,
+                        outline: 'none',
+                        borderStyle: 'solid',
+                        boxSizing: 'border-box',
+                        ...StyleSheet.flatten(getInputStyle('currencyAccountNumber'))
+                      }}
+                      placeholder=""
+                      value={currencyAccountNumber}
+                      onChange={e => setCurrencyAccountNumber(e.target.value)}
+                      type="number"
+                    />
+                    {errors.currencyAccountNumber && (
+                      <Text style={{ color: theme.notification, fontSize: 12, marginTop: 4 }}>
+                        {errors.currencyAccountNumber}
+                      </Text>
+                    )}
+                  </View>
+                ) : (
+                  <Input
+                    label={language === 'en' ? 'Currency Account Number *' : 'Номер счёта валюты *'}
+                    value={currencyAccountNumber}
+                    onChangeText={setCurrencyAccountNumber}
+                    error={errors.currencyAccountNumber}
+                    darkMode={darkMode}
+                    style={getInputStyle('currencyAccountNumber')}
+                    keyboardType="numeric"
+                  />
+                )}
+
+                {/* Client ID */}
+                {Platform.OS === 'web' ? (
+                  <View style={{ marginBottom: 16 }}>
+                    <Text style={{ 
+                      color: theme.text, 
+                      fontSize: 16, 
+                      fontWeight: '500', 
+                      marginBottom: 8 
+                    }}>
+                      {language === 'en' ? 'Client ID *' : 'ID клиента *'}
+                    </Text>
+                    <input
+                      style={{
+                        width: '100%',
+                        height: 48,
+                        borderWidth: 1,
+                        borderColor: errors.clientId ? theme.notification : theme.border,
+                        borderRadius: 8,
+                        padding: '12px',
+                        fontSize: 16,
+                        backgroundColor: theme.background,
+                        color: theme.text,
+                        outline: 'none',
+                        borderStyle: 'solid',
+                        boxSizing: 'border-box',
+                        ...StyleSheet.flatten(getInputStyle('clientId'))
+                      }}
+                      placeholder=""
+                      value={clientId}
+                      onChange={e => setClientId(e.target.value)}
+                      type="number"
+                    />
+                    {errors.clientId && (
+                      <Text style={{ color: theme.notification, fontSize: 12, marginTop: 4 }}>
+                        {errors.clientId}
+                      </Text>
+                    )}
+                  </View>
+                ) : (
+                  <Input
+                    label={language === 'en' ? 'Client ID *' : 'ID клиента *'}
+                    value={clientId}
+                    onChangeText={setClientId}
+                    error={errors.clientId}
+                    darkMode={darkMode}
+                    style={getInputStyle('clientId')}
+                    keyboardType="numeric"
+                  />
+                )}
+
+                {/* Currency Account GUID */}
+                {Platform.OS === 'web' ? (
+                  <View style={{ marginBottom: 16 }}>
+                    <Text style={{ 
+                      color: theme.text, 
+                      fontSize: 16, 
+                      fontWeight: '500', 
+                      marginBottom: 8 
+                    }}>
+                      {language === 'en' ? 'Currency Account GUID *' : 'GUID счёта валюты *'}
+                    </Text>
+                    <input
+                      style={{
+                        width: '100%',
+                        height: 48,
+                        borderWidth: 1,
+                        borderColor: errors.currencyAccountGuid ? theme.notification : theme.border,
+                        borderRadius: 8,
+                        padding: '12px',
+                        fontSize: 16,
+                        backgroundColor: theme.background,
+                        color: theme.text,
+                        outline: 'none',
+                        borderStyle: 'solid',
+                        boxSizing: 'border-box',
+                        ...StyleSheet.flatten(getInputStyle('currencyAccountGuid'))
+                      }}
+                      placeholder=""
+                      value={currencyAccountGuid}
+                      onChange={e => setCurrencyAccountGuid(e.target.value)}
+                    />
+                    {errors.currencyAccountGuid && (
+                      <Text style={{ color: theme.notification, fontSize: 12, marginTop: 4 }}>
+                        {errors.currencyAccountGuid}
+                      </Text>
+                    )}
+                  </View>
+                ) : (
+                  <Input
+                    label={language === 'en' ? 'Currency Account GUID *' : 'GUID счёта валюты *'}
+                    value={currencyAccountGuid}
+                    onChangeText={setCurrencyAccountGuid}
+                    error={errors.currencyAccountGuid}
+                    darkMode={darkMode}
+                    style={getInputStyle('currencyAccountGuid')}
+                  />
+                )}
+
+                {/* Merchant Name */}
+                {Platform.OS === 'web' ? (
+                  <View style={{ marginBottom: 16 }}>
+                    <Text style={{ 
+                      color: theme.text, 
+                      fontSize: 16, 
+                      fontWeight: '500', 
+                      marginBottom: 8 
+                    }}>
+                      {language === 'en' ? 'Merchant Name (Optional)' : 'Имя продавца (необязательно)'}
+                    </Text>
+                    <input
+                      style={{
+                        width: '100%',
+                        height: 48,
+                        borderWidth: 1,
+                        borderColor: errors.merchantName ? theme.notification : theme.border,
+                        borderRadius: 8,
+                        padding: '12px',
+                        fontSize: 16,
+                        backgroundColor: theme.background,
+                        color: theme.text,
+                        outline: 'none',
+                        borderStyle: 'solid',
+                        boxSizing: 'border-box'
+                      }}
+                      placeholder=""
+                      value={merchantName}
+                      onChange={e => setMerchantName(e.target.value)}
+                      maxLength={50}
+                    />
+                    {errors.merchantName && (
+                      <Text style={{ color: theme.notification, fontSize: 12, marginTop: 4 }}>
+                        {errors.merchantName}
+                      </Text>
+                    )}
+                  </View>
+                ) : (
+                  <Input
+                    label={language === 'en' ? 'Merchant Name (Optional)' : 'Имя продавца (необязательно)'}
+                    value={merchantName}
+                    onChangeText={setMerchantName}
+                    error={errors.merchantName}
+                    darkMode={darkMode}
+                    maxLength={50}
+                  />
+                )}
+
                 {/* Display account balance if available */}
                 {accountBalance !== null && validationStep >= 2 && (
                   <View style={[styles.balanceInfo, { backgroundColor: theme.card }]}>
-                    <Text style={[styles.balanceLabel, { color: theme.text }]} allowFontScaling={false}>
+                    <Text style={[styles.balanceLabel, { color: theme.text }]}>
                       {language === 'en' ? 'Account Balance:' : 'Баланс счета:'}
                     </Text>
-                    <Text style={[styles.balanceValue, { color: theme.primary }]} allowFontScaling={false}>
+                    <Text style={[styles.balanceValue, { color: theme.text }]}>
                       ₽{accountBalance.toLocaleString()}
                     </Text>
                   </View>
@@ -431,40 +634,39 @@ export default function AuthScreen() {
                 {/* Display customer balance if available */}
                 {customerBalance !== null && validationStep >= 3 && (
                   <View style={[styles.balanceInfo, { backgroundColor: theme.card }]}>
-                    <Text style={[styles.balanceLabel, { color: theme.text }]} allowFontScaling={false}>
+                    <Text style={[styles.balanceLabel, { color: theme.text }]}>
                       {language === 'en' ? 'Customer Balance:' : 'Баланс клиента:'}
                     </Text>
-                    <Text style={[styles.balanceValue, { color: theme.primary }]} allowFontScaling={false}>
+                    <Text style={[styles.balanceValue, { color: theme.text }]}>
                       ₽{customerBalance.toLocaleString()}
                     </Text>
                   </View>
                 )}
-                
+
                 <Button
-                  title={isLoading 
-                    ? (language === 'en' ? "Checking..." : "Проверка...") 
-                    : (language === 'en' ? "Connect Workplace" : "Подключить рабочее место")}
+                  title={language === 'en' ? 'Authorize Terminal' : 'Авторизовать кассу'}
                   onPress={handleSubmit}
                   loading={isLoading}
+                  disabled={isLoading}
                   style={styles.submitButton}
                 />
                 
                 <Button
-                  title={language === 'en' ? "Use Example Data" : "Использовать примеры данных"}
-                  variant="outline"
+                  title={language === 'en' ? 'Fill Test Data' : 'Заполнить тестовыми данными'}
                   onPress={fillExampleCredentials}
+                  variant="outline"
                   style={styles.testButton}
                 />
                 
                 <Button
-                  title={language === 'en' ? "Go Back" : "Вернуться назад"}
-                  variant="outline"
+                  title={language === 'en' ? 'Back' : 'Назад'}
                   onPress={() => setShowSetupForm(false)}
+                  variant="outline"
                   style={styles.backButton}
                 />
               </View>
-              
-              <Text style={[styles.helpText, { color: theme.placeholder }]} allowFontScaling={false}>
+
+              <Text style={[styles.helpText, { color: theme.textSecondary }]}>
                 {language === 'en' 
                   ? 'Need help? Contact your manager or visit merch.mpspay.ru' 
                   : 'Нужна помощь? Свяжитесь с вашим менеджером или посетите merch.mpspay.ru'}
@@ -472,16 +674,16 @@ export default function AuthScreen() {
             </ScrollView>
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
-        
-        <ErrorPopup
-          visible={errorPopupVisible}
-          message={errorMessage}
-          onClose={() => setErrorPopupVisible(false)}
-          darkMode={darkMode}
-          title={language === 'en' ? 'Validation Error' : 'Ошибка валидации'}
-          rawResponse={rawErrorResponse || undefined}
-        />
       </SafeAreaView>
+      
+      <ErrorPopup
+        visible={errorPopupVisible}
+        message={errorMessage}
+        onClose={() => setErrorPopupVisible(false)}
+        darkMode={darkMode}
+        title={language === 'en' ? 'Validation Error' : 'Ошибка валидации'}
+        rawResponse={rawErrorResponse || undefined}
+      />
     </>
   );
 }
