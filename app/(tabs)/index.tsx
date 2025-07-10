@@ -782,22 +782,46 @@ export default function HomeScreen() {
               </Text>
               
               <View style={styles.transactionCheckForm}>
-                <TextInput
-                  style={[
-                    styles.transactionCheckInput,
-                    { 
-                      backgroundColor: theme.background,
-                      color: theme.text,
-                      borderColor: transactionCheckError ? theme.notification : theme.border
-                    }
-                  ]}
-                  placeholder={language === 'en' ? 'Enter transaction ID' : 'Введите ID операции'}
-                  placeholderTextColor={theme.placeholder}
-                  value={transactionIdToCheck}
-                  onChangeText={setTransactionIdToCheck}
-                  keyboardType="numeric"
-                  allowFontScaling={false}
-                />
+              {Platform.OS === 'web' ? (
+  <input
+    style={{
+      flex: 1,
+      height: 44,
+      borderWidth: 1,
+      borderColor: transactionCheckError ? theme.error : theme.border,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      marginRight: 8,
+      fontSize: 16,
+      backgroundColor: theme.background,
+      color: theme.text,
+      outline: 'none',
+      borderStyle: 'solid',
+    }}
+    placeholder={language === 'en' ? 'Enter transaction ID' : 'Введите ID операции'}
+    value={transactionIdToCheck}
+    onChange={e => setTransactionIdToCheck(e.target.value)}
+    type="text"
+  />
+) : (
+  <TextInput
+    style={[
+      styles.transactionCheckInput,
+      { 
+        backgroundColor: theme.background,
+        color: theme.text,
+        borderColor: transactionCheckError ? theme.error : theme.border
+      }
+    ]}
+    placeholder={language === 'en' ? 'Enter transaction ID' : 'Введите ID операции'}
+    placeholderTextColor={theme.placeholder}
+    value={transactionIdToCheck}
+    onChangeText={setTransactionIdToCheck}
+    keyboardType="numeric"
+    allowFontScaling={false}
+  />
+)}
+  
                 
                 <Button
                   title={language === 'en' ? 'Check' : 'Проверить'}
