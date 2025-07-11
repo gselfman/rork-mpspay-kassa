@@ -8,6 +8,8 @@ import {
   Alert,
   Platform,
   Image,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
@@ -79,6 +81,10 @@ export default function SettingsScreen() {
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   
+  // Добавляем состояние для модального окна импорта
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importText, setImportText] = useState('');
+  
   const handleLogout = () => {
     Alert.alert(
       language === 'en' ? 'Logout' : 'Выход',
@@ -97,7 +103,7 @@ export default function SettingsScreen() {
               await logout();
               router.replace('/');
             } catch (error) {
-              console.error('Error during logout:', error);
+              console.error('Logout error:', error);
             } finally {
               setIsLoggingOut(false);
             }
@@ -106,578 +112,485 @@ export default function SettingsScreen() {
       ]
     );
   };
-  
-  const handleLanguageChange = () => {
-    const newLanguage = language === 'en' ? 'ru' : 'en';
-    setLanguage(newLanguage);
-  };
-  
-  const handleEditProfile = () => {
-    router.push('/profile/edit');
-  };
 
-  const handleManageProducts = () => {
-    router.push('/product');
-  };
-
-  const handleTelegramSupport = () => {
-    Alert.alert(
-      language === 'en' ? 'Telegram Support' : 'Поддержка в Telegram',
-      language === 'en' 
-        ? 'Contact our support team via Telegram: @max_support_main'
-        : 'Свяжитесь с нашей службой поддержки через Telegram: @max_support_main',
-      [
-        {
-          text: 'OK',
-          style: 'default'
-        }
-      ]
-    );
-  };
-
-  const handleExportConfiguration = () => {
+  const handleExport = async () => {
     if (!credentials) {
       Alert.alert(
         language === 'en' ? 'Error' : 'Ошибка',
-        language === 'en' ? 'No configuration to export. Please set up your credentials first.' : 'Нет конфигурации для экспорта. Пожалуйста, сначала настройте учетные данные.'
+        language === 'en' ? 'No credentials to export' : 'Нет данных для экспорта'
       );
       return;
     }
-    performExport();
-  };
 
-  const performExport = async () => {
     setIsExporting(true);
     
     try {
-      const configuration = {
-        version: '1.0',
-        exportDate: new Date().toISOString(),
-        appName: 'MPSPAY Kassa',
-        credentials: {
-          clientId: credentials?.clientId || '',
-          merchantName: credentials?.merchantName || '',
-          readOnlyAccessKey: credentials?.readOnlyAccessKey || '',
-          clientSecret: credentials?.clientSecret || '',
-          currencyAccountNumber: credentials?.currencyAccountNumber || '',
-          currencyAccountGuid: credentials?.currencyAccountGuid || '',
-          currencyCode: credentials?.currencyCode || '643',
-          commentNumber: credentials?.commentNumber || undefined,
-          apiKey: credentials?.readOnlyAccessKey || '',
-          secretKey: credentials?.clientSecret || '',
-          accountNumber: credentials?.currencyAccountNumber || '',
-          accountGuid: credentials?.currencyAccountGuid || ''
-        },
-        settings: {
-          language,
-          darkMode
-        },
-        products: products.map(product => ({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          description: product.description || '',
-          sku: product.sku || '',
-          imageUrl: product.imageUrl || ''
-        })),
-        statistics: {
-          totalProducts: products.length,
-          exportedBy: credentials?.merchantName || 'Unknown',
-          exportTimestamp: Date.now()
-        }
+      const exportData = {
+        credentials,
+        products,
+        exportedAt: new Date().toISOString(),
+        version: '1.0'
       };
-
-      const configJson = JSON.stringify(configuration, null, 2);
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
-      const fileName = `kassa-config-${timestamp}.json`;
       
+      const jsonData = JSON.stringify(exportData, null, 2);
       const environment = detectEnvironment();
       
-      if (environment === 'web') {
-        // Web browser download
-        const blob = new Blob([configJson], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
+      if (environment === 'telegram' || environment === 'web') {
+        // Для Telegram Mini App и веб-версии - показываем алерт с возможностью копирования
         Alert.alert(
-          language === 'en' ? 'Export Successful' : 'Экспорт успешен',
-          language === 'en' 
-            ? `Configuration file "${fileName}" has been downloaded.`
-            : `Файл конфигурации "${fileName}" был загружен.`
+          language === 'en' ? 'Export Configuration' : 'Экспорт конфигурации',
+          jsonData,
+          [
+            {
+              text: language === 'en' ? 'Copy to Clipboard' : 'Скопировать в буфер',
+              onPress: async () => {
+                try {
+                  if (navigator && navigator.clipboard) {
+                    await navigator.clipboard.writeText(jsonData);
+                    Alert.alert(
+                      language === 'en' ? 'Success' : 'Успех',
+                      language === 'en' ? 'Configuration copied to clipboard' : 'Конфигурация скопирована в буфер обмена'
+                    );
+                  } else {
+                    // Fallback для старых браузеров
+                    const textArea = document.createElement('textarea');
+                    textArea.value = jsonData;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    Alert.alert(
+                      language === 'en' ? 'Success' : 'Успех',
+                      language === 'en' ? 'Configuration copied to clipboard' : 'Конфигурация скопирована в буфер обмена'
+                    );
+                  }
+                } catch (error) {
+                  console.error('Copy error:', error);
+                  Alert.alert(
+                    language === 'en' ? 'Error' : 'Ошибка',
+                    language === 'en' ? 'Failed to copy to clipboard' : 'Не удалось скопировать в буфер обмена'
+                  );
+                }
+              }
+            },
+            {
+              text: language === 'en' ? 'OK' : 'ОК',
+              style: 'cancel'
+            }
+          ],
+          { cancelable: true }
         );
-      } else if (environment === 'telegram') {
-        // Telegram Mini App - copy to clipboard
-        if (navigator.clipboard) {
-          await navigator.clipboard.writeText(configJson);
-          Alert.alert(
-            language === 'en' ? 'Configuration Copied' : 'Конфигурация скопирована',
-            language === 'en' 
-              ? 'Configuration has been copied to clipboard. You can paste it into a text file.'
-              : 'Конфигурация скопирована в буфер обмена. Вы можете вставить её в текстовый файл.'
-          );
-        } else {
-          // Show config in alert for manual copying
-          Alert.alert(
-            language === 'en' ? 'Export Configuration' : 'Экспорт конфигурации',
-            configJson.substring(0, 500) + '...\n\n' + 
-            (language === 'en' ? 'Copy this text and save it manually.' : 'Скопируйте этот текст и сохраните вручную.')
-          );
-        }
       } else {
-        // Mobile platform
-        const fileUri = `${FileSystem.documentDirectory}${fileName}`;
-        await FileSystem.writeAsStringAsync(fileUri, configJson);
+        // Для мобильных платформ - сохраняем в файл
+        const fileName = `mpspay_config_${new Date().toISOString().split('T')[0]}.json`;
+        const fileUri = FileSystem.documentDirectory + fileName;
+        
+        await FileSystem.writeAsStringAsync(fileUri, jsonData, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
         
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(fileUri, {
             mimeType: 'application/json',
-            dialogTitle: language === 'en' ? 'Save Configuration File' : 'Сохранить файл конфигурации'
+            dialogTitle: language === 'en' ? 'Export Configuration' : 'Экспорт конфигурации',
+            UTI: 'public.json',
           });
-        } else {
-          Alert.alert(
-            language === 'en' ? 'Export Complete' : 'Экспорт завершен',
-            language === 'en' 
-              ? `Configuration saved to: ${fileUri}`
-              : `Конфигурация сохранена в: ${fileUri}`
-          );
         }
+        
+        Alert.alert(
+          language === 'en' ? 'Success' : 'Успех',
+          language === 'en' ? 'Configuration exported successfully' : 'Конфигурация успешно экспортирована'
+        );
       }
     } catch (error) {
       console.error('Export error:', error);
       Alert.alert(
-        language === 'en' ? 'Export Error' : 'Ошибка экспорта',
-        language === 'en' 
-          ? `Failed to export: ${error instanceof Error ? error.message : 'Unknown error'}`
-          : `Ошибка экспорта: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
+        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' ? 'Failed to export configuration' : 'Не удалось экспортировать конфигурацию'
       );
     } finally {
       setIsExporting(false);
     }
   };
 
-  const handleImportConfiguration = () => {
-    Alert.alert(
-      language === 'en' ? 'Warning' : 'Предупреждение',
-      language === 'en' 
-        ? 'This will replace ALL current settings, credentials and products with data from the imported file.\n\nMake sure you exported your current configuration as backup before continuing.\n\nContinue with import?'
-        : 'Это заменит ВСЕ текущие настройки, учетные данные и товары данными из импортируемого файла.\n\nУбедитесь, что вы экспортировали текущую конфигурацию как резервную копию перед продолжением.\n\nПродолжить импорт?',
-      [
-        { text: language === 'en' ? 'Cancel' : 'Отмена', style: 'cancel' },
-        { text: language === 'en' ? 'Import' : 'Импорт', onPress: performImport }
-      ]
-    );
+  const handleImport = async () => {
+    const environment = detectEnvironment();
+    
+    if (environment === 'telegram' || environment === 'web') {
+      // Для Telegram Mini App и веб-версии - показываем модальное окно
+      setImportText('');
+      setImportModalVisible(true);
+    } else {
+      // Для мобильных платформ - используем DocumentPicker
+      setIsImporting(true);
+      
+      try {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: 'application/json',
+          copyToCacheDirectory: true,
+        });
+        
+        if (result.type === 'success') {
+          const content = await FileSystem.readAsStringAsync(result.uri, {
+            encoding: FileSystem.EncodingType.UTF8,
+          });
+          
+          await processImportData(content);
+        }
+      } catch (error) {
+        console.error('Import error:', error);
+        Alert.alert(
+          language === 'en' ? 'Error' : 'Ошибка',
+          language === 'en' ? 'Failed to import configuration' : 'Не удалось импортировать конфигурацию'
+        );
+      } finally {
+        setIsImporting(false);
+      }
+    }
   };
 
-  const performImport = async () => {
-    setIsImporting(true);
-
+  const processImportData = async (jsonData: string) => {
     try {
-      let configContent = '';
-      let fileName = '';
+      const importData = JSON.parse(jsonData);
       
-      const environment = detectEnvironment();
-      
-      if (environment === 'web' || environment === 'telegram') {
-        // Create a promise that resolves when file is selected
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = '.json,application/json';
-        fileInput.style.display = 'none';
-        
-        const filePromise = new Promise<{content: string, name: string}>((resolve, reject) => {
-          let resolved = false;
-          
-          const cleanup = () => {
-            if (document.body.contains(fileInput)) {
-              document.body.removeChild(fileInput);
-            }
-          };
-          
-          fileInput.onchange = (event: any) => {
-            if (resolved) return;
-            resolved = true;
-            
-            const file = event.target.files?.[0];
-            if (!file) {
-              cleanup();
-              reject(new Error('No file selected'));
-              return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              cleanup();
-              const content = e.target?.result;
-              if (typeof content === 'string') {
-                resolve({ content, name: file.name });
-              } else {
-                reject(new Error('Failed to read file content'));
-              }
-            };
-            reader.onerror = () => {
-              cleanup();
-              reject(new Error('Failed to read file'));
-            };
-            reader.readAsText(file);
-          };
-          
-          // Handle file dialog cancellation
-          const checkCancellation = () => {
-            setTimeout(() => {
-              if (!resolved) {
-                resolved = true;
-                cleanup();
-                reject(new Error('File selection cancelled'));
-              }
-            }, 1000);
-          };
-          
-          document.body.appendChild(fileInput);
-          fileInput.click();
-          checkCancellation();
-        });
-
-        const result = await filePromise;
-        configContent = result.content;
-        fileName = result.name;
-      } else {
-        // Mobile approach
-        const result = await DocumentPicker.getDocumentAsync({
-          type: ['application/json', 'text/json'],
-          copyToCacheDirectory: true,
-          multiple: false
-        });
-
-        if (result.canceled) {
-          setIsImporting(false);
-          return;
-        }
-
-        const asset = result.assets[0];
-        fileName = asset.name;
-        configContent = await FileSystem.readAsStringAsync(asset.uri);
-      }
-
-      // Parse and validate
-      let configuration;
-      try {
-        configuration = JSON.parse(configContent);
-      } catch (parseError) {
-        throw new Error('Invalid JSON format');
+      if (importData.credentials) {
+        await importCredentials(importData.credentials);
       }
       
-      if (!configuration?.credentials) {
-        throw new Error('Configuration file is missing credentials');
+      if (importData.products) {
+        await importProducts(importData.products);
       }
-
-      // Show preview and apply
-      const productCount = configuration.products?.length || 0;
+      
       Alert.alert(
-        language === 'en' ? 'Confirm Import' : 'Подтвердить импорт',
-        language === 'en' 
-          ? `Import from "${fileName}"?\n\n• Credentials\n• ${productCount} products\n• Settings\n\n⚠️ This will replace ALL current data!`
-          : `Импорт из "${fileName}"?\n\n• Учетные данные\n• ${productCount} товаров\n• Настройки\n\n⚠️ Это заменит ВСЕ текущие данные!`,
-        [
-          { text: language === 'en' ? 'Cancel' : 'Отмена', style: 'cancel' },
-          { text: language === 'en' ? 'Import' : 'Импорт', onPress: () => applyConfiguration(configuration) }
-        ]
+        language === 'en' ? 'Success' : 'Успех',
+        language === 'en' ? 'Configuration imported successfully' : 'Конфигурация успешно импортирована'
       );
-
     } catch (error) {
-      console.error('Import error:', error);
+      console.error('Import processing error:', error);
       Alert.alert(
-        language === 'en' ? 'Import Error' : 'Ошибка импорта',
-        language === 'en' 
-          ? `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-          : `Ошибка импорта: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`
+        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' ? 'Invalid configuration format' : 'Неверный формат конфигурации'
       );
+    }
+  };
+
+  const handleImportFromText = async () => {
+    if (!importText.trim()) {
+      Alert.alert(
+        language === 'en' ? 'Error' : 'Ошибка',
+        language === 'en' ? 'Please enter configuration data' : 'Пожалуйста, введите данные конфигурации'
+      );
+      return;
+    }
+    
+    setIsImporting(true);
+    
+    try {
+      await processImportData(importText);
+      setImportModalVisible(false);
+      setImportText('');
+    } catch (error) {
+      // Ошибка уже обработана в processImportData
     } finally {
       setIsImporting(false);
     }
   };
 
-  const applyConfiguration = async (configuration: any) => {
-    try {
-      let appliedItems = [];
-      
-      if (configuration.credentials) {
-        const requiredFields = ['clientId', 'readOnlyAccessKey', 'currencyAccountNumber', 'currencyAccountGuid'];
-        const missingFields = requiredFields.filter(field => !configuration.credentials[field]);
-        
-        if (missingFields.length > 0) {
-          throw new Error(`Missing required credential fields: ${missingFields.join(', ')}`);
-        }
-        
-        importCredentials(configuration.credentials);
-        appliedItems.push(language === 'en' ? 'Credentials' : 'Учетные данные');
-      }
-
-      if (configuration.settings) {
-        if (configuration.settings.language && configuration.settings.language !== language) {
-          setLanguage(configuration.settings.language);
-          appliedItems.push(language === 'en' ? 'Language' : 'Язык');
-        }
-        if (typeof configuration.settings.darkMode === 'boolean' && configuration.settings.darkMode !== darkMode) {
-          toggleDarkMode();
-          appliedItems.push(language === 'en' ? 'Theme' : 'Тема');
-        }
-      }
-
-      if (configuration.products && Array.isArray(configuration.products)) {
-        const validProducts = configuration.products.filter((product: any) => {
-          return product && 
-                 typeof product.name === 'string' && 
-                 product.name.length > 0 &&
-                 typeof product.price === 'number' && 
-                 product.price > 0;
-        });
-        
-        if (validProducts.length > 0) {
-          importProducts(validProducts);
-          appliedItems.push(`${validProducts.length} ${language === 'en' ? 'products' : 'товаров'}`);
-        }
-        
-        if (validProducts.length < configuration.products.length) {
-          const skipped = configuration.products.length - validProducts.length;
-          console.warn(`Skipped ${skipped} invalid products during import`);
-        }
-      }
-
-      const appliedItemsText = appliedItems.length > 0 
-        ? appliedItems.join(', ')
-        : (language === 'en' ? 'No items' : 'Нет элементов');
-
-      Alert.alert(
-        language === 'en' ? 'Import Successful' : 'Импорт успешен',
-        language === 'en' 
-          ? `Successfully imported: ${appliedItemsText}\n\nSome changes may require restarting the app to take full effect.`
-          : `Успешно импортировано: ${appliedItemsText}\n\nНекоторые изменения могут потребовать перезапуска приложения для полного применения.`,
-        [
-          {
-            text: 'OK',
-            style: 'default'
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Apply configuration error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      Alert.alert(
-        language === 'en' ? 'Apply Error' : 'Ошибка применения',
-        language === 'en' 
-          ? `Failed to apply configuration:\n${errorMessage}`
-          : `Не удалось применить конфигурацию:\n${errorMessage}`
-      );
-    }
-  };
-  
-  const renderSettingItem = (
-    icon: React.ReactNode,
-    title: string,
-    subtitle?: string,
-    onPress?: () => void,
-    rightElement?: React.ReactNode
-  ) => (
-    <TouchableOpacity 
-      style={[styles.settingItem, { borderBottomColor: theme.border }]}
-      onPress={onPress}
-      disabled={!onPress}
-    >
-      <View style={styles.settingLeft}>
-        <View style={[styles.iconContainer, { backgroundColor: theme.primary + '20' }]}>
-          {icon}
-        </View>
-        <View style={styles.settingText}>
-          <Text style={[styles.settingTitle, { color: theme.text }]} allowFontScaling={false}>
-            {title}
-          </Text>
-          {subtitle && (
-            <Text style={[styles.settingSubtitle, { color: theme.placeholder }]} allowFontScaling={false}>
-              {subtitle}
-            </Text>
-          )}
-        </View>
-      </View>
-      <View style={styles.settingRight}>
-        {rightElement ? rightElement : <ChevronRight size={20} color={theme.placeholder} />}
-      </View>
-    </TouchableOpacity>
-  );
-  
   return (
-    <>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Stack.Screen 
-        options={{
-          headerShown: false
-        }}
+        options={{ 
+          headerShown: true,
+          headerTitle: language === 'en' ? 'Settings' : 'Настройки',
+          headerStyle: { backgroundColor: theme.background },
+          headerTintColor: theme.text,
+        }} 
       />
       
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <Image 
-              source={IMAGES.LOGO_SET} 
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={[styles.title, { 
-              color: theme.text,
-              fontSize: scaleFontSize(Platform.OS === 'android' ? 20 : 22)
-            }]} allowFontScaling={false}>
-              {language === 'en' ? 'Settings' : 'Настройки'}
-            </Text>
-          </View>
-          
-          <Card style={styles.profileCard}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Profile Section */}
+        <Card style={[styles.profileCard, { backgroundColor: theme.card }]}>
+          <View style={styles.profileHeader}>
+            <Image source={IMAGES.logo} style={styles.profileImage} />
             <View style={styles.profileInfo}>
-              <View style={[styles.profileAvatar, { backgroundColor: theme.primary + '20' }]}>
-                <User size={32} color={theme.primary} />
-              </View>
-              <View style={styles.profileText}>
-                <Text style={[styles.profileName, { color: theme.text }]} allowFontScaling={false}>
-                  {credentials?.merchantName || (language === 'en' ? 'Merchant' : 'Мерчант')}
-                </Text>
-                <Text style={[styles.profileEmail, { color: theme.placeholder }]} allowFontScaling={false}>
-                  {language === 'en' ? 'Client ID' : 'ID клиента'}: {credentials?.clientId || 'N/A'}
-                </Text>
-              </View>
+              <Text style={[styles.profileName, { color: theme.text }]}>
+                {credentials?.merchantName || (language === 'en' ? 'Merchant' : 'Продавец')}
+              </Text>
+              <Text style={[styles.profileId, { color: theme.textSecondary }]}>
+                ID: {credentials?.clientId || '---'}
+              </Text>
             </View>
-            <Button
-              title={language === 'en' ? 'Edit Profile' : 'Редактировать профиль'}
-              variant="outline"
-              size="small"
-              onPress={handleEditProfile}
-              style={styles.editButton}
-            />
-          </Card>
-          
-          <Card style={styles.settingsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
-              {language === 'en' ? 'App Settings' : 'Настройки приложения'}
+          </View>
+        </Card>
+
+        {/* Settings Sections */}
+        <View style={styles.sectionsContainer}>
+          {/* Account Section */}
+          <Card style={[styles.sectionCard, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {language === 'en' ? 'Account' : 'Аккаунт'}
             </Text>
             
-            {renderSettingItem(
-              <Globe size={20} color={theme.primary} />,
-              language === 'en' ? 'Language' : 'Язык',
-              language === 'en' ? 'English' : 'Русский',
-              handleLanguageChange
-            )}
-            
-            {renderSettingItem(
-              darkMode ? <Moon size={20} color={theme.primary} /> : <Sun size={20} color={theme.primary} />,
-              language === 'en' ? 'Theme' : 'Тема',
-              darkMode ? (language === 'en' ? 'Dark' : 'Тёмная') : (language === 'en' ? 'Light' : 'Светлая'),
-              toggleDarkMode
-            )}
+            <TouchableOpacity 
+              style={[styles.settingItem, { borderBottomColor: theme.border }]}
+              onPress={() => router.push('/profile/edit')}
+            >
+              <View style={styles.settingItemLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
+                  <User size={20} color={theme.primary} />
+                </View>
+                <Text style={[styles.settingItemText, { color: theme.text }]}>
+                  {language === 'en' ? 'Edit Profile' : 'Редактировать профиль'}
+                </Text>
+              </View>
+              <ChevronRight size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
           </Card>
-          
-          <Card style={styles.settingsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
+
+          {/* Data Management Section */}
+          <Card style={[styles.sectionCard, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {language === 'en' ? 'Data Management' : 'Управление данными'}
+            </Text>
+            
+            <TouchableOpacity 
+              style={[styles.settingItem, { borderBottomColor: theme.border }]}
+              onPress={handleExport}
+              disabled={isExporting}
+            >
+              <View style={styles.settingItemLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
+                  <Download size={20} color={theme.primary} />
+                </View>
+                <Text style={[styles.settingItemText, { color: theme.text }]}>
+                  {language === 'en' ? 'Export Configuration' : 'Экспорт конфигурации'}
+                </Text>
+              </View>
+              <ChevronRight size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.settingItem, { borderBottomColor: theme.border }]}
+              onPress={handleImport}
+              disabled={isImporting}
+            >
+              <View style={styles.settingItemLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
+                  <Upload size={20} color={theme.primary} />
+                </View>
+                <Text style={[styles.settingItemText, { color: theme.text }]}>
+                  {language === 'en' ? 'Import Configuration' : 'Импорт конфигурации'}
+                </Text>
+              </View>
+              <ChevronRight size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </Card>
+
+          {/* Products Section */}
+          <Card style={[styles.sectionCard, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
               {language === 'en' ? 'Products' : 'Товары'}
             </Text>
             
-            {renderSettingItem(
-              <ShoppingBag size={20} color={theme.primary} />,
-              language === 'en' ? 'Manage Products' : 'Управление товарами',
-              language === 'en' ? 'Add, edit or remove products' : 'Добавление, редактирование или удаление товаров',
-              handleManageProducts
-            )}
+            <TouchableOpacity 
+              style={[styles.settingItem, { borderBottomColor: theme.border }]}
+              onPress={() => router.push('/products')}
+            >
+              <View style={styles.settingItemLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
+                  <ShoppingBag size={20} color={theme.primary} />
+                </View>
+                <Text style={[styles.settingItemText, { color: theme.text }]}>
+                  {language === 'en' ? 'Manage Products' : 'Управление товарами'}
+                </Text>
+              </View>
+              <View style={styles.settingItemRight}>
+                <Text style={[styles.settingItemCounter, { color: theme.textSecondary }]}>
+                  {products.length}
+                </Text>
+                <ChevronRight size={20} color={theme.textSecondary} />
+              </View>
+            </TouchableOpacity>
           </Card>
 
-          <Card style={styles.settingsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
-              {language === 'en' ? 'Configuration' : 'Конфигурация'}
+          {/* Preferences Section */}
+          <Card style={[styles.sectionCard, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {language === 'en' ? 'Preferences' : 'Настройки'}
             </Text>
             
-            {renderSettingItem(
-              <Download size={20} color={theme.primary} />,
-              language === 'en' ? 'Export' : 'Экспорт',
-              language === 'en' ? 'Save all settings and products to file' : 'Сохранить все настройки и товары в файл',
-              handleExportConfiguration,
-              isExporting ? <Text style={[styles.loadingText, { color: theme.placeholder }]}>...</Text> : null
-            )}
+            <TouchableOpacity 
+              style={[styles.settingItem, { borderBottomColor: theme.border }]}
+              onPress={() => {
+                setLanguage(language === 'en' ? 'ru' : 'en');
+              }}
+            >
+              <View style={styles.settingItemLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
+                  <Globe size={20} color={theme.primary} />
+                </View>
+                <Text style={[styles.settingItemText, { color: theme.text }]}>
+                  {language === 'en' ? 'Language' : 'Язык'}
+                </Text>
+              </View>
+              <View style={styles.settingItemRight}>
+                <Text style={[styles.settingItemValue, { color: theme.textSecondary }]}>
+                  {language === 'en' ? 'English' : 'Русский'}
+                </Text>
+                <ChevronRight size={20} color={theme.textSecondary} />
+              </View>
+            </TouchableOpacity>
             
-            {renderSettingItem(
-              <Upload size={20} color={theme.primary} />,
-              language === 'en' ? 'Import' : 'Импорт',
-              language === 'en' ? 'Load settings and products from file' : 'Загрузить настройки и товары из файла',
-              handleImportConfiguration,
-              isImporting ? <Text style={[styles.loadingText, { color: theme.placeholder }]}>...</Text> : null
-            )}
+            <TouchableOpacity 
+              style={[styles.settingItem, { borderBottomColor: theme.border }]}
+              onPress={toggleDarkMode}
+            >
+              <View style={styles.settingItemLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
+                  {darkMode ? <Moon size={20} color={theme.primary} /> : <Sun size={20} color={theme.primary} />}
+                </View>
+                <Text style={[styles.settingItemText, { color: theme.text }]}>
+                  {language === 'en' ? 'Dark Mode' : 'Тёмная тема'}
+                </Text>
+              </View>
+              <View style={styles.settingItemRight}>
+                <Text style={[styles.settingItemValue, { color: theme.textSecondary }]}>
+                  {darkMode ? (language === 'en' ? 'On' : 'Вкл') : (language === 'en' ? 'Off' : 'Выкл')}
+                </Text>
+                <ChevronRight size={20} color={theme.textSecondary} />
+              </View>
+            </TouchableOpacity>
           </Card>
-          
-          <Card style={styles.settingsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
-              {language === 'en' ? 'Security' : 'Безопасность'}
+
+          {/* Help Section */}
+          <Card style={[styles.sectionCard, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              {language === 'en' ? 'Help & Support' : 'Помощь и поддержка'}
             </Text>
             
-            {renderSettingItem(
-              <Shield size={20} color={theme.primary} />,
-              language === 'en' ? 'Privacy & Security' : 'Конфиденциальность и безопасность',
-              language === 'en' ? 'Manage your privacy settings' : 'Управление настройками конфиденциальности',
-              () => Alert.alert(
-                language === 'en' ? 'Privacy & Security' : 'Конфиденциальность и безопасность',
-                language === 'en' ? 'Privacy settings will be available in future updates.' : 'Настройки конфиденциальности будут доступны в будущих обновлениях.'
-              )
-            )}
+            <TouchableOpacity 
+              style={[styles.settingItem, { borderBottomColor: theme.border }]}
+              onPress={() => router.push('/help')}
+            >
+              <View style={styles.settingItemLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
+                  <HelpCircle size={20} color={theme.primary} />
+                </View>
+                <Text style={[styles.settingItemText, { color: theme.text }]}>
+                  {language === 'en' ? 'Help Center' : 'Справочный центр'}
+                </Text>
+              </View>
+              <ChevronRight size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.settingItem, { borderBottomColor: theme.border }]}
+              onPress={() => router.push('/contact')}
+            >
+              <View style={styles.settingItemLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
+                  <MessageCircle size={20} color={theme.primary} />
+                </View>
+                <Text style={[styles.settingItemText, { color: theme.text }]}>
+                  {language === 'en' ? 'Contact Support' : 'Связаться с поддержкой'}
+                </Text>
+              </View>
+              <ChevronRight size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.settingItem, { borderBottomWidth: 0 }]}
+              onPress={() => router.push('/about')}
+            >
+              <View style={styles.settingItemLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
+                  <Info size={20} color={theme.primary} />
+                </View>
+                <Text style={[styles.settingItemText, { color: theme.text }]}>
+                  {language === 'en' ? 'About' : 'О приложении'}
+                </Text>
+              </View>
+              <ChevronRight size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
           </Card>
-          
-          <Card style={styles.settingsCard}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]} allowFontScaling={false}>
-              {language === 'en' ? 'Support' : 'Поддержка'}
-            </Text>
-            
-            {renderSettingItem(
-              <HelpCircle size={20} color={theme.primary} />,
-              language === 'en' ? 'Help & Support' : 'Помощь и поддержка',
-              language === 'en' ? 'Get help with the app' : 'Получить помощь с приложением',
-              () => Alert.alert(
-                language === 'en' ? 'Help & Support' : 'Помощь и поддержка',
-                language === 'en' ? 'Support features will be available in future updates.' : 'Функции поддержки будут доступны в будущих обновлениях.'
-              )
-            )}
-            
-            {renderSettingItem(
-              <MessageCircle size={20} color={theme.primary} />,
-              language === 'en' ? 'Telegram Support' : 'Поддержка в Telegram',
-              '@max_support_main',
-              handleTelegramSupport
-            )}
-            
-            {renderSettingItem(
-              <Info size={20} color={theme.primary} />,
-              language === 'en' ? 'About' : 'О приложении',
-              language === 'en' ? 'Version 1.1.1' : 'Версия 1.1.1',
-              () => Alert.alert(
-                language === 'en' ? 'About' : 'О приложении',
-                language === 'en' 
-                  ? "MPS Pay Mobile App\nVersion 1.1.1\n\nA secure payment processing application for merchants."
-                  : "Мобильное приложение MPS Pay\nВерсия 1.1.1\n\nБезопасное приложение для обработки платежей для мерчантов."
-              )
-            )}
-          </Card>
-          
-          <Card style={styles.logoutCard}>
-            <Button
-              title={language === 'en' ? 'Logout' : 'Выйти'}
-              variant="outline"
+
+          {/* Logout Section */}
+          <Card style={[styles.sectionCard, { backgroundColor: theme.card }]}>
+            <TouchableOpacity 
+              style={[styles.settingItem, { borderBottomWidth: 0 }]}
               onPress={handleLogout}
-              loading={isLoggingOut}
-              style={styles.logoutButton}
-              textStyle={{ color: theme.notification }}
-              icon={<LogOut size={20} color={theme.notification} />}
-            />
+              disabled={isLoggingOut}
+            >
+              <View style={styles.settingItemLeft}>
+                <View style={[styles.settingIcon, { backgroundColor: theme.errorLight }]}>
+                  <LogOut size={20} color={theme.error} />
+                </View>
+                <Text style={[styles.settingItemText, { color: theme.error }]}>
+                  {language === 'en' ? 'Logout' : 'Выйти'}
+                </Text>
+              </View>
+              <ChevronRight size={20} color={theme.textSecondary} />
+            </TouchableOpacity>
           </Card>
-        </ScrollView>
-      </View>
-    </>
+        </View>
+      </ScrollView>
+
+      {/* Модальное окно для импорта */}
+      <Modal
+        visible={importModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setImportModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              {language === 'en' ? 'Import Configuration' : 'Импорт конфигурации'}
+            </Text>
+            
+            <Text style={[styles.modalDescription, { color: theme.textSecondary }]}>
+              {language === 'en' 
+                ? 'Paste the configuration JSON below:' 
+                : 'Вставьте JSON конфигурации ниже:'}
+            </Text>
+            
+            <TextInput
+              style={[styles.modalTextInput, { 
+                backgroundColor: theme.background, 
+                color: theme.text,
+                borderColor: theme.border
+              }]}
+              multiline
+              numberOfLines={10}
+              value={importText}
+              onChangeText={setImportText}
+              placeholder={language === 'en' ? 'Paste configuration JSON here...' : 'Вставьте JSON конфигурации сюда...'}
+              placeholderTextColor={theme.textSecondary}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            
+            <View style={styles.modalButtons}>
+              <Button
+                title={language === 'en' ? 'Cancel' : 'Отмена'}
+                onPress={() => {
+                  setImportModalVisible(false);
+                  setImportText('');
+                }}
+                variant="outline"
+                style={styles.modalButton}
+              />
+              <Button
+                title={language === 'en' ? 'Import' : 'Импортировать'}
+                onPress={handleImportFromText}
+                loading={isImporting}
+                style={styles.modalButton}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
@@ -685,43 +598,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  scrollContainer: {
     paddingHorizontal: scaleSpacing(16),
-    paddingTop: scaleSpacing(16),
-    paddingBottom: scaleSpacing(8),
-  },
-  logo: {
-    width: 40,
-    height: 40,
-    marginRight: scaleSpacing(12),
-  },
-  title: {
-    fontWeight: 'bold',
-    flex: 1,
+    paddingVertical: scaleSpacing(16),
   },
   profileCard: {
-    margin: scaleSpacing(16),
-    padding: scaleSpacing(20),
-  },
-  profileInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: scaleSpacing(16),
   },
-  profileAvatar: {
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: scaleSpacing(16),
+  },
+  profileImage: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginRight: scaleSpacing(16),
   },
-  profileText: {
+  profileInfo: {
     flex: 1,
   },
   profileName: {
@@ -729,40 +624,39 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: scaleSpacing(4),
   },
-  profileEmail: {
+  profileId: {
     fontSize: scaleFontSize(14),
   },
-  editButton: {
-    alignSelf: 'flex-start',
+  sectionsContainer: {
+    gap: scaleSpacing(16),
   },
-  settingsCard: {
-    marginHorizontal: scaleSpacing(16),
-    marginBottom: scaleSpacing(16),
-    padding: scaleSpacing(20),
-  },
-  logoutCard: {
-    marginHorizontal: scaleSpacing(16),
-    marginBottom: scaleSpacing(32),
-    padding: scaleSpacing(20),
+  sectionCard: {
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   sectionTitle: {
     fontSize: scaleFontSize(16),
     fontWeight: '600',
-    marginBottom: scaleSpacing(16),
+    padding: scaleSpacing(16),
+    paddingBottom: scaleSpacing(8),
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: scaleSpacing(12),
+    padding: scaleSpacing(16),
     borderBottomWidth: 1,
   },
-  settingLeft: {
+  settingItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  iconContainer: {
+  settingItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  settingIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -770,25 +664,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: scaleSpacing(12),
   },
-  settingText: {
+  settingItemText: {
+    fontSize: scaleFontSize(16),
     flex: 1,
   },
-  settingTitle: {
-    fontSize: scaleFontSize(16),
-    fontWeight: '500',
-    marginBottom: scaleSpacing(2),
-  },
-  settingSubtitle: {
+  settingItemValue: {
     fontSize: scaleFontSize(14),
+    marginRight: scaleSpacing(8),
   },
-  settingRight: {
-    marginLeft: scaleSpacing(12),
-  },
-  logoutButton: {
-    width: '100%',
-    borderColor: Platform.OS === 'web' ? undefined : 'rgba(255, 59, 48, 0.5)',
-  },
-  loadingText: {
+  settingItemCounter: {
     fontSize: scaleFontSize(14),
+    marginRight: scaleSpacing(8),
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    paddingHorizontal: scaleSpacing(8),
+    paddingVertical: scaleSpacing(2),
+    borderRadius: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 400,
+    borderRadius: 16,
+    padding: scaleSpacing(20),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: scaleFontSize(18),
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: scaleSpacing(8),
+  },
+  modalDescription: {
+    fontSize: scaleFontSize(14),
+    textAlign: 'center',
+    marginBottom: scaleSpacing(16),
+  },
+  modalTextInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: scaleSpacing(12),
+    fontSize: scaleFontSize(14),
+    textAlignVertical: 'top',
+    minHeight: 120,
+    marginBottom: scaleSpacing(16),
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: scaleSpacing(12),
+  },
+  modalButton: {
+    flex: 1,
   },
 });
