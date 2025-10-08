@@ -434,9 +434,9 @@ export default function TransactionDetailsScreen() {
 <body>
     <div class="header">
         <div class="logo">
-            <img src="https://i.imgur.com/5la0Aov.png" alt="MPSPAY" style="width: 80px; height: 80px; border-radius: 12px;" />
+            <img src="https://i.imgur.com/5la0Aov.png" alt="Kassa" style="width: 80px; height: 80px; border-radius: 12px;" />
         </div>
-        <div class="company-name">MPSPAY Kassa</div>
+        <div class="company-name">Kassa</div>
         <div class="receipt-title">Чек об оплате</div>
     </div>
     
@@ -503,7 +503,7 @@ export default function TransactionDetailsScreen() {
     </div>
     
     <div class="footer">
-        <p><strong>Спасибо за использование MPSPAY!</strong></p>
+        <p><strong>Спасибо за использование Kassa!</strong></p>
         <p>Дата печати: ${new Date().toLocaleString('ru-RU')}</p>
         <p>Этот документ является электронным чеком</p>
     </div>
