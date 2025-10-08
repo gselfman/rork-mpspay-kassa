@@ -424,7 +424,7 @@ export default function HomeScreen() {
               />
               <View style={styles.headerTextContainer}>
                 <Text style={[styles.title, { color: theme.text, fontSize: scaleFontSize(24) }]} allowFontScaling={false}>
-                  MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
+                   {language === 'en' ? 'Terminal' : 'Касса'}
                 </Text>
                 <Text style={[styles.subtitle, { color: theme.placeholder, fontSize: scaleFontSize(14) }]} allowFontScaling={false}>
                   {language === 'en' 
