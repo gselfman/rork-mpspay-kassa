@@ -267,7 +267,7 @@ export default function AuthScreen() {
             </View>
             
             <Text style={[styles.welcomeTitle, { color: theme.text }]}>
-              MPSPAY {language === 'en' ? 'Terminal' : 'Касса'}
+               {language === 'en' ? 'Terminal' : 'Касса'}
             </Text>
             
             <Text style={[styles.welcomeSubtitle, { color: theme.text }]}>
