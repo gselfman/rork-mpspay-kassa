@@ -458,8 +458,8 @@ export default function EditProfileScreen() {
           
           <Text style={[styles.disclaimer, { color: theme.placeholder }]}>
             {language === 'en' 
-              ? 'These credentials are used to connect to the MPSPAY payment system. Please ensure they are entered correctly.'
-              : 'Эти учетные данные используются для подключения к платежной системе MPSPAY. Пожалуйста, убедитесь, что они введены правильно.'}
+              ? 'These credentials are used to connect to the payment system. Please ensure they are entered correctly.'
+              : 'Эти учетные данные используются для подключения к платежной системе. Пожалуйста, убедитесь, что они введены правильно.'}
           </Text>
         </ScrollView>
         
